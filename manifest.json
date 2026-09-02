@@ -1,0 +1,26 @@
+{
+  "id": "/index.php",
+  "name": "GoldHen Manager V3.0",
+  "short_name": "GoldHen V3",
+  "description": "Gestor Autónomo de PS4 y Modding",
+  "start_url": "/index.php",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#060913",
+  "theme_color": "#060913",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/js/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/js/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
