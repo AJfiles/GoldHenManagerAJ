@@ -47,6 +47,16 @@ function initBiblio() {
             iniciarCargaInmediataYEscaneoSilencioso(); 
         }
     }
+
+    // ======== MEJORA: BÚSQUEDA AUTOMÁTICA EN TIEMPO REAL ========
+    const searchInput = document.getElementById('engine-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            index3DActivo = 0;
+            recompilarTodo();
+        });
+    }
+    // ======== FIN MEJORA ========
 }
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initBiblio); } 
 else { initBiblio(); }
@@ -238,7 +248,7 @@ async function forzarSincronizacionManual() {
     }
 }
 
-function abortarSincronizacionDesdeBoton() { if (bibliotecaAbortController) { bibliotecaAbortController.abort(); } closeSincronizacionModal(); }
+function aborpZELkorMwhkkpShF5PvT8YnqRCupnLTNG() { if (bibliotecaAbortController) { bibliotecaAbortController.abort(); } closeSincronizacionModal(); }
 function closeSincronizacionModal() { const modal = document.getElementById('modal-sincronizacion-progreso'); if (modal) { modal.classList.remove('opacity-100'); setTimeout(()=>modal.classList.add('hidden'), 300); } }
 
 function aplicarOrdenamientoInterno() {
