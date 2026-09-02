@@ -23,6 +23,7 @@ let globalAppConfig = {
 };
 
 let globalAudioCtx = null;
+let radarTimeoutId = null; // Para controlar el cierre automático del radar
 
 const introNamesMap = {
     'none': 'Sin Intro (Rápido)',
@@ -360,7 +361,6 @@ async function verificarRadarInicial() {
         if (pingIndicator) {
             pingIndicator.className = "w-2 h-2 bg-red-500 rounded-full shadow-[0_0_8px_#ef4444]";
         }
-        // El error no se muestra al usuario aquí para no ser intrusivo, pero se loguea
         console.warn("Error en verificarRadarInicial:", error.message);
     }
 }
@@ -368,11 +368,13 @@ async function verificarRadarInicial() {
 // ============ VALIDACIÓN DE IP ============
 
 function validarEstructuraIP(ipString) {
-    // Permite IPs como 192.168.1.1 o 10.0.0.1, etc.
     return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipString);
 }
 
 // ============ SISTEMA DE NOTIFICACIONES ============
+
+let notificationCounter = 0;
+const MAX_NOTIFICATIONS = 3;
 
 function sysNotification(titulo, mensaje, iconoClase = "fa-info-circle") {
     if (!globalAppConfig.alertasActivas) return;
@@ -383,6 +385,13 @@ function sysNotification(titulo, mensaje, iconoClase = "fa-info-circle") {
         contenedorNotificaciones.id = 'sys-notification-holder';
         contenedorNotificaciones.className = "fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none";
         document.body.appendChild(contenedorNotificaciones);
+    }
+
+    // Limitar el número de notificaciones en pantalla
+    const existing = contenedorNotificaciones.children;
+    if (existing.length >= MAX_NOTIFICATIONS) {
+        // Eliminar la más antigua
+        existing[0]?.remove();
     }
 
     const burbuja = document.createElement('div');
@@ -407,9 +416,15 @@ function sysNotification(titulo, mensaje, iconoClase = "fa-info-circle") {
     }, 4000);
 }
 
-// ============ RADAR ============
+// ============ RADAR MEJORADO ============
 
 async function lanzarRadarVentanaEmergente() {
+    // Cancelar cualquier cierre automático pendiente
+    if (radarTimeoutId) {
+        clearTimeout(radarTimeoutId);
+        radarTimeoutId = null;
+    }
+
     emitirEfectoSonidoNativo('ps-ui'); 
     const modal = document.getElementById('modal-radar-emergente');
     const caja = document.getElementById('radar-caja');
@@ -428,6 +443,7 @@ async function lanzarRadarVentanaEmergente() {
         logTerm.innerHTML += `<p class="text-gray-500">Verificando IP guardada: ${globalAppConfig.ipConsola}...</p>`;
         logTerm.scrollTop = logTerm.scrollHeight;
 
+        // Primero intentar con la IP guardada (rápido)
         let resCache = await fetch(`api/scanner.php?ip=${globalAppConfig.ipConsola}&port=${globalAppConfig.portFTP}`);
         let dataCache = await resCache.json();
 
@@ -435,7 +451,8 @@ async function lanzarRadarVentanaEmergente() {
             logTerm.innerHTML += `<p class="text-white font-bold bg-emerald-950/50 px-1 border border-emerald-500/20">🚀 PS4 HALLADA EN CACHÉ: ${globalAppConfig.ipConsola}</p>`;
             if (subLabel) subLabel.innerText = `LINK.ESTABLISHED`;
             await verificarRadarInicial();
-            setTimeout(() => { abortarYEstabilizarRadar(); }, 1200);
+            // Cerrar automáticamente después de 1.2 segundos
+            radarTimeoutId = setTimeout(() => { abortarYEstabilizarRadar(); }, 1200);
             return;
         }
 
@@ -443,12 +460,21 @@ async function lanzarRadarVentanaEmergente() {
         logTerm.innerHTML += `<p class="text-emerald-400">Aislando nueva subred y lanzando Escaneo Masivo Paralelo...</p>`;
         logTerm.scrollTop = logTerm.scrollHeight;
 
-        let resRadar = await fetch('api/radar_api.php');
+        // Llamar al radar con timeout personalizado (250ms por defecto)
+        // Podemos pasar un timeout mayor si la red es lenta (ej. 300ms)
+        const timeoutMs = 250;
+        let resRadar = await fetch(`api/radar_api.php?timeout=${timeoutMs}&port=${globalAppConfig.portFTP}`);
         let dataRadar = await resRadar.json();
 
         if (dataRadar && dataRadar.status === 'success') {
             if (subLabel) subLabel.innerText = `SCANNING.${dataRadar.segmento}`;
-            logTerm.innerHTML += `<p class="text-gray-500">Barriendo 254 IPs simultáneas en subred ${dataRadar.segmento} (Timeout 200ms)...</p>`;
+            logTerm.innerHTML += `<p class="text-gray-500">Barriendo 254 IPs simultáneas en subred ${dataRadar.segmento} (Timeout ${timeoutMs}ms)...</p>`;
+            
+            // Mostrar IP local detectada por el backend
+            if (dataRadar.local_ip) {
+                logTerm.innerHTML += `<p class="text-gray-400 text-[8px]">📡 IP Local detectada: ${dataRadar.local_ip}</p>`;
+            }
+            
             logTerm.scrollTop = logTerm.scrollHeight;
 
             if (dataRadar.ps4_ips && dataRadar.ps4_ips.length > 0) {
@@ -461,23 +487,36 @@ async function lanzarRadarVentanaEmergente() {
                 if (inputIP) inputIP.value = nuevaIP;
 
                 await verificarRadarInicial();
-                setTimeout(() => { abortarYEstabilizarRadar(); }, 2000);
+                // Cerrar automáticamente después de 2 segundos
+                radarTimeoutId = setTimeout(() => { abortarYEstabilizarRadar(); }, 2000);
             } else {
                 logTerm.innerHTML += `<p class="text-red-400">[ERROR] Ninguna PS4 respondió en la red ${dataRadar.segmento}.</p>`;
                 if (subLabel) subLabel.innerText = `SCAN.FAILED`;
+                // Cerrar automáticamente después de 3 segundos
+                radarTimeoutId = setTimeout(() => { abortarYEstabilizarRadar(); }, 3000);
             }
         } else {
             logTerm.innerHTML += `<p class="text-red-500">[ERROR] ${dataRadar.message || 'Fallo de interfaz de red.'}</p>`;
+            // Cerrar automáticamente después de 3 segundos
+            radarTimeoutId = setTimeout(() => { abortarYEstabilizarRadar(); }, 3000);
         }
     } catch (e) {
         logTerm.innerHTML += `<p class="text-red-500">[ERROR CRÍTICO] Servidor Termux no responde o error de red.</p>`;
         sysNotification("ERROR RADAR", "No se pudo completar el escaneo. Verifica tu conexión.", "fa-circle-xmark");
         console.error("Error en lanzarRadarVentanaEmergente:", e);
+        // Cerrar automáticamente después de 3 segundos
+        radarTimeoutId = setTimeout(() => { abortarYEstabilizarRadar(); }, 3000);
     }
     logTerm.scrollTop = logTerm.scrollHeight;
 }
 
 function abortarYEstabilizarRadar() {
+    // Limpiar el timeout programado
+    if (radarTimeoutId) {
+        clearTimeout(radarTimeoutId);
+        radarTimeoutId = null;
+    }
+
     const modal = document.getElementById('modal-radar-emergente');
     const caja = document.getElementById('radar-caja');
     if (modal) {
