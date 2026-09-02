@@ -1,11 +1,11 @@
 /**
  * ====================================================================
- * GOLDHEN MANAGER V3.0 🚀 (PS4) - NÚCLEO DE CONTROL CENTRAL (CORE)
- * DEVELOPED By SeBaS - RUTA: js/app.js
+ * GOLDHEN MANAGER AJ 🚀 (PS4) - NÚCLEO DE CONTROL CENTRAL (CORE)
+ * DEVELOPED By SeBaS - Mod AJ
  * ====================================================================
  */
-const CREATOR_ATTRIBUTION = "by SeBaS";
-console.log(`%c GOLDHEN MANAGER V3.0 - Developed ${CREATOR_ATTRIBUTION} `, "background: #111827; color: #22d3ee; font-weight: bold; padding: 4px;");
+const CREATOR_ATTRIBUTION = "by SeBaS (Mod AJ)";
+console.log(`%c GOLDHEN MANAGER AJ - Developed ${CREATOR_ATTRIBUTION} `, "background: #111827; color: #22d3ee; font-weight: bold; padding: 4px;");
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -22,7 +22,7 @@ let globalAppConfig = {
     volumenSfx: 0.5
 };
 
-let globalAudioCtx = null; 
+let globalAudioCtx = null;
 
 const introNamesMap = {
     'none': 'Sin Intro (Rápido)',
@@ -120,7 +120,6 @@ function inicializarContextoAudio() {
 
 function emitirEfectoSonidoNativo(tipo) {
     if (!globalAppConfig.sonidosActivos || globalAppConfig.volumenSfx <= 0) return;
-
     try {
         inicializarContextoAudio();
         let ctx = globalAudioCtx;
@@ -230,7 +229,10 @@ function configurarEventosDashboard() {
                 localStorage.setItem('sebas_ip_final_libre', nuevaIP);
                 sysNotification("AJUSTES", "Dirección IP actualizada.", "fa-network-wired");
                 verificarRadarInicial();
-            } else { e.target.value = globalAppConfig.ipConsola; }
+            } else {
+                e.target.value = globalAppConfig.ipConsola;
+                sysNotification("ERROR", "IP inválida. No se guardó.", "fa-circle-xmark");
+            }
         });
     }
     document.querySelectorAll('.launcher-card').forEach(card => {
@@ -271,51 +273,106 @@ function volverAlLauncher() {
     }
 }
 
+// ============ MEJORAS: FEEDBACK VISUAL + MANEJO DE ERRORES ============
+
 async function conectarIPManualValidando() {
     emitirEfectoSonidoNativo('click');
     const inputIP = document.getElementById('ps-ip-full-input');
     const inputPort = document.getElementById('ps-port-input');
+    const btnConectar = document.querySelector('button[onclick="conectarIPManualValidando()"]');
+    
     if (!inputIP) return;
 
     const ip = inputIP.value.trim();
     const port = inputPort ? inputPort.value.trim() : '2121';
 
-    if (!validarEstructuraIP(ip)) { sysNotification("ERROR", "IP inválida.", "fa-circle-xmark"); return; }
+    // Validación de IP
+    if (!validarEstructuraIP(ip)) {
+        sysNotification("ERROR", "IP inválida. Formato: 192.168.x.x", "fa-circle-xmark");
+        return;
+    }
 
-    localStorage.setItem('sebas_ip_final_libre', ip);
-    localStorage.setItem('sebas_port_libre', port);
-    globalAppConfig.ipConsola = ip;
-    globalAppConfig.portFTP = parseInt(port, 10);
+    // Feedback visual: deshabilitar y cambiar texto
+    if (btnConectar) {
+        btnConectar.disabled = true;
+        btnConectar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
+    }
 
-    sysNotification("ENLACE", "Sincronizando...", "fa-rotate");
-    await verificarRadarInicial();
-}
-
-async function verificarRadarInicial() {
     try {
-        const lblStatus = document.getElementById('console-status-label');
-        const pingIndicator = document.getElementById('connection-ping-indicator');
+        // Guardar configuración
+        localStorage.setItem('sebas_ip_final_libre', ip);
+        localStorage.setItem('sebas_port_libre', port);
+        globalAppConfig.ipConsola = ip;
+        globalAppConfig.portFTP = parseInt(port, 10);
 
-        let response = await fetch(`api/scanner.php?ip=${globalAppConfig.ipConsola}&port=${globalAppConfig.portFTP}`);
-        let json = await response.json();
+        sysNotification("ENLACE", "Verificando conexión con la PS4...", "fa-rotate");
 
-        if (json && json.status === 'success') {
-            globalAppConfig.statusConexion = true;
-            if (lblStatus) { lblStatus.innerText = "CONECTADO"; lblStatus.className = "text-[9px] font-mono text-emerald-400 font-bold uppercase"; }
-            if (pingIndicator) { pingIndicator.className = "w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"; }
-        } else { throw new Error("Offline"); }
-    } catch (e) {
-        globalAppConfig.statusConexion = false;
-        const lblStatus = document.getElementById('console-status-label');
-        const pingIndicator = document.getElementById('connection-ping-indicator');
-        if (lblStatus) { lblStatus.innerText = "DESCONECTADO"; lblStatus.className = "text-[9px] font-mono text-red-400 font-bold uppercase"; }
-        if (pingIndicator) { pingIndicator.className = "w-2 h-2 bg-red-500 rounded-full shadow-[0_0_8px_#ef4444]"; }
+        // Ejecutar ping real
+        await verificarRadarInicial();
+
+        if (globalAppConfig.statusConexion) {
+            sysNotification("ÉXITO", "Conexión establecida correctamente.", "fa-check-circle");
+        } else {
+            sysNotification("FALLO", "No se pudo contactar con la PS4. Verifica IP y puerto.", "fa-triangle-exclamation");
+        }
+    } catch (error) {
+        sysNotification("ERROR", "Error al conectar: " + error.message, "fa-circle-xmark");
+        console.error("Error en conectarIPManualValidando:", error);
+    } finally {
+        // Restaurar botón
+        if (btnConectar) {
+            btnConectar.disabled = false;
+            btnConectar.innerHTML = '<i class="fa-solid fa-link text-[11px]"></i>';
+        }
     }
 }
 
+// ============ PING REAL CON MANEJO DE ERRORES ============
+
+async function verificarRadarInicial() {
+    const lblStatus = document.getElementById('console-status-label');
+    const pingIndicator = document.getElementById('connection-ping-indicator');
+
+    try {
+        const url = `api/scanner.php?ip=${globalAppConfig.ipConsola}&port=${globalAppConfig.portFTP}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const json = await response.json();
+
+        if (json && json.status === 'success') {
+            globalAppConfig.statusConexion = true;
+            if (lblStatus) {
+                lblStatus.innerText = "CONECTADO";
+                lblStatus.className = "text-[9px] font-mono text-emerald-400 font-bold uppercase";
+            }
+            if (pingIndicator) {
+                pingIndicator.className = "w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]";
+            }
+        } else {
+            throw new Error("Respuesta inválida del servidor");
+        }
+    } catch (error) {
+        globalAppConfig.statusConexion = false;
+        if (lblStatus) {
+            lblStatus.innerText = "DESCONECTADO";
+            lblStatus.className = "text-[9px] font-mono text-red-400 font-bold uppercase";
+        }
+        if (pingIndicator) {
+            pingIndicator.className = "w-2 h-2 bg-red-500 rounded-full shadow-[0_0_8px_#ef4444]";
+        }
+        // El error no se muestra al usuario aquí para no ser intrusivo, pero se loguea
+        console.warn("Error en verificarRadarInicial:", error.message);
+    }
+}
+
+// ============ VALIDACIÓN DE IP ============
+
 function validarEstructuraIP(ipString) {
+    // Permite IPs como 192.168.1.1 o 10.0.0.1, etc.
     return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipString);
 }
+
+// ============ SISTEMA DE NOTIFICACIONES ============
 
 function sysNotification(titulo, mensaje, iconoClase = "fa-info-circle") {
     if (!globalAppConfig.alertasActivas) return;
@@ -349,6 +406,8 @@ function sysNotification(titulo, mensaje, iconoClase = "fa-info-circle") {
         setTimeout(() => { burbuja.remove(); }, 400);
     }, 4000);
 }
+
+// ============ RADAR ============
 
 async function lanzarRadarVentanaEmergente() {
     emitirEfectoSonidoNativo('ps-ui'); 
@@ -411,7 +470,9 @@ async function lanzarRadarVentanaEmergente() {
             logTerm.innerHTML += `<p class="text-red-500">[ERROR] ${dataRadar.message || 'Fallo de interfaz de red.'}</p>`;
         }
     } catch (e) {
-        logTerm.innerHTML += `<p class="text-red-500">[ERROR CRÍTICO] Servidor Termux no responde.</p>`;
+        logTerm.innerHTML += `<p class="text-red-500">[ERROR CRÍTICO] Servidor Termux no responde o error de red.</p>`;
+        sysNotification("ERROR RADAR", "No se pudo completar el escaneo. Verifica tu conexión.", "fa-circle-xmark");
+        console.error("Error en lanzarRadarVentanaEmergente:", e);
     }
     logTerm.scrollTop = logTerm.scrollHeight;
 }
@@ -426,9 +487,13 @@ function abortarYEstabilizarRadar() {
     }
 }
 
+// Exponer funciones globales
 window.sysNotification = sysNotification;
 window.abrirModulo = abrirModulo;
 window.volverAlLauncher = volverAlLauncher;
+window.conectarIPManualValidando = conectarIPManualValidando;
+
+// ============ PWA INSTALL ============
 
 let deferredPrompt;
 
@@ -465,4 +530,3 @@ window.addEventListener('appinstalled', () => {
         sysNotification("SISTEMA", "¡Instalación completada! Abre la app desde tu cajón de aplicaciones.", "fa-check");
     }
 });
-
