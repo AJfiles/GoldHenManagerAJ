@@ -1,8 +1,9 @@
 <?php
 /**
  * ====================================================================
- * GOLDHEN MANAGER V2.1 🚀 - API CORE DE LA BIBLIOTECA
- * DEVELOPED By SeBaS - RUTA: api/library_biblioteca.php
+ * GOLDHEN MANAGER AJ 🚀 - API CORE DE LA BIBLIOTECA
+ * DEVELOPED By SeBaS - Mod AJ
+ * RUTA: api/library_biblioteca.php
  * ====================================================================
  */
 error_reporting(0);
@@ -21,8 +22,12 @@ $port = isset($_POST['port']) ? (int)$_POST['port'] : 2121;
 
 // 🔥 RUTA CORREGIDA HACIA LA NUEVA ESTRUCTURA USER
 $cache_dir = '../user/cache/biblioteca';
-if (!file_exists($cache_dir)) { @mkdir($cache_dir, 0777, true); }
-if (!file_exists($cache_dir . '/.nomedia')) { @file_put_contents($cache_dir . '/.nomedia', ''); }
+if (!file_exists($cache_dir)) { 
+    @mkdir($cache_dir, 0777, true); 
+}
+if (!file_exists($cache_dir . '/.nomedia')) { 
+    @file_put_contents($cache_dir . '/.nomedia', ''); 
+}
 
 $db_categorias_file = $cache_dir . '/custom_categories.json';
 $custom_cats = [];
@@ -32,8 +37,13 @@ if (file_exists($db_categorias_file)) {
 
 /**
  * PARSEADOR SFO ORIGINAL DE SEBAS (RESTAURADO PARA NOMBRES EXACTOS)
+ * Mejorado con límites de longitud para evitar bucles infinitos
  */
 function parse_sfo_real($filepath) {
+    if (!file_exists($filepath) || @filesize($filepath) === 0) {
+        return false;
+    }
+    
     $buffer = @file_get_contents($filepath);
     if (!$buffer) return false;
     
@@ -73,17 +83,27 @@ function parse_sfo_real($filepath) {
     return false;
 }
 
-function curl_download_ftp_file($ip, $port, $remote_path, $local_path) {
-    $ch = curl_init("ftp://$ip:$port" . $remote_path);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
-    $data = curl_exec($ch);
-    curl_close($ch);
-    
-    if ($data !== false && strlen($data) > 0) {
-        @file_put_contents($local_path, $data);
-        return true;
+/**
+ * Descarga un archivo desde FTP con reintentos si falla
+ */
+function curl_download_ftp_file($ip, $port, $remote_path, $local_path, $max_attempts = 2) {
+    $attempt = 0;
+    while ($attempt < $max_attempts) {
+        $ch = curl_init("ftp://$ip:$port" . $remote_path);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FTP_USE_EPSV, false); // Mejor compatibilidad
+        $data = curl_exec($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
+        
+        if ($data !== false && strlen($data) > 0) {
+            @file_put_contents($local_path, $data);
+            return true;
+        }
+        $attempt++;
+        usleep(200000); // Esperar 200ms entre reintentos
     }
     return false;
 }
@@ -95,6 +115,9 @@ function clean_title_sfo($parsed_array, $cusa) {
     return trim(preg_replace('/\s+/', ' ', $title));
 }
 
+// =======================================================
+// ACCIÓN: OBTENER JUEGOS EN CACHÉ
+// =======================================================
 if ($action === 'get_cached_games') {
     $games = [];
     $sfos_locales = glob($cache_dir . '/*.sfo');
@@ -129,7 +152,6 @@ if ($action === 'get_cached_games') {
                     'tipo' => $tipo_final,
                     'version' => $version,
                     'size' => '23.5 GB',
-                    // 🔥 RUTA WEB CORREGIDA A USER/CACHE/BIBLIOTECA
                     'img' => 'user/cache/biblioteca/' . $cusa . '.png?v=' . @filemtime($icon_path)
                 ];
             }
@@ -140,6 +162,9 @@ if ($action === 'get_cached_games') {
     exit;
 }
 
+// =======================================================
+// ACCIÓN: ESCANEAR CONSOLA (DETECTAR NUEVOS JUEGOS)
+// =======================================================
 if ($action === 'scan') {
     $rutas_appmeta = [
         "/user/appmeta", "/system_data/priv/appmeta",
@@ -173,6 +198,7 @@ if ($action === 'scan') {
         }
     }
 
+    // Limpiar caché de juegos que ya no están en la consola
     if ($escaneo_exitoso && count($cusa_detectados) > 0) {
         $sfos_existentes = glob($cache_dir . '/*.sfo');
         if (is_array($sfos_existentes)) {
@@ -182,7 +208,6 @@ if ($action === 'scan') {
                     @unlink($cache_dir . '/' . $cusa_local . '.png');
                     @unlink($sfo_path);
                     @unlink($cache_dir . '/sizes_' . $cusa_local . '.txt');
-                    // 🔥 RUTA CORREGIDA PARA BORRAR EL ICONO CUSTOM SI EL JUEGO SE ELIMINA
                     @unlink('../user/.iconos/' . $cusa_local . '.jpg');
                     if (isset($custom_cats[$cusa_local])) { unset($custom_cats[$cusa_local]); }
                 }
@@ -195,8 +220,14 @@ if ($action === 'scan') {
     exit;
 }
 
+// =======================================================
+// ACCIÓN: OBTENER DATOS DE UN JUEGO ESPECÍFICO
+// =======================================================
 if ($action === 'get_game_data') {
-    if (!$host_ip || !$cusa_id) { echo json_encode(['status' => 'error']); exit; }
+    if (!$host_ip || !$cusa_id) { 
+        echo json_encode(['status' => 'error', 'message' => 'Faltan IP o CUSA']); 
+        exit; 
+    }
 
     $base_route = $_POST['base_path'] ?? $_GET['base_path'] ?? '';
     $local_icon = $cache_dir . '/' . $cusa_id . '.png';
@@ -205,6 +236,7 @@ if ($action === 'get_game_data') {
     $has_icon = (file_exists($local_icon) && @filesize($local_icon) > 0);
     $has_sfo = (file_exists($local_sfo) && @filesize($local_sfo) > 0);
 
+    // Si ya tenemos icono y SFO, devolver desde caché
     if ($has_icon && $has_sfo) {
         $parsed = parse_sfo_real($local_sfo);
         if ($parsed) {
@@ -212,7 +244,9 @@ if ($action === 'get_game_data') {
             $version = $parsed['APP_VER'] ?? 'v1.00';
             $category_key = $parsed['CATEGORY'] ?? 'g';
             $tipo_por_defecto = (strpos($category_key, 'g') !== false) ? 'JUEGOS' : 'APPS';
-            if ($cusa_id === 'APOLO0004' || strpos($cusa_id, 'LAPY') === 0 || strpos($cusa_id, 'NPXS') === 0) { $tipo_por_defecto = 'APPS'; }
+            if ($cusa_id === 'APOLO0004' || strpos($cusa_id, 'LAPY') === 0 || strpos($cusa_id, 'NPXS') === 0) { 
+                $tipo_por_defecto = 'APPS'; 
+            }
             $tipo_final = $custom_cats[$cusa_id] ?? $tipo_por_defecto;
 
             echo json_encode([
@@ -224,7 +258,6 @@ if ($action === 'get_game_data') {
                     'tipo' => $tipo_final,
                     'version' => $version,
                     'size' => '23.5 GB',
-                    // 🔥 RUTA WEB CORREGIDA
                     'img' => 'user/cache/biblioteca/' . $cusa_id . '.png?v=' . @filemtime($local_icon)
                 ]
             ]);
@@ -232,9 +265,12 @@ if ($action === 'get_game_data') {
         }
     }
 
+    // Intentar descargar SFO si no existe localmente
     if (!$has_sfo) {
         $rutas_sfo_posibles = [];
-        if (!empty($base_route)) { $rutas_sfo_posibles[] = rtrim($base_route, '/') . '/' . $cusa_id . '/param.sfo'; }
+        if (!empty($base_route)) { 
+            $rutas_sfo_posibles[] = rtrim($base_route, '/') . '/' . $cusa_id . '/param.sfo'; 
+        }
         $rutas_sfo_posibles = array_merge($rutas_sfo_posibles, [
             "/user/appmeta/$cusa_id/param.sfo",
             "/system_data/priv/appmeta/$cusa_id/param.sfo",
@@ -242,23 +278,27 @@ if ($action === 'get_game_data') {
             "/user/app/$cusa_id/sce_sys/param.sfo"
         ]);
         foreach ($rutas_sfo_posibles as $r_sfo) {
-            if (curl_download_ftp_file($host_ip, $port, $r_sfo, $local_sfo)) { $has_sfo = true; break; }
+            if (curl_download_ftp_file($host_ip, $port, $r_sfo, $local_sfo)) { 
+                $has_sfo = true; 
+                break; 
+            }
         }
     }
 
     if (!file_exists($local_sfo) || @filesize($local_sfo) == 0) {
         @unlink($local_sfo);
-        echo json_encode(['status' => 'error', 'message' => 'Archivo no legible en la consola']);
+        echo json_encode(['status' => 'error', 'message' => 'No se pudo leer el SFO de la consola']);
         exit;
     }
 
     $parsed = parse_sfo_real($local_sfo);
     if (!$parsed || empty($parsed['TITLE'])) {
         @unlink($local_sfo);
-        echo json_encode(['status' => 'error', 'message' => 'Datos de metadatos no viables']);
+        echo json_encode(['status' => 'error', 'message' => 'Metadatos inválidos en el SFO']);
         exit;
     }
 
+    // Intentar descargar icono si no existe
     if (!$has_icon) {
         $rutas_maestras_iconos = [];
         if (!empty($base_route)) {
@@ -279,7 +319,10 @@ if ($action === 'get_game_data') {
         $rutas_maestras_iconos = array_unique($rutas_maestras_iconos);
 
         foreach ($rutas_maestras_iconos as $r_icon) {
-            if (curl_download_ftp_file($host_ip, $port, $r_icon, $local_icon)) { $has_icon = true; break; }
+            if (curl_download_ftp_file($host_ip, $port, $r_icon, $local_icon)) { 
+                $has_icon = true; 
+                break; 
+            }
         }
     }
 
@@ -288,10 +331,11 @@ if ($action === 'get_game_data') {
     $category_key = $parsed['CATEGORY'] ?? 'g';
     
     $tipo_por_defecto = (strpos($category_key, 'g') !== false) ? 'JUEGOS' : 'APPS';
-    if (strpos($cusa_id, 'LAPY') === 0 || $cusa_id === 'APOLO0004') { $tipo_por_defecto = 'APPS'; }
+    if (strpos($cusa_id, 'LAPY') === 0 || $cusa_id === 'APOLO0004') { 
+        $tipo_por_defecto = 'APPS'; 
+    }
     $tipo_final = $custom_cats[$cusa_id] ?? $tipo_por_defecto;
 
-    // 🔥 RUTA WEB CORREGIDA
     $final_img = (file_exists($local_icon) && @filesize($local_icon) > 0) 
         ? 'user/cache/biblioteca/' . $cusa_id . '.png?v=' . @filemtime($local_icon)
         : 'https://images.unsplash.com/photo-1612287230202-1bf1d85d1bdf?w=400&q=80';
@@ -311,26 +355,43 @@ if ($action === 'get_game_data') {
     exit;
 }
 
+// =======================================================
+// ACCIÓN: CAMBIAR CATEGORÍA DE UN JUEGO
+// =======================================================
 if ($action === 'cambiar_categoria') {
     $nueva_cat = strtoupper(trim($_POST['categoria'] ?? ''));
-    if (!$cusa_id || !$nueva_cat) { echo json_encode(['status' => 'error']); exit; }
+    if (!$cusa_id || !$nueva_cat) { 
+        echo json_encode(['status' => 'error', 'message' => 'Faltan datos']); 
+        exit; 
+    }
     $custom_cats[$cusa_id] = $nueva_cat;
     @file_put_contents($db_categorias_file, json_encode($custom_cats, JSON_PRETTY_PRINT));
     echo json_encode(['status' => 'success']);
     exit;
 }
 
+// =======================================================
+// ACCIÓN: ELIMINAR CATEGORÍA GLOBAL
+// =======================================================
 if ($action === 'eliminar_categoria_global') {
     $cat_a_borrar = strtoupper(trim($_POST['categoria'] ?? ''));
     if (empty($cat_a_borrar) || in_array($cat_a_borrar, ['TODOS', 'JUEGOS', 'APPS'])) {
-        echo json_encode(['status' => 'error']);
+        echo json_encode(['status' => 'error', 'message' => 'Categoría protegida o vacía']);
         exit;
     }
     foreach ($custom_cats as $cusa_key => $valor_cat) {
-        if ($valor_cat === $cat_a_borrar) { unset($custom_cats[$cusa_key]); }
+        if ($valor_cat === $cat_a_borrar) { 
+            unset($custom_cats[$cusa_key]); 
+        }
     }
     @file_put_contents($db_categorias_file, json_encode($custom_cats, JSON_PRETTY_PRINT));
     echo json_encode(['status' => 'success']);
     exit;
 }
+
+// =======================================================
+// FALLBACK: ACCIÓN NO RECONOCIDA
+// =======================================================
+echo json_encode(['status' => 'error', 'message' => 'Acción no válida']);
+exit;
 ?>
