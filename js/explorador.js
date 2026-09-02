@@ -6,11 +6,11 @@
  */
 
 let exploradorRutaActual = '/';
-let ftpCurrentItems = []; 
+let ftpCurrentItems = [];
 
 // 🔥 NUEVO CLIPBOARD MÚLTIPLE
-let ftpClipboard = { type: null, sourcePath: null, isDir: false, isMulti: false, sourcePaths: [] }; 
-let ctxTargetItem = null; 
+let ftpClipboard = { type: null, sourcePath: null, isDir: false, isMulti: false, sourcePaths: [] };
+let ctxTargetItem = null;
 
 let isMultiSelectMode = false;
 let multiSelectedPaths = new Map();
@@ -26,12 +26,12 @@ let isUploadingExplorer = false;
 function abrirCapaExplorador() {
     document.querySelectorAll('.app-layer').forEach(layer => layer.classList.remove('active', 'flex'));
     document.querySelectorAll('.app-layer').forEach(layer => layer.classList.add('hidden'));
-    
+
     const capa = document.getElementById('layer-explorador');
     if (capa) {
         capa.classList.remove('hidden');
         capa.classList.add('active', 'flex');
-        cargarRutaFtp('/', true); 
+        cargarRutaFtp('/', true);
         renderizarAccesosRapidos();
     }
 }
@@ -68,19 +68,51 @@ async function cargarRutaFtp(rutaDestino, esNavegacionAtras = false) {
 
         let res = await fetch('api/explorador_api.php', { method: 'POST', body: fd });
         let data = await res.json();
-        
+
         if (data.status === 'success') {
             exploradorRutaActual = data.current_path;
-            rutaBreadcrumb.innerText = exploradorRutaActual;
-            setTimeout(() => { rutaBreadcrumb.scrollLeft = rutaBreadcrumb.scrollWidth; }, 100);
-            
+
+            // ======== MEJORA: BREADCRUMBS INTERACTIVOS ========
+            if (rutaBreadcrumb) {
+                rutaBreadcrumb.innerHTML = '';
+                const segmentos = exploradorRutaActual.split('/').filter(seg => seg !== '');
+                let rutaAcumulada = '';
+                // Raíz
+                const rootLink = document.createElement('a');
+                rootLink.href = '#';
+                rootLink.className = 'text-cyan-400 hover:text-white font-bold text-[11px] transition-colors';
+                rootLink.textContent = '/';
+                rootLink.onclick = (e) => { e.preventDefault(); cargarRutaFtp('/', true); };
+                rutaBreadcrumb.appendChild(rootLink);
+
+                segmentos.forEach((seg, index) => {
+                    rutaAcumulada += '/' + seg;
+                    const sep = document.createElement('span');
+                    sep.className = 'text-gray-500 mx-1 text-[10px]';
+                    sep.textContent = '›';
+                    rutaBreadcrumb.appendChild(sep);
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.className = 'text-cyan-400 hover:text-white font-bold text-[11px] transition-colors';
+                    link.textContent = seg;
+                    link.onclick = (e) => {
+                        e.preventDefault();
+                        cargarRutaFtp(rutaAcumulada, true);
+                    };
+                    rutaBreadcrumb.appendChild(link);
+                });
+                // Scroll automático para ver la ruta completa
+                setTimeout(() => { rutaBreadcrumb.scrollLeft = rutaBreadcrumb.scrollWidth; }, 100);
+            }
+            // ======== FIN MEJORA ========
+
             if (!esNavegacionAtras && exploradorRutaActual !== '/') {
                 history.pushState({ page: 'ftp_folder', ruta: exploradorRutaActual }, "Carpeta FTP", "");
             }
 
             ftpCurrentItems = [...data.data.carpetas, ...data.data.archivos];
-            
-            if(ftpClipboard.type) { document.getElementById('btn-paste-top').classList.remove('hidden'); } 
+
+            if (ftpClipboard.type) { document.getElementById('btn-paste-top').classList.remove('hidden'); }
             else { document.getElementById('btn-paste-top').classList.add('hidden'); }
 
             renderizarListaExplorador(data.data.carpetas, data.data.archivos);
@@ -108,15 +140,15 @@ function renderizarListaExplorador(carpetas, archivos) {
         let div = document.createElement('div');
         let fullPath = normalizePath(exploradorRutaActual + '/' + item.name);
         let isSelected = multiSelectedPaths.has(fullPath);
-        
+
         div.className = `item-hover flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer select-none ${isSelected ? 'selected-row' : 'border-transparent'}`;
-        
+
         div.addEventListener('touchstart', (e) => {
             longPressTimer = setTimeout(() => {
-                if(!isMultiSelectMode) abrirContextMenu(item, isDir, iconCode);
-            }, 600); 
-        }, {passive: true});
-        
+                if (!isMultiSelectMode) abrirContextMenu(item, isDir, iconCode);
+            }, 600);
+        }, { passive: true });
+
         div.addEventListener('touchend', () => clearTimeout(longPressTimer));
         div.addEventListener('touchmove', () => clearTimeout(longPressTimer));
 
@@ -125,11 +157,11 @@ function renderizarListaExplorador(carpetas, archivos) {
             if (isMultiSelectMode) {
                 toggleSeleccion(fullPath, isDir, div);
             } else {
-                if(isDir) entrarCarpeta(item.name);
+                if (isDir) entrarCarpeta(item.name);
                 else window.ps5Notification("ARCHIVO", item.name, "fas fa-file");
             }
         };
-        
+
         let metaTxt = isDir ? "DIR" : formatearTamanoBytes(item.size);
         let checkHTML = isMultiSelectMode ? `<div class="w-5 h-5 rounded-md border border-cyan-500/50 flex items-center justify-center ml-2 ${isSelected ? 'bg-cyan-500 text-black' : 'bg-transparent text-transparent'}"><i class="fas fa-check text-[10px]"></i></div>` : '';
 
@@ -152,11 +184,16 @@ function renderizarListaExplorador(carpetas, archivos) {
     carpetas.forEach(c => appendItem(c, "fas fa-folder", "text-blue-400 bg-blue-500/10", true));
     archivos.forEach(a => {
         let ext = a.name.split('.').pop().toLowerCase();
-        let iconCode = "fas fa-file"; let colorClasses = "text-gray-400 bg-gray-500/10";
-        if (['png', 'jpg', 'jpeg'].includes(ext)) { iconCode = "fas fa-image"; colorClasses = "text-emerald-400 bg-emerald-500/10"; }
-        if (['json', 'sfo', 'ini'].includes(ext)) { iconCode = "fas fa-file-code"; colorClasses = "text-yellow-400 bg-yellow-500/10"; }
-        if (['prx', 'bin', 'elf'].includes(ext)) { iconCode = "fas fa-microchip"; colorClasses = "text-purple-400 bg-purple-500/10"; }
-        if (['pkg'].includes(ext)) { iconCode = "fas fa-box-open"; colorClasses = "text-cyan-400 bg-cyan-500/10"; }
+        let iconCode = "fas fa-file";
+        let colorClasses = "text-gray-400 bg-gray-500/10";
+        if (['png', 'jpg', 'jpeg'].includes(ext)) { iconCode = "fas fa-image";
+            colorClasses = "text-emerald-400 bg-emerald-500/10"; }
+        if (['json', 'sfo', 'ini'].includes(ext)) { iconCode = "fas fa-file-code";
+            colorClasses = "text-yellow-400 bg-yellow-500/10"; }
+        if (['prx', 'bin', 'elf'].includes(ext)) { iconCode = "fas fa-microchip";
+            colorClasses = "text-purple-400 bg-purple-500/10"; }
+        if (['pkg'].includes(ext)) { iconCode = "fas fa-box-open";
+            colorClasses = "text-cyan-400 bg-cyan-500/10"; }
         appendItem(a, iconCode, colorClasses, false);
     });
 }
@@ -165,11 +202,11 @@ function entrarCarpeta(nombreCarpeta) { cargarRutaFtp(exploradorRutaActual + '/'
 
 function navegarArribaFtp(esNavegacionAtras = false) {
     if (exploradorRutaActual === '/' || exploradorRutaActual === '') return;
-    history.back(); 
+    history.back();
 }
 
 function abrirContextMenu(item, isDir, iconCode) {
-    if ("vibrate" in navigator) navigator.vibrate(50); 
+    if ("vibrate" in navigator) navigator.vibrate(50);
     ctxTargetItem = { ...item, isDir: isDir, fullPath: normalizePath(exploradorRutaActual + '/' + item.name) };
     document.getElementById('ctx-title').innerText = item.name;
     document.getElementById('ctx-subtitle').innerText = isDir ? "Carpeta" : formatearTamanoBytes(item.size);
@@ -179,7 +216,8 @@ function abrirContextMenu(item, isDir, iconCode) {
     const menu = document.getElementById('ctx-menu-sheet');
     const content = document.getElementById('ctx-menu-content');
     menu.classList.remove('hidden');
-    setTimeout(() => { menu.classList.add('opacity-100'); content.classList.remove('translate-y-full'); }, 10);
+    setTimeout(() => { menu.classList.add('opacity-100');
+        content.classList.remove('translate-y-full'); }, 10);
 }
 
 function cerrarContextMenu() {
@@ -197,36 +235,31 @@ function ctxAction(actionStr) {
             ftpClipboard = { type: actionStr, sourcePath: ctxTargetItem.fullPath, isDir: ctxTargetItem.isDir, isMulti: false, sourcePaths: [] };
             document.getElementById('btn-paste-top').classList.remove('hidden');
             window.ps5Notification("PORTAPAPELES", `${ctxTargetItem.name} copiado.`, "fas fa-paste");
-        } 
-        else if (actionStr === 'renombrar') {
+        } else if (actionStr === 'renombrar') {
             abrirPromptFtp(`Renombrar: ${ctxTargetItem.name}`, ctxTargetItem.name, async (nuevoNombre) => {
                 let oldP = ctxTargetItem.fullPath;
                 let newP = normalizePath(exploradorRutaActual + '/' + nuevoNombre);
                 ejecutarAPI('renombrar_mover', { old_path: oldP, new_path: newP }, "Elemento renombrado.");
             });
-        }
-        else if (actionStr === 'duplicar') {
+        } else if (actionStr === 'duplicar') {
             let newName = ctxTargetItem.name + "_copia";
             let newP = normalizePath(exploradorRutaActual + '/' + newName);
             window.ps5Notification("DUPLICANDO", "Creando copia...", "fas fa-clone");
             ejecutarAPI('copiar', { source_path: ctxTargetItem.fullPath, dest_path: newP }, "Duplicado correctamente.");
-        }
-        else if (actionStr === 'eliminar') {
+        } else if (actionStr === 'eliminar') {
             abrirDeleteConfirm(ctxTargetItem.name, () => {
                 window.ps5Notification("SISTEMA", "Iniciando borrado profundo...", "fas fa-trash");
                 ejecutarAPI('eliminar', { target: ctxTargetItem.fullPath, is_dir: ctxTargetItem.isDir }, "Eliminado permanentemente.");
             });
-        }
-        else if (actionStr === 'seleccionar') {
+        } else if (actionStr === 'seleccionar') {
             isMultiSelectMode = true;
             multiSelectedPaths.set(ctxTargetItem.fullPath, ctxTargetItem.isDir);
             activarModoMultiselect();
-        }
-        else if (actionStr === 'compartir') {
-            if(ctxTargetItem.isDir) { window.ps5Notification("AVISO", "No se puede descargar carpetas enteras aún.", "fas fa-info"); return; }
+        } else if (actionStr === 'compartir') {
+            if (ctxTargetItem.isDir) { window.ps5Notification("AVISO", "No se puede descargar carpetas enteras aún.", "fas fa-info"); return; }
             const ip = localStorage.getItem('sebas_ip_final_libre');
             let downloadUrl = `api/explorador_api.php?action=descargar_directo&host_ip=${ip}&path=${encodeURIComponent(ctxTargetItem.fullPath)}`;
-            
+
             let iframe = document.getElementById('hidden-downloader-frame');
             if (!iframe) {
                 iframe = document.createElement('iframe');
@@ -272,18 +305,17 @@ async function ejecutarAPI(action, extraData, successMsg) {
     try {
         document.getElementById('loader-explorador').classList.remove('hidden');
         document.getElementById('loader-explorador').classList.add('flex');
-        
+
         let res = await fetch('api/explorador_api.php', { method: 'POST', body: fd });
         let raw = await res.text();
         try {
             let data = JSON.parse(raw);
             if (data.status === 'success') {
                 window.ps5Notification("ÉXITO", successMsg, "fas fa-check");
-                cargarRutaFtp(exploradorRutaActual, true); 
+                cargarRutaFtp(exploradorRutaActual, true);
             } else { window.ps5Notification("ERROR", data.message, "fas fa-times"); }
-        } catch(e) { window.ps5Notification("ERROR", "Fallo del servidor.", "fas fa-bug"); }
-    } catch(e) { window.ps5Notification("ERROR", "Sin red.", "fas fa-wifi"); }
-    finally {
+        } catch (e) { window.ps5Notification("ERROR", "Fallo del servidor.", "fas fa-bug"); }
+    } catch (e) { window.ps5Notification("ERROR", "Sin red.", "fas fa-wifi"); } finally {
         document.getElementById('loader-explorador').classList.add('hidden');
         document.getElementById('loader-explorador').classList.remove('flex');
     }
@@ -295,7 +327,7 @@ function activarModoMultiselect() {
     document.getElementById('explorador-header-multiselect').classList.remove('hidden');
     document.getElementById('explorador-header-multiselect').classList.add('flex');
     actualizarContadorMultiselect();
-    cargarRutaFtp(exploradorRutaActual, true); 
+    cargarRutaFtp(exploradorRutaActual, true);
 }
 
 function cancelarSeleccionMultiple() {
@@ -309,14 +341,15 @@ function cancelarSeleccionMultiple() {
 }
 
 function toggleSeleccion(fullPath, isDir, divElement) {
-    if (multiSelectedPaths.has(fullPath)) { multiSelectedPaths.delete(fullPath); } 
-    else { multiSelectedPaths.set(fullPath, isDir); }
+    if (multiSelectedPaths.has(fullPath)) { multiSelectedPaths.delete(fullPath); } else { multiSelectedPaths.set(fullPath, isDir); }
     actualizarContadorMultiselect();
-    
+
     divElement.classList.toggle('selected-row');
     let checkIcon = divElement.querySelector('.fa-check').parentElement;
-    checkIcon.classList.toggle('bg-cyan-500'); checkIcon.classList.toggle('bg-transparent');
-    checkIcon.classList.toggle('text-black'); checkIcon.classList.toggle('text-transparent');
+    checkIcon.classList.toggle('bg-cyan-500');
+    checkIcon.classList.toggle('bg-transparent');
+    checkIcon.classList.toggle('text-black');
+    checkIcon.classList.toggle('text-transparent');
 }
 
 function actualizarContadorMultiselect() {
@@ -325,15 +358,14 @@ function actualizarContadorMultiselect() {
 
 // 🔥 NUEVAS ACCIONES MÚLTIPLES: COPIAR, CORTAR Y DUPLICAR LOTES
 function ejecutarAccionMultiple(accion) {
-    if(multiSelectedPaths.size === 0) return;
+    if (multiSelectedPaths.size === 0) return;
 
     if (accion === 'copiar' || accion === 'cortar') {
         ftpClipboard = { type: accion, sourcePath: null, isDir: false, isMulti: true, sourcePaths: Array.from(multiSelectedPaths.keys()) };
         document.getElementById('btn-paste-top').classList.remove('hidden');
         window.ps5Notification("PORTAPAPELES", `${multiSelectedPaths.size} elementos seleccionados.`, accion === 'copiar' ? "fas fa-paste" : "fas fa-cut");
         cancelarSeleccionMultiple();
-    }
-    else if (accion === 'duplicar') {
+    } else if (accion === 'duplicar') {
         window.ps5Notification("DUPLICANDO", "Duplicando lote...", "fas fa-clone");
         (async () => {
             for (let path of multiSelectedPaths.keys()) {
@@ -343,8 +375,7 @@ function ejecutarAccionMultiple(accion) {
             }
             cancelarSeleccionMultiple();
         })();
-    }
-    else if(accion === 'eliminar') {
+    } else if (accion === 'eliminar') {
         abrirDeleteConfirm(`${multiSelectedPaths.size} Elementos`, async () => {
             window.ps5Notification("ELIMINANDO", "Borrando lote...", "fas fa-trash");
             for (let [path, isDir] of multiSelectedPaths.entries()) {
@@ -356,7 +387,9 @@ function ejecutarAccionMultiple(accion) {
 }
 
 function abrirDeleteConfirm(targetName, onConfirmCallback) {
-    deleteStep = 1; deleteTarget = targetName; deleteCallback = onConfirmCallback;
+    deleteStep = 1;
+    deleteTarget = targetName;
+    deleteCallback = onConfirmCallback;
     actualizarUIDelete();
     const modal = document.getElementById('modal-delete-confirm');
     modal.classList.remove('hidden');
@@ -378,7 +411,8 @@ function actualizarUIDelete() {
         desc.innerHTML = `¿Estás seguro que deseas eliminar <b>${deleteTarget}</b>?`;
         btn.className = "w-full py-4 rounded-xl bg-orange-600 text-[11px] font-black tracking-widest uppercase text-white active:scale-95 transition-all shadow-[0_0_15px_rgba(249,115,22,0.4)]";
         btn.innerText = "Sí, Continuar al Paso 2";
-        btn.onclick = () => { deleteStep = 2; actualizarUIDelete(); };
+        btn.onclick = () => { deleteStep = 2;
+            actualizarUIDelete(); };
     } else {
         box.className = "w-full max-w-sm rounded-[2rem] border-2 border-red-500/80 bg-[#1a0505]/95 p-6 shadow-[0_0_60px_rgba(239,68,68,0.4)] flex flex-col items-center text-center transition-colors duration-300";
         icon.className = "w-16 h-16 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center text-3xl mb-4 animate-pulse";
@@ -387,7 +421,7 @@ function actualizarUIDelete() {
         desc.innerHTML = `ÚLTIMA ADVERTENCIA. Vas a destruir <b>${deleteTarget}</b> por completo.`;
         btn.className = "w-full py-4 rounded-xl bg-red-600 text-[11px] font-black tracking-widest uppercase text-white active:scale-95 transition-all shadow-[0_0_15px_rgba(239,68,68,0.5)]";
         btn.innerText = "⚠️ ELIMINAR DEFINITIVAMENTE";
-        btn.onclick = () => { cerrarDeleteConfirm(); if(deleteCallback) deleteCallback(); };
+        btn.onclick = () => { cerrarDeleteConfirm(); if (deleteCallback) deleteCallback(); };
     }
 }
 
@@ -403,9 +437,11 @@ function abrirPromptFtp(title, defaultValue, onConfirmCallback) {
     input.value = defaultValue;
     const modal = document.getElementById('modal-prompt-ftp');
     modal.classList.remove('hidden');
-    setTimeout(() => { modal.classList.add('opacity-100'); input.focus(); }, 10);
+    setTimeout(() => { modal.classList.add('opacity-100');
+        input.focus(); }, 10);
     document.getElementById('prompt-btn-confirm').onclick = () => {
-        if(input.value.trim() !== '') { cerrarPromptFtp(); onConfirmCallback(input.value.trim()); }
+        if (input.value.trim() !== '') { cerrarPromptFtp();
+            onConfirmCallback(input.value.trim()); }
     };
 }
 function cerrarPromptFtp() {
@@ -419,9 +455,13 @@ function toggleFabMenu() {
     const icon = document.getElementById('fab-icon');
     if (menu.classList.contains('hidden')) {
         menu.classList.remove('hidden');
-        setTimeout(() => { menu.classList.remove('scale-95', 'opacity-0'); menu.classList.add('scale-100', 'opacity-100'); icon.style.transform = 'rotate(45deg)'; }, 10);
+        setTimeout(() => { menu.classList.remove('scale-95', 'opacity-0');
+            menu.classList.add('scale-100', 'opacity-100');
+            icon.style.transform = 'rotate(45deg)'; }, 10);
     } else {
-        menu.classList.remove('scale-100', 'opacity-100'); menu.classList.add('scale-95', 'opacity-0'); icon.style.transform = 'rotate(0deg)';
+        menu.classList.remove('scale-100', 'opacity-100');
+        menu.classList.add('scale-95', 'opacity-0');
+        icon.style.transform = 'rotate(0deg)';
         setTimeout(() => menu.classList.add('hidden'), 200);
     }
 }
@@ -436,7 +476,7 @@ function promptCrear(tipo) {
 }
 
 async function procesarSubidaExplorador(event) {
-    toggleFabMenu(); 
+    toggleFabMenu();
     const file = event.target.files[0];
     if (!file) return;
 
@@ -454,12 +494,12 @@ async function procesarSubidaExplorador(event) {
     document.getElementById('up-modal-sent').innerText = `0 B / ${formatearTamanoBytes(file.size)}`;
     document.getElementById('up-modal-speed').innerText = "0 MB/s";
     document.getElementById('up-modal-eta').innerText = "ETA: --:--";
-    
+
     const modal = document.getElementById('modal-upload-progress');
     modal.classList.remove('hidden');
     setTimeout(() => modal.classList.add('opacity-100'), 10);
 
-    const CHUNK_SIZE = 1.5 * 1024 * 1024; 
+    const CHUNK_SIZE = 1.5 * 1024 * 1024;
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
     let bytesSent = 0;
 
@@ -480,7 +520,7 @@ async function procesarSubidaExplorador(event) {
         fd.append('host_ip', ip);
         fd.append('chunk_index', currentChunk);
         fd.append('filename', file.name);
-        fd.append('target_dir', exploradorRutaActual); 
+        fd.append('target_dir', exploradorRutaActual);
         fd.append('file_chunk', chunkBlob, file.name);
 
         try {
@@ -553,7 +593,7 @@ async function procesarSubidaCarpetaEstructurada(event) {
             if (subDir !== "") finalTargetDir += subDir + '/';
 
             const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-            if(totalChunks === 0) continue; 
+            if (totalChunks === 0) continue;
 
             for (let currentChunk = 0; currentChunk < totalChunks; currentChunk++) {
                 if (uploadAbortController.signal.aborted) break;
@@ -602,10 +642,10 @@ function actualizarProgresoExplorador(bytesSent, totalBytes, chunkStartTime, chu
     const chunkTimeSecs = (Date.now() - chunkStartTime) / 1000;
     const speedBytesPerSec = chunkTimeSecs > 0 ? (chunkSize / chunkTimeSecs) : 0;
     const speedMB = (speedBytesPerSec / (1024 * 1024)).toFixed(2);
-    
+
     const bytesRemaining = totalBytes - bytesSent;
     const secondsRemaining = speedBytesPerSec > 0 ? Math.round(bytesRemaining / speedBytesPerSec) : 0;
-    
+
     let etaString = "--:--";
     if (secondsRemaining > 0 && isFinite(secondsRemaining)) {
         const m = Math.floor(secondsRemaining / 60).toString().padStart(2, '0');
@@ -621,7 +661,7 @@ function actualizarProgresoExplorador(bytesSent, totalBytes, chunkStartTime, chu
 }
 
 function cancelarSubidaExplorador() {
-    if(uploadAbortController) uploadAbortController.abort();
+    if (uploadAbortController) uploadAbortController.abort();
     isUploadingExplorer = false;
 }
 
@@ -658,7 +698,7 @@ function renderizarAccesosRapidos() {
 }
 
 function abrirModalNuevoAccesoFtp() {
-    toggleFabMenu(); 
+    toggleFabMenu();
     document.getElementById('ftp-shortcut-btn-name').value = '';
     document.getElementById('txt-ruta-a-guardar').innerText = exploradorRutaActual;
     const modal = document.getElementById('modal-nuevo-acceso-ftp');
