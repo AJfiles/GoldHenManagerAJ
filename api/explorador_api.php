@@ -20,6 +20,8 @@ if (!$host_ip && $action !== 'descargar_directo') {
     exit;
 }
 
+// ... (resto del código igual, ya tiene tamaño)
+
 // =======================================================
 // FUNCIÓN AUXILIAR: COMANDOS FTP PUROS
 // =======================================================
