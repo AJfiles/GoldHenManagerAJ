@@ -1,8 +1,9 @@
 <?php
 /**
  * ====================================================================
- * GOLDHEN MANAGER V3.0 🚀 (PS4) - EDICIÓN MODULAR TERMUX
- * DEVELOPED By SeBaS - RUTA: index.php
+ * GOLDHEN MANAGER AJ 🚀 (PS4) - EDICIÓN MODULAR TERMUX
+ * DEVELOPED By SeBaS - Mod AJ
+ * RUTA: index.php
  * ====================================================================
  */
 error_reporting(0);
@@ -10,7 +11,8 @@ error_reporting(0);
 @ini_set('memory_limit', '512M'); 
 
 header('Content-Type: text/html; charset=utf-8');
-$firma = chr(83).chr(101).chr(66).chr(97).chr(83); 
+// Firma original de SeBaS + mención de modificación
+$firma = chr(83).chr(101).chr(66).chr(97).chr(83) . " (Mod AJ)"; 
 header('X-Author: ' . $firma);
 ?>
 <!DOCTYPE html>
@@ -18,12 +20,13 @@ header('X-Author: ' . $firma);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GoldHen Manager V3.0</title>
+    <title>GoldHen Manager AJ | PS4 Tool</title>
 
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#060913">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GoldHen AJ">
     <link rel="apple-touch-icon" href="/js/icon-192.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -46,8 +49,8 @@ header('X-Author: ' . $firma);
         }
         .launcher-card:active { transform: scale(0.95); border-color: rgba(34, 211, 238, 0.4) !important; background: rgba(10, 13, 24, 0.7) !important; }
 
-        .app-layer .bg-\\[\\#0a0f1a\\], 
-        .app-layer .bg-\\[\\#02040a\\], 
+        .app-layer .bg-\[\#0a0f1a\], 
+        .app-layer .bg-\[\#02040a\], 
         .glass-premium {
             background-color: rgba(10, 15, 26, 0.60) !important;
             backdrop-filter: blur(8px) !important;
@@ -70,7 +73,7 @@ header('X-Author: ' . $firma);
             z-index: 9999 !important;
         }
 
-        .bg-black\\/80, .bg-black\\/90 {
+        .bg-black\/80, .bg-black\/90 {
             background-color: rgba(0, 0, 0, 0.85) !important;
         }
 
@@ -94,7 +97,7 @@ header('X-Author: ' . $firma);
         
         <div class="text-center w-full pt-1 shrink-0 z-10 flex flex-col items-center">
             <div class="flex items-center justify-center gap-2 mb-1.5 hover:opacity-100 transition-opacity">
-                <span class="text-[8px] font-black tracking-[0.25em] text-gray-400 uppercase">Developed By SeBaS</span>
+                <span class="text-[8px] font-black tracking-[0.25em] text-gray-400 uppercase">Developed By SeBaS • Mod AJ</span>
                 <div class="flex flex-col w-3.5 h-2.5 justify-between opacity-60">
                     <div class="h-[33%] bg-[#74ACDF]"></div>
                     <div class="h-[34%] bg-white flex items-center justify-center"><div class="w-[3px] h-[3px] bg-[#F1B517] rounded-full"></div></div>
@@ -106,7 +109,7 @@ header('X-Author: ' . $firma);
             </h1>
             <div class="flex items-center justify-center gap-3 mt-2.5 opacity-80">
                 <span class="h-[1px] w-6 bg-gradient-to-r from-transparent to-cyan-500/80"></span>
-                <span class="text-[9px] font-mono tracking-[0.4em] font-bold text-cyan-400">VERSION 3.0</span>
+                <span class="text-[9px] font-mono tracking-[0.4em] font-bold text-cyan-400">VERSION 3.0 • MOD AJ</span>
                 <span class="h-[1px] w-6 bg-gradient-to-l from-transparent to-cyan-500/80"></span>
             </div>
         </div>
