@@ -15,7 +15,7 @@ header('Content-Type: application/json; charset=utf-8');
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 // =======================================================
-// AUTO-DETECTOR IP: MÉTODO SOCKET UDP
+// AUTO-DETECTOR IP: MÉTODO SOCKET UDP + FALLBACK
 // =======================================================
 if ($action === 'get_phone_ip') {
     $ip = '';
@@ -26,10 +26,15 @@ if ($action === 'get_phone_ip') {
         @socket_close($sock);
     }
     
+    // Fallback: usar la IP del servidor (si está disponible)
+    if (empty($ip) || $ip === '127.0.0.1') {
+        $ip = $_SERVER['SERVER_ADDR'] ?? '';
+    }
+
     if (!empty($ip) && $ip !== '127.0.0.1') {
         ob_end_clean(); echo json_encode(['status' => 'success', 'ip' => trim($ip)]);
     } else {
-        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'No se pudo forzar la lectura.']);
+        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'No se pudo obtener la IP.']);
     }
     exit;
 }
@@ -42,7 +47,7 @@ if ($action === 'list_ftp_dirs') {
     $path = $_POST['path'] ?? '/';
     $port = 2121;
     
-    if(!$host_ip) { ob_end_clean(); echo json_encode(['status'=>'error']); exit; }
+    if(!$host_ip) { ob_end_clean(); echo json_encode(['status'=>'error', 'message'=>'Falta IP']); exit; }
 
     $ch = curl_init();
     $partes = explode('/', trim($path, '/'));
@@ -171,7 +176,7 @@ if ($action === 'rpi_install') {
 }
 
 // =======================================================
-// 🔥 MODO 3: TRANSFERENCIA FTP REFORZADA
+// 🔥 MODO 3: TRANSFERENCIA FTP REFORZADA (CON MEJORAS)
 // =======================================================
 $host_ip = $_POST['host_ip'] ?? '';
 $chunk_index = (int)($_POST['chunk_index'] ?? 0);
@@ -180,7 +185,32 @@ $target_dir = $_POST['target_dir'] ?? '/data/';
 $port = 2121;
 
 if (!$host_ip || !isset($_FILES['file_chunk']) || $_FILES['file_chunk']['error'] !== UPLOAD_ERR_OK) {
-    ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'Límite de memoria superado o archivo corrupto.']); exit;
+    $error_msg = 'Límite de memoria superado o archivo corrupto.';
+    if (isset($_FILES['file_chunk']['error'])) {
+        switch ($_FILES['file_chunk']['error']) {
+            case UPLOAD_ERR_INI_SIZE:
+            case UPLOAD_ERR_FORM_SIZE:
+                $error_msg = 'El archivo excede el tamaño máximo permitido.';
+                break;
+            case UPLOAD_ERR_PARTIAL:
+                $error_msg = 'El archivo se subió parcialmente.';
+                break;
+            case UPLOAD_ERR_NO_FILE:
+                $error_msg = 'No se recibió ningún archivo.';
+                break;
+            case UPLOAD_ERR_NO_TMP_DIR:
+                $error_msg = 'Falta la carpeta temporal.';
+                break;
+            case UPLOAD_ERR_CANT_WRITE:
+                $error_msg = 'Error al escribir el archivo en disco.';
+                break;
+            case UPLOAD_ERR_EXTENSION:
+                $error_msg = 'Una extensión de PHP detuvo la subida.';
+                break;
+        }
+    }
+    ob_end_clean(); echo json_encode(['status' => 'error', 'message' => $error_msg]); 
+    exit;
 }
 
 // 🔥 TRUCO DEL NÚCLEO: Usar rutas absolutas para saltear bloqueos de seguridad de la PS4
@@ -191,6 +221,23 @@ if (strpos($target_dir, '/app_tmp/') === 0 || strpos($target_dir, '/data/') === 
 // Normalizar la ruta para que no haya dobles barras
 $ruta_completa = rtrim($target_dir, '/') . '/' . ltrim($filename, '/');
 $tmp_file = $_FILES['file_chunk']['tmp_name'];
+
+// Intentar crear el directorio destino si no existe (solo para el primer chunk)
+if ($chunk_index === 0) {
+    $dir_path = dirname($ruta_completa);
+    $dir_parts = explode('/', trim($dir_path, '/'));
+    $current_path = '';
+    foreach ($dir_parts as $part) {
+        $current_path .= '/' . $part;
+        // Intentar crear el directorio (ignorar errores si ya existe)
+        $ch = curl_init("ftp://$host_ip:$port$current_path/");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_QUOTE, ["MKD $current_path"]);
+        curl_exec($ch);
+        curl_close($ch);
+    }
+}
+
 $partes = explode('/', $ruta_completa);
 $partes_codificadas = array_map('rawurlencode', $partes);
 $url = "ftp://$host_ip:$port" . implode('/', $partes_codificadas);
@@ -202,21 +249,30 @@ if ($chunk_index > 0) { curl_setopt($ch, CURLOPT_FTPAPPEND, true); }
 curl_setopt($ch, CURLOPT_UPLOAD, 1);
 curl_setopt($ch, CURLOPT_INFILE, $fp);
 curl_setopt($ch, CURLOPT_INFILESIZE, filesize($tmp_file));
-curl_setopt($ch, CURLOPT_TIMEOUT, 60); 
+curl_setopt($ch, CURLOPT_TIMEOUT, 120); // Aumentado a 120 segundos
 
 // 🔥 LA CLAVE 2: Obligar al FTP a crear la estructura de carpetas si la Play se pone en exquisita
 curl_setopt($ch, CURLOPT_FTP_CREATE_MISSING_DIRS, true); 
 
 $res = curl_exec($ch);
 $err = curl_error($ch);
+$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 fclose($fp);
 
 if ($res) {
     ob_end_clean(); echo json_encode(['status' => 'success']);
 } else {
-    // Te muestro el error exacto para debugear más fácil si vuelve a fallar
-    ob_end_clean(); echo json_encode(['status' => 'error', 'message' => "Fallo FTP: $err"]);
+    // Mensaje de error más descriptivo
+    $mensaje = "Fallo FTP: $err";
+    if (strpos($err, 'Could not resolve host') !== false) {
+        $mensaje = "No se pudo resolver la IP de la PS4. Verifica la conexión.";
+    } elseif (strpos($err, 'Connection refused') !== false) {
+        $mensaje = "La PS4 rechazó la conexión FTP. ¿Está encendida y con FTP activo?";
+    } elseif (strpos($err, 'Permission denied') !== false) {
+        $mensaje = "Permisos insuficientes en la carpeta de destino.";
+    }
+    ob_end_clean(); echo json_encode(['status' => 'error', 'message' => $mensaje]);
 }
 exit;
 ?>
