@@ -9,6 +9,7 @@ const CHUNK_SIZE = 1.5 * 1024 * 1024;
 
 let isTransferring = false;
 let transferAbortController = null;
+let currentXhr = null; // Para poder abortar el XHR activo
 
 let colaDeArchivos = [];
 let totalArchivosEnCola = 0;
@@ -194,6 +195,11 @@ function iniciarGestorDeCola() {
 }
 
 function abortarTransferenciaActiva() {
+    // Abortar el XHR actual si existe
+    if (currentXhr) {
+        currentXhr.abort();
+        currentXhr = null;
+    }
     if (transferAbortController) { transferAbortController.abort(); }
     isTransferring = false;
     colaDeArchivos = []; 
@@ -280,20 +286,25 @@ function accionColision(accion) {
     }
 }
 
+// =======================================================
+// 🔥 NUEVA VERSIÓN CON XMLHttpRequest Y PROGRESO REAL
+// =======================================================
 async function ejecutarSubidaUnica() {
     const ip = localStorage.getItem('sebas_ip_final_libre');
     let targetDir = document.getElementById('transfer-target-path').value.trim() || '/data/';
     if (!targetDir.endsWith('/')) targetDir += '/';
 
     transferAbortController = new AbortController();
-
     const totalChunks = Math.ceil(archivoActualBlob.size / CHUNK_SIZE);
-    let bytesSent = 0;
+    let bytesSent = 0; // bytes ya enviados en chunks completos
 
     document.getElementById('transfer-total').innerText = formatearTamanoBytes(archivoActualBlob.size);
 
     for (let currentChunk = 0; currentChunk < totalChunks; currentChunk++) {
-        if (transferAbortController.signal.aborted) { return; }
+        if (transferAbortController.signal.aborted) {
+            // Salir si se abortó
+            return;
+        }
 
         const start = currentChunk * CHUNK_SIZE;
         const end = Math.min(start + CHUNK_SIZE, archivoActualBlob.size);
@@ -302,38 +313,95 @@ async function ejecutarSubidaUnica() {
         let fd = new FormData();
         fd.append('host_ip', ip);
         fd.append('chunk_index', currentChunk);
-        fd.append('filename', archivoActualNombreFinal); 
+        fd.append('filename', archivoActualNombreFinal);
         fd.append('target_dir', targetDir);
         fd.append('file_chunk', chunkBlob, archivoActualNombreFinal);
 
-        try {
-            const chunkStartTime = Date.now();
-            let res = await fetch('api/transferir_api.php', { method: 'POST', body: fd, signal: transferAbortController.signal });
-            let data = await res.json();
-            
-            if (data.status === 'success') {
-                bytesSent += (end - start);
-                actualizarMetricas(bytesSent, archivoActualBlob.size, chunkStartTime, end - start);
-            } else { throw new Error(data.message); }
-        } catch (err) {
-            if (err.name !== 'AbortError') {
-                window.ps5Notification("ERROR FTP", err.message || "Fallo en la subida.", "fa-exclamation-triangle");
-                resetTransferUI(); 
+        // Crear XHR para este chunk
+        const xhr = new XMLHttpRequest();
+        currentXhr = xhr; // guardar referencia para abortar
+        xhr.open('POST', 'api/transferir_api.php', true);
+
+        // Promesa para esperar la finalización del chunk
+        const chunkPromise = new Promise((resolve, reject) => {
+            xhr.onload = function() {
+                currentXhr = null;
+                if (xhr.status === 200) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.status === 'success') {
+                            resolve();
+                        } else {
+                            reject(new Error(data.message || 'Error en el servidor'));
+                        }
+                    } catch (e) {
+                        reject(new Error('Respuesta inválida del servidor'));
+                    }
+                } else {
+                    reject(new Error(`HTTP ${xhr.status}`));
+                }
+            };
+            xhr.onerror = function() {
+                currentXhr = null;
+                reject(new Error('Error de red'));
+            };
+            xhr.onabort = function() {
+                currentXhr = null;
+                reject(new Error('Abortado'));
+            };
+        });
+
+        // Escuchar progreso de subida de este chunk
+        xhr.upload.onprogress = function(e) {
+            if (e.lengthComputable) {
+                // bytes enviados en este chunk hasta ahora
+                const chunkBytesSent = e.loaded;
+                const totalSent = bytesSent + chunkBytesSent;
+                // Actualizar UI con el total acumulado
+                actualizarMetricas(totalSent, archivoActualBlob.size, Date.now(), chunkBytesSent);
             }
+        };
+
+        // Enviar el chunk
+        xhr.send(fd);
+
+        // Esperar a que termine el chunk
+        try {
+            await chunkPromise;
+            // Chunk completado, sumar al total
+            bytesSent += (end - start);
+            // Actualizar una última vez para asegurar 100% si no llegó el evento
+            actualizarMetricas(bytesSent, archivoActualBlob.size, Date.now(), 0);
+        } catch (err) {
+            if (err.message !== 'Abortado') {
+                window.ps5Notification("ERROR FTP", err.message || "Fallo en la subida.", "fa-exclamation-triangle");
+            }
+            resetTransferUI();
             return;
         }
     }
+
+    // Todos los chunks completados
     procesarSiguienteEnLaCola();
 }
 
 function actualizarMetricas(bytesSent, totalBytes, chunkStartTime, chunkSize) {
     const percent = ((bytesSent / totalBytes) * 100).toFixed(1);
-    const chunkTimeSeconds = (Date.now() - chunkStartTime) / 1000;
-    const speedBytesPerSec = chunkTimeSeconds > 0 ? (chunkSize / chunkTimeSeconds) : 0;
-    
+    // Calcular velocidad basada en el tiempo transcurrido desde el inicio del chunk actual
+    // Usamos un enfoque simple: velocidad = bytes enviados en este evento / tiempo desde el inicio del chunk
+    // Si chunkSize es 0 (llamada final), no actualizamos velocidad
+    let speedMB = 0;
+    if (chunkSize > 0) {
+        const timeElapsed = (Date.now() - chunkStartTime) / 1000;
+        if (timeElapsed > 0) {
+            const speedBytesPerSec = chunkSize / timeElapsed;
+            speedMB = speedBytesPerSec / (1024 * 1024);
+        }
+    }
+    const speedText = speedMB > 0 ? `${speedMB.toFixed(2)} MB/s` : 'Calculando...';
+
     const bytesRemaining = totalBytes - bytesSent;
-    const secondsRemaining = speedBytesPerSec > 0 ? Math.round(bytesRemaining / speedBytesPerSec) : 0;
-    
+    const secondsRemaining = speedMB > 0 ? Math.round(bytesRemaining / (speedMB * 1024 * 1024)) : 0;
     let etaString = "--:--";
     if (secondsRemaining > 0 && isFinite(secondsRemaining)) {
         const m = Math.floor(secondsRemaining / 60).toString().padStart(2, '0');
@@ -344,12 +412,13 @@ function actualizarMetricas(bytesSent, totalBytes, chunkStartTime, chunkSize) {
     document.getElementById('transfer-percent').innerText = `${percent}%`;
     document.getElementById('transfer-bar').style.width = `${percent}%`;
     document.getElementById('transfer-sent').innerText = formatearTamanoBytes(bytesSent);
-    document.getElementById('transfer-speed').innerText = `${(speedBytesPerSec / (1024*1024)).toFixed(2)} MB/s`;
+    document.getElementById('transfer-speed').innerText = speedText;
     document.getElementById('transfer-eta').innerText = etaString;
 }
 
 function resetTransferUI(success = false) {
     isTransferring = false;
+    currentXhr = null;
     document.getElementById('input-archivo-pesado').value = '';
 
     const btn = document.getElementById('btn-iniciar-transferencia');
