@@ -45,7 +45,7 @@ else
     mkdir -p /sdcard/GoldHenManager/user
 
     echo -e "${AMARILLO}[*] Clonando repositorio maestro...${NC}"
-    git clone https://github.com/tu-usuario/GoldHenManager-v3.git "$REPO_DIR"
+    git clone https://github.com/AJfiles/GoldHenManager-v3.git "$REPO_DIR"
 fi
 
 # Configuración común (symlink y .bashrc)
