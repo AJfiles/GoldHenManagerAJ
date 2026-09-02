@@ -1,7 +1,8 @@
 /**
  * ====================================================================
- * GOLD HEN SUITE PRO 🚀 - CONTROLADOR DE MODDING
- * DEVELOPED By SeBaS - RUTA: js/modding.js
+ * GOLDHEN MANAGER AJ 🚀 - CONTROLADOR DE MODDING
+ * DEVELOPED By SeBaS - Mod AJ
+ * RUTA: js/modding.js
  * ====================================================================
  */
 
@@ -18,17 +19,17 @@ let observerModding = null;
 // Variables del Gestor Inteligente
 let smartFilesArray = []; 
 let moddingSelectorTarget = 'manual'; 
+let isInjecting = false; // Para evitar doble clic
 
 document.addEventListener("DOMContentLoaded", () => {
     const capaModding = document.getElementById('layer-modding');
     if (capaModding) {
         const observadorCapa = new MutationObserver(() => {
             if (capaModding.classList.contains('active')) { 
-                // 🔥 FIX UX: Forzamos la pestaña "Manual" silenciosamente cada vez que se abre el módulo
+                // Forzar la pestaña "Manual" silenciosamente cada vez que se abre el módulo
                 if (typeof switchModdingTab === 'function') {
                     switchModdingTab('manual', false); 
                 }
-                
                 inicializarModuloModding(); 
                 cargarGaleriaDesdeServidor('listar_backups'); 
                 cargarGaleriaDesdeServidor('listar_local'); 
@@ -202,16 +203,17 @@ function filtrarSelectorJuegosModding() {
 }
 
 function seleccionarJuegoModding(cusa) {
-    cerrarSelectorJuegosModding();
     const jg = listadoJuegos.find(j => j.id === cusa);
     if (!jg) return;
 
     if (moddingSelectorTarget === 'manual') {
         localStorage.setItem('modding_cusa_activo', cusa);
         inicializarModuloModding(); 
-        limpiarPreviewModding(); 
+        limpiarPreviewModding();
+        cerrarSelectorJuegosModding(); 
     } else {
         asignarJuegoASmartFile(moddingSelectorTarget, jg);
+        cerrarSelectorJuegosModding();
     }
 }
 
@@ -224,7 +226,12 @@ async function cargarGaleriaDesdeServidor(accion) {
             if (accion === 'listar_local') listaCarpetaLocal = json.data || [];
             renderizarGaleriaModding();
         }
-    } catch(e) {}
+    } catch(e) {
+        console.error('Error cargando galería:', e);
+        if (accion === 'listar_backups') listaBackupsServer = [];
+        if (accion === 'listar_local') listaCarpetaLocal = [];
+        renderizarGaleriaModding();
+    }
 }
 
 function forzarRecargaGaleriasModding() {
@@ -385,7 +392,11 @@ function procesarImagenSubida(event) {
 }
 
 async function inyectarPortadaEnConsola() {
-    if (!moddingJuegoActivo) return;
+    if (isInjecting) return; // Evitar doble clic
+    if (!moddingJuegoActivo) {
+        if(typeof ps5Notification === 'function') ps5Notification("ERROR", "Selecciona un juego primero.", "fa-solid fa-exclamation-triangle");
+        return;
+    }
 
     const btn = document.getElementById('btn-inyectar-portada');
     const loader = document.getElementById('modding-inyectando-loader');
@@ -403,6 +414,7 @@ async function inyectarPortadaEnConsola() {
         return;
     }
     
+    isInjecting = true;
     btn.style.opacity = '0.5';
     btn.style.pointerEvents = 'none';
     loader.classList.remove('hidden');
@@ -446,6 +458,7 @@ async function inyectarPortadaEnConsola() {
     } catch (e) {
         if(typeof ps5Notification === 'function') ps5Notification("ERROR", "El servidor no responde.", "fa-solid fa-wifi");
     } finally {
+        isInjecting = false;
         btn.style.opacity = '1';
         btn.style.pointerEvents = 'auto';
         loader.classList.add('hidden');
@@ -457,7 +470,6 @@ async function inyectarPortadaEnConsola() {
  * GESTOR INTELIGENTE V3 (EXTRACCIÓN DE ZIP + CARGA DE IMÁGENES)
  * ==================================================================== */
 
-// 🔥 FIX UX: Agregamos parámetro silencioso para que no suene doble click al saltar desde biblioteca
 function switchModdingTab(tab, playSound = true) {
     if(playSound && typeof emitirEfectoSonidoNativo === 'function') emitirEfectoSonidoNativo('click');
     
@@ -574,6 +586,13 @@ async function processSmartFilesUI(event) {
 }
 
 function agregarItemAlGestorHTML(file, autoCusa) {
+    // Evitar duplicados exactos (mismo nombre y tamaño)
+    const duplicado = smartFilesArray.some(f => f.file.name === file.name && f.file.size === file.size);
+    if (duplicado) {
+        if(typeof ps5Notification === 'function') ps5Notification("AVISO", `El archivo "${file.name}" ya está en la lista.`, "fa-solid fa-info-circle");
+        return;
+    }
+
     let uniqueIndex = new Date().getTime() + Math.floor(Math.random() * 10000);
     let fileId = 'smart-file-' + uniqueIndex;
     let defaultLabel = "-- ASIGNAR JUEGO --";
@@ -641,9 +660,11 @@ function asignarJuegoASmartFile(fileId, jg) {
             btn.classList.add('border-purple-500/30', 'text-purple-400');
         }
     }
+    cerrarSelectorJuegosModding();
 }
 
 async function inyectarLoteEnConsola() {
+    if (isInjecting) return;
     if(typeof emitirEfectoSonidoNativo === 'function') emitirEfectoSonidoNativo('click');
     
     const validTargets = smartFilesArray.filter(f => f.cusa !== '');
@@ -652,6 +673,7 @@ async function inyectarLoteEnConsola() {
         return;
     }
 
+    isInjecting = true;
     const ip = localStorage.getItem('sebas_ip_final_libre') || '192.168.1.28';
     const progressContainer = document.getElementById('smart-progress-container');
     const progressStatus = document.getElementById('smart-progress-status');
@@ -679,7 +701,11 @@ async function inyectarLoteEnConsola() {
         fd.append('cover_image', archivoFinalProcesado);
 
         try {
-            await fetch('api/inyector_portadas.php', { method: 'POST', body: fd });
+            let res = await fetch('api/inyector_portadas.php', { method: 'POST', body: fd });
+            let data = await res.json();
+            if (data.status !== 'success') {
+                console.warn(`Fallo inyección para ${target.cusa}: ${data.message}`);
+            }
         } catch(e) {
             console.error(`Error de red en ${target.cusa}`);
         }
@@ -696,6 +722,7 @@ async function inyectarLoteEnConsola() {
         progressContainer.classList.remove('flex');
         progressBar.style.width = '0%';
         progressTxt.innerText = '0%';
+        isInjecting = false;
         
         if (typeof levantarCacheLocalBiblioteca === 'function') {
             await levantarCacheLocalBiblioteca(); 
