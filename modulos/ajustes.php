@@ -1,8 +1,9 @@
 <?php
 /**
  * ====================================================================
- * GOLDHEN MANAGER V3.0 🚀 - MÓDULO DE CONFIGURACIÓN Y TEMAS GAMING
- * DEVELOPED By SeBaS - RUTA: modulos/ajustes.php
+ * GOLDHEN MANAGER AJ 🚀 - MÓDULO DE CONFIGURACIÓN Y TEMAS GAMING
+ * DEVELOPED By SeBaS - Mod AJ
+ * RUTA: modulos/ajustes.php
  * ====================================================================
  */
 ?>
@@ -25,6 +26,7 @@
 
     <div class="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-4 pb-10 z-20">
 
+        <!-- Notificaciones -->
         <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
             <div class="flex items-center gap-2 border-b border-white/5 pb-2">
                 <i class="fas fa-bell text-cyan-400 text-sm"></i>
@@ -42,6 +44,7 @@
             </div>
         </div>
 
+        <!-- Sonido -->
         <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
             <div class="flex items-center gap-2 border-b border-white/5 pb-2">
                 <i class="fas fa-volume-up text-amber-400 text-sm"></i>
@@ -56,6 +59,7 @@
             </div>
         </div>
 
+        <!-- Fondos Animados (Wallpapers) -->
         <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
             <div class="flex items-center gap-2 border-b border-white/5 pb-2">
                 <i class="fas fa-desktop text-purple-400 text-sm"></i>
@@ -64,23 +68,23 @@
             
             <div class="relative w-full mt-1" id="custom-select-container">
                 <div onclick="toggleCustomSelect()" class="w-full bg-[#111827] border border-white/10 rounded-xl px-4 py-3.5 text-[11px] font-bold text-white flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors shadow-inner">
-                    <span id="custom-select-label" class="uppercase tracking-wider">System Default (PS5)</span>
+                    <span id="custom-select-label" class="uppercase tracking-wider">Olas Líquidas (PS4)</span>
                     <i id="custom-select-icon" class="fas fa-chevron-down text-cyan-400 transition-transform duration-300"></i>
                 </div>
                 
                 <div id="custom-select-options" class="absolute w-full mt-2 bg-[#0a0f1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 origin-top transform scale-y-0 opacity-0 transition-all duration-300 max-h-[220px] overflow-y-auto custom-scrollbar flex flex-col pointer-events-none">
-                    <div onclick="seleccionarFondoCustom('none', 'Apagar Fondos')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider cursor-pointer">Apagar Fondos</div>
-                    <div onclick="seleccionarFondoCustom('bg-ps5', 'System Default (PS5)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-cyan-400 uppercase tracking-wider cursor-pointer">System Default (PS5)</div>
-                    <div onclick="seleccionarFondoCustom('bg-ps4', 'Olas Líquidas (PS4)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-blue-400 uppercase tracking-wider cursor-pointer">Olas Líquidas (PS4)</div>
-                    <div onclick="seleccionarFondoCustom('bg-ps2', 'Cubos 3D (PS2)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-indigo-400 uppercase tracking-wider cursor-pointer">Cubos 3D (PS2)</div>
-                    <div onclick="seleccionarFondoCustom('bg-matrix', 'Lluvia de Código (Matrix)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-emerald-400 uppercase tracking-wider cursor-pointer">Lluvia de Código (Matrix)</div>
-                    <div onclick="seleccionarFondoCustom('bg-warp', 'Velocidad Warp (Espacio)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-white uppercase tracking-wider cursor-pointer">Velocidad Warp (Espacio)</div>
-                    <div onclick="seleccionarFondoCustom('bg-plasma', 'Fluido Plasma')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-pink-400 uppercase tracking-wider cursor-pointer">Fluido Plasma</div>
-                    <div onclick="seleccionarFondoCustom('bg-network', 'Red Neuronal (Network)')" class="p-3.5 hover:bg-white/5 text-[10.5px] font-bold text-sky-400 uppercase tracking-wider cursor-pointer">Red Neuronal (Network)</div>
+                    <div onclick="seleccionarFondoCustom('none', 'Apagar Fondos')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider cursor-pointer transition-colors">Apagar Fondos</div>
+                    <div onclick="seleccionarFondoCustom('bg-ps4', 'Olas Líquidas (PS4)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-blue-400 uppercase tracking-wider cursor-pointer transition-colors">Olas Líquidas (PS4)</div>
+                    <div onclick="seleccionarFondoCustom('bg-ps2', 'Cubos 3D (PS2)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-indigo-400 uppercase tracking-wider cursor-pointer transition-colors">Cubos 3D (PS2)</div>
+                    <div onclick="seleccionarFondoCustom('bg-matrix', 'Lluvia de Código (Matrix)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-emerald-400 uppercase tracking-wider cursor-pointer transition-colors">Lluvia de Código (Matrix)</div>
+                    <div onclick="seleccionarFondoCustom('bg-warp', 'Velocidad Warp (Espacio)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-white uppercase tracking-wider cursor-pointer transition-colors">Velocidad Warp (Espacio)</div>
+                    <div onclick="seleccionarFondoCustom('bg-plasma', 'Fluido Plasma')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-pink-400 uppercase tracking-wider cursor-pointer transition-colors">Fluido Plasma</div>
+                    <div onclick="seleccionarFondoCustom('bg-network', 'Red Neuronal (Network)')" class="p-3.5 hover:bg-white/5 text-[10.5px] font-bold text-sky-400 uppercase tracking-wider cursor-pointer transition-colors">Red Neuronal (Network)</div>
                 </div>
             </div>
         </div>
 
+        <!-- Animaciones de Inicio (Boot) -->
         <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
             <div class="flex items-center gap-2 border-b border-white/5 pb-2">
                 <i class="fas fa-play-circle text-green-400 text-sm"></i>
@@ -95,10 +99,9 @@
                 
                 <div id="custom-select-intro-options" class="absolute w-full mt-2 bg-[#0a0f1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[60] origin-top transform scale-y-0 opacity-0 transition-all duration-300 max-h-[220px] overflow-y-auto custom-scrollbar flex flex-col pointer-events-none">
                     <div onclick="seleccionarIntroCustom('none', 'Sin Intro (Rápido)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider cursor-pointer transition-colors">Sin Intro (Rápido)</div>
-                    <div onclick="seleccionarIntroCustom('intro-ps5', 'PlayStation 5')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-cyan-400 uppercase tracking-wider cursor-pointer transition-colors">PlayStation 5</div>
                     <div onclick="seleccionarIntroCustom('intro-ps4', 'PlayStation 4')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-blue-400 uppercase tracking-wider cursor-pointer transition-colors">PlayStation 4</div>
-                    <div onclick="seleccionarIntroCustom('intro-ps2', 'PlayStation 2 Clásica')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-indigo-400 uppercase tracking-wider cursor-pointer transition-colors">PlayStation 2 Clásica</div>
                     <div onclick="seleccionarIntroCustom('intro-glitch', 'Glitch Hacker')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-fuchsia-400 uppercase tracking-wider cursor-pointer transition-colors">Glitch Hacker</div>
+                    <div onclick="seleccionarIntroCustom('intro-ps2', 'PlayStation 2 Clásica')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-indigo-400 uppercase tracking-wider cursor-pointer transition-colors">PlayStation 2 Clásica</div>
                     <div onclick="seleccionarIntroCustom('intro-hud', 'Sci-Fi HUD')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-sky-400 uppercase tracking-wider cursor-pointer transition-colors">Sci-Fi HUD</div>
                     <div onclick="seleccionarIntroCustom('intro-neon', 'Cyberpunk Neon')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-pink-500 uppercase tracking-wider cursor-pointer transition-colors">Cyberpunk Neon</div>
                     <div onclick="seleccionarIntroCustom('intro-decrypt', 'Decrypt System')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-green-500 uppercase tracking-wider cursor-pointer transition-colors">Decrypt System</div>
@@ -107,6 +110,23 @@
                     <div onclick="seleccionarIntroCustom('intro-crt', 'Terminal CRT (Boot)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-orange-400 uppercase tracking-wider cursor-pointer transition-colors">Terminal CRT (Boot)</div>
                     <div onclick="seleccionarIntroCustom('intro-gb', 'Game Boy Clásica')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-lime-500 uppercase tracking-wider cursor-pointer transition-colors">Game Boy Clásica</div>
                     <div onclick="seleccionarIntroCustom('intro-breach', 'System Breach')" class="p-3.5 hover:bg-white/5 text-[10.5px] font-bold text-red-500 uppercase tracking-wider cursor-pointer transition-colors">System Breach</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Créditos (nuevo) -->
+        <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-2">
+            <div class="flex items-center gap-2 border-b border-white/5 pb-2">
+                <i class="fas fa-code text-cyan-400 text-sm"></i>
+                <span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Acerca de</span>
+            </div>
+            <div class="flex flex-col items-center py-2">
+                <span class="text-[9px] font-mono text-gray-500 tracking-widest">GoldHen Manager AJ</span>
+                <span class="text-[8px] font-mono text-gray-600 tracking-wider">Versión 3.0 • Modificado por AJ</span>
+                <span class="text-[7px] font-mono text-gray-700 mt-1">Basado en el trabajo original de SeBaS</span>
+                <div class="flex gap-3 mt-2">
+                    <span class="text-[8px] font-mono text-cyan-500/50">❤️ Comunidad</span>
+                    <span class="text-[8px] font-mono text-cyan-500/50">🔓 Código Abierto</span>
                 </div>
             </div>
         </div>
