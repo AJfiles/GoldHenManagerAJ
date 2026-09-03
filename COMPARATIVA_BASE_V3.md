@@ -1,6 +1,7 @@
 # Comparativa técnica: GoldHen Manager AJ 3.2 frente a GoldHenManager-v3
 
-Fecha de análisis: septiembre de 2026. proyecto `GoldHenManager-v3-main`
+Fecha de análisis: 3 de septiembre de 2026. La carpeta `GoldHenManager-v3-main`
+fue analizada en modo lectura y no fue modificada.
 
 ## Alcance y método
 
@@ -65,7 +66,7 @@ compatibilidad del payload sigue dependiendo de GoldHEN, firmware y memoria.
 spinner nativo y la ruta `$HOME/GoldHenManagerAJ`. No instala `php-zip`, ya que
 no es un paquete existente separado en los repositorios Termux actuales.
 
-## Limitaciones y decisiones
+## Limitaciones y decisiones deliberadas
 
 - No se implementan transferencias largas FTP en segundo plano mediante
   Service Worker: Android puede suspenderlas y dañar archivos.
@@ -74,3 +75,11 @@ no es un paquete existente separado en los repositorios Termux actuales.
   distribución el administrador tenga autorización. El prototipo `store.php`
   actual incluye proxy remoto y enlaces de terceros; no debe publicarse ni
   ampliarse así.
+
+## Prueba de procedencia futura
+
+1. Conservar este archivo junto al historial Git del repositorio AJ.
+2. Al comparar una versión posterior de la base, usar `git diff --no-index` o
+   hashes por archivo, no solo nombres de módulos.
+3. Registrar en `MEJORAS_IMPLEMENTADAS.txt` fecha, archivo y propósito de cada
+   mejora AJ nueva.
