@@ -1,0 +1,10 @@
+MD5:
+413c61da1a7929d9612d8d8dfa74ac03  plugins/afr.prx
+e9ec197fc22c488eb282e42dcb048398  plugins/aio_fix_505.prx
+ef2a10919aed3fcd7c6da1421c6c540b  plugins/button_swap.prx
+3165bd7cf711583fe9bf9eb8e310f7eb  plugins/fliprate_remover.prx
+0275ef08681e30335bef250b01ffaa12  plugins/force_1080p_display.prx
+8ac8829c5efd648757fdb6f09c525c92  plugins/force_30_fps.prx
+70cb489035657167a273dec03f88dce1  plugins/game_patch.prx
+bdab8cbc1f3f714079cab73056b3852c  plugins/gamepad_helper.prx
+59c054aabd620097cb295d2dac2a4504  plugins/no_share_watermark.prx
