@@ -406,9 +406,7 @@ function actualizarCoverflow3DStyles() {
 
             if (tTitle) tTitle.innerText = currentJg.nombre;
             if (tCusa) tCusa.innerText = currentJg.id;
-            if (tVersion) tVersion.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-gray-600"></i> LEYENDO...`;
-            
-            consultarPesoRealConsola(currentJg.id, currentJg.tipo, currentJg.version);
+            if (tVersion) tVersion.innerText = `v${currentJg.version || '1.00'}`;
             actualizarConteoCapturasDock(currentJg.id, 'sheet-count-capturas-badge-3d');
 
             if (glowBg) glowBg.style.background = `radial-gradient(circle, rgba(0, 162, 255, 0.5) 0%, rgba(0, 114, 230, 0.15) 45%, rgba(0,0,0,0) 70%)`;
@@ -639,46 +637,6 @@ function conmutarModoVista() {
     recompilarTodo();
 }
 
-async function consultarPesoRealConsola(cusa, tipo, version) {
-    const tVersion = document.getElementById('text-version-3d');
-    const sheetSize = document.getElementById('panel-game-size');
-    
-    if (juegoSeleccionadoLocal && juegoSeleccionadoLocal.id === cusa && juegoSeleccionadoLocal.realSizeHtml) {
-        if (tVersion) tVersion.innerHTML = juegoSeleccionadoLocal.realSizeHtml;
-        if (sheetSize) sheetSize.innerHTML = juegoSeleccionadoLocal.sheetSizeHtml;
-        return;
-    }
-
-    const ip = localStorage.getItem('sebas_ip_final_libre') || '192.168.1.28';
-
-    try {
-        let fd = new FormData();
-        fd.append('host_ip', ip);
-        fd.append('cusa_id', cusa);
-        let res = await fetch('api/tech_info_biblioteca.php', { method: 'POST', body: fd });
-        let data = await res.json();
-        
-        if (data && data.status === 'success') {
-            const iconLoc = data.location.includes('Ampliado') ? '<i class="fa-solid fa-server text-emerald-500 mr-1"></i> Alm. Ampliado' : '<i class="fa-solid fa-hdd text-gray-500 mr-1"></i> Alm. Interno';
-            
-            const sizeStr3D = `${iconLoc}  •  ${data.size} (aprox.)`;
-            const sizeStrSheet = `${data.location.includes('Ampliado') ? '<i class="fa-solid fa-server text-emerald-400"></i>' : '<i class="fa-solid fa-hdd text-gray-400"></i>'} ${data.size} (aprox.)`;
-            
-            if (juegoSeleccionadoLocal && juegoSeleccionadoLocal.id === cusa) {
-                juegoSeleccionadoLocal.realSize = data.size;
-                juegoSeleccionadoLocal.realSizeBytes = data.bytes; 
-                juegoSeleccionadoLocal.realSizeHtml = sizeStr3D;
-                juegoSeleccionadoLocal.sheetSizeHtml = sizeStrSheet;
-            }
-
-            if(tVersion) tVersion.innerHTML = sizeStr3D;
-            if(sheetSize) sheetSize.innerHTML = sizeStrSheet;
-        }
-    } catch(e) {
-        if (tVersion) tVersion.innerText = `--- (aprox.)`;
-    }
-}
-
 async function actualizarConteoCapturasDock(cusa, targetBadgeId = 'sheet-count-capturas-badge') {
     const ip = localStorage.getItem('sebas_ip_final_libre') || '192.168.1.28';
     const badge = document.getElementById(targetBadgeId);
@@ -749,8 +707,6 @@ function abrirOpcionesJuegoDirecto(id) {
     const labelCat = document.getElementById('label-categoria-actual');
     if (labelCat) labelCat.innerText = juegoSeleccionadoLocal.tipo;
     
-    const sizeElem = document.getElementById('panel-game-size');
-    if(sizeElem) sizeElem.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-cyan-500"></i>`;
     
     const panelBg = document.getElementById('panel-bg-blur');
     if(panelBg) panelBg.style.backgroundImage = `url('${juegoSeleccionadoLocal.img}')`;
@@ -758,7 +714,6 @@ function abrirOpcionesJuegoDirecto(id) {
     const avatarArt = document.getElementById('panel-avatar-art');
     if (avatarArt) avatarArt.style.backgroundImage = `url('${juegoSeleccionadoLocal.img}')`;
 
-    consultarPesoRealConsola(juegoSeleccionadoLocal.id, juegoSeleccionadoLocal.tipo, juegoSeleccionadoLocal.version);
     actualizarConteoCapturasDock(juegoSeleccionadoLocal.id, 'sheet-count-capturas-badge');
     
     const sheet = document.getElementById('sheet-detalles-juego');
@@ -1290,7 +1245,6 @@ async function ejecutarEliminacionContenidoFTP() {
             document.getElementById('dlc-data-container').classList.add('hidden');
             document.getElementById('dlc-loader').classList.remove('hidden');
             setTimeout(() => { escanearDLCsYUpdates(true); }, 500); 
-            consultarPesoRealConsola(juegoSeleccionadoLocal.id, juegoSeleccionadoLocal.tipo, juegoSeleccionadoLocal.version);
         } else {
             window.ps5Notification("ERROR", "No se pudo borrar por permisos de FTP.", "fa-circle-xmark");
         }

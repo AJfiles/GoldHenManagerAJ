@@ -24,6 +24,7 @@ let globalAppConfig = {
 
 let globalAudioCtx = null;
 let radarTimeoutId = null; // Para controlar el cierre automático del radar
+let pwaInstallPrompt = null;
 
 const introNamesMap = {
     'none': 'Sin Intro (Rápido)',
@@ -587,6 +588,7 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
+    pwaInstallPrompt = e;
 
     if (!document.getElementById('btn-pwa-install') && !sessionStorage.getItem('pwa_install_prompt_seen')) {
         const btn = document.createElement('button');
@@ -615,6 +617,38 @@ window.addEventListener('beforeinstallprompt', (e) => {
         }, 12000);
     }
 });
+
+window.mostrarInstalacionPWA = async function() {
+    if (!pwaInstallPrompt) { sysNotification('INSTALACIÓN', 'El navegador no ofrece instalación en este momento.', 'fa-mobile-screen-button'); return; }
+    pwaInstallPrompt.prompt();
+    await pwaInstallPrompt.userChoice;
+    pwaInstallPrompt = null;
+};
+
+window.comprobarActualizacion = async function() {
+    const estado = document.getElementById('update-status');
+    const boton = document.getElementById('btn-aplicar-update');
+    if (estado) estado.innerText = 'Consultando GitHub…';
+    try {
+        const fd = new FormData(); fd.append('action', 'check');
+        const res = await fetch('api/update_api.php', { method: 'POST', body: fd }); const data = await res.json();
+        if (data.status !== 'success') throw new Error(data.message);
+        if (data.update_available) { if (estado) estado.innerText = `Nueva versión disponible (${data.remote}).`; if (boton) { boton.disabled=false; boton.classList.remove('opacity-40'); } }
+        else { if (estado) estado.innerText = `Ya tienes la versión más reciente (${data.current}).`; if (boton) { boton.disabled=true; boton.classList.add('opacity-40'); } }
+    } catch (error) { if (estado) estado.innerText = error.message || 'No se pudo comprobar la actualización.'; }
+};
+
+window.aplicarActualizacion = async function() {
+    const estado = document.getElementById('update-status');
+    if (estado) estado.innerText = 'Aplicando actualización…';
+    try {
+        const fd = new FormData(); fd.append('action', 'apply');
+        const res = await fetch('api/update_api.php', { method: 'POST', body: fd }); const data = await res.json();
+        if (data.status !== 'success') throw new Error(data.message);
+        if (estado) estado.innerText = data.updated ? 'Actualización aplicada. Recargando…' : 'Ya estabas actualizado.';
+        if (data.updated) setTimeout(() => window.location.reload(), 900);
+    } catch (error) { if (estado) estado.innerText = error.message || 'No se pudo aplicar la actualización.'; }
+};
 
 window.addEventListener('appinstalled', () => {
     const btn = document.getElementById('btn-pwa-install');
