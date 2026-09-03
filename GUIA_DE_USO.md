@@ -64,5 +64,9 @@ Comprueba en este orden:
 4. Explorador lista la raíz FTP.
 5. Una transferencia pequeña muestra métricas y termina correctamente.
 6. Ajustes conserva tema y tamaño tras recargar la página.
+7. En Ajustes, usa **Verificar** para consultar actualizaciones y **Actualizar**
+   sólo cuando no tengas cambios locales pendientes.
+8. En Payloads, abre Linux o Especial, confirma el envío y comprueba que
+   BinLoader esté disponible en el puerto 9090.
 
 Si falla una operación, conserva el mensaje mostrado y verifica IP, puerto, red Wi-Fi, GoldHEN y permisos de almacenamiento de Termux.

@@ -109,18 +109,14 @@ header('X-Author: ' . $firma);
         <div class="text-center w-full pt-1 shrink-0 z-10 flex flex-col items-center">
             <div class="flex items-center justify-center gap-2 mb-1.5 hover:opacity-100 transition-opacity">
                 <span class="text-[8px] font-black tracking-[0.25em] text-gray-400 uppercase">GoldHen Manager AJ</span>
-                <div class="flex flex-col w-3.5 h-2.5 justify-between opacity-60">
-                    <div class="h-[33%] bg-[#74ACDF]"></div>
-                    <div class="h-[34%] bg-white flex items-center justify-center"><div class="w-[3px] h-[3px] bg-[#F1B517] rounded-full"></div></div>
-                    <div class="h-[33%] bg-[#74ACDF]"></div>
-                </div>
+                <i class="fa-solid fa-gamepad text-cyan-400 text-[10px] opacity-70"></i>
             </div>
             <h1 class="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-[#ffffff] to-[#9aa0ab] uppercase leading-none drop-shadow-md">
                 GoldHen Manager
             </h1>
             <div class="flex items-center justify-center gap-3 mt-2.5 opacity-80">
                 <span class="h-[1px] w-6 bg-gradient-to-r from-transparent to-cyan-500/80"></span>
-                <span class="text-[9px] font-mono tracking-[0.4em] font-bold text-cyan-400">VERSION 3.1 • AJ</span>
+                <span class="text-[9px] font-mono tracking-[0.4em] font-bold text-cyan-400">VERSION 3.2 • AJ</span>
                 <span class="h-[1px] w-6 bg-gradient-to-l from-transparent to-cyan-500/80"></span>
             </div>
         </div>

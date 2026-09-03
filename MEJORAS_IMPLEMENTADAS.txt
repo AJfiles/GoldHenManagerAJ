@@ -10,7 +10,9 @@ Instalación en Termux
 ---------------------
 - goldhen.sh usa https://github.com/AJfiles/GoldHenManagerAJ.git.
 - El proyecto se clona y ejecuta desde $HOME/GoldHenManagerAJ.
-- Se instala php-zip para las funciones ZIP del servidor PHP.
+- Se instala PHP estándar, Git y Termux API. Algunas distribuciones de Termux
+  incluyen ZipArchive con PHP; php-zip no se instala porque no existe como
+  paquete independiente en los repositorios actuales.
 - El directorio user se enlaza a /sdcard/GoldHenManager/user.
 
 Archivos modificados
@@ -21,7 +23,7 @@ Archivos modificados
 
 - goldhen.sh
   Ruta de clonación y de arranque unificadas en GoldHenManagerAJ. Incluye
-  php-zip para ZipArchive.
+  las dependencias disponibles de Termux.
 
 - modulos/afr_mods.php y js/afr_mods.js
   El botón de instalación de plugins AFR abre el selector oculto
@@ -118,6 +120,19 @@ Actualización visual y de instalación 3.1
   motores implementados actualmente; evita el panel confuso de motor ausente.
 - modulos/ajustes.php conserva sólo el tamaño de texto y eleva los menús de
   fondos/intros para que se superpongan correctamente.
+
+Actualización 3.2
+----------------
+- Los payloads de payloads/ se muestran directamente y se organizan en
+  General, Linux y Especial. La lista admite .bin, .payload y .elf; la
+  extensión no altera el envío crudo al BinLoader, pero cada payload debe ser
+  compatible con el GoldHEN instalado.
+- Se eliminó el cálculo y panel de tamaño de juegos, junto con el endpoint
+  tech_info_biblioteca.php, porque el cálculo FTP era lento e impreciso.
+- Ajustes incorpora comprobación/actualización Git segura con git pull
+  --ff-only y un botón de instalación PWA. Si hay cambios locales, no los
+  sobrescribe y muestra el error para resolverlo desde Termux.
+- Identidad visual y documentación actualizadas a versión 3.2.
 
 Módulos avanzados de GoldHEN 3.1
 -------------------------------
