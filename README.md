@@ -10,6 +10,8 @@ Aplicación web local para Termux orientada a administrar una PS4 con GoldHEN me
 - Modding: respaldo e inyección de portadas, procesado de imágenes y galerías locales.
 - Game Mods: bóveda de mods de Minecraft e integración AFR para juegos compatibles.
 - Ajustes: notificaciones, audio, fondos, intros, tema y tamaño de texto.
+- Plugins: sube `.prx`, consulta los instalados y asigna plugins a `[default]` o a CUSA mediante `plugins.ini`.
+- Payload Loader: lista payloads locales/remotos y los envía al BinLoader de GoldHEN en el puerto `9090`.
 
 ## Requisitos
 
@@ -52,9 +54,13 @@ Los datos generados por la aplicación se guardan fuera del repositorio en:
 
 Incluye cachés, portadas, capturas, respaldos y archivos para RPI. La caché se limpia automáticamente cuando un archivo lleva más de 30 días sin uso.
 
+Los plugins incluidos en `plugins/` se pueden subir desde el módulo Plugins. Los payloads que añadas se guardan en `user/payloads/`.
+
 ## Seguridad
 
 La herramienta está pensada para una red local de confianza. No expongas el servidor PHP a Internet ni abras puertos del teléfono hacia redes públicas. Las operaciones de eliminar, mover, inyectar y activar mods afectan datos reales de la consola.
+
+El módulo Plugins realiza una copia local de `plugins.ini` antes de editarlo. Payload Loader ejecuta binarios en la consola: utiliza únicamente payloads que conozcas y entiendas.
 
 ## Desarrollo
 

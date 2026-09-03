@@ -44,6 +44,10 @@ APIs PHP
 - api/stream_image_api.php: descarga y cachea una captura bajo demanda.
 - api/tech_info_biblioteca.php: calcula tamaño y ubicación de juegos.
 - api/transferir_api.php: RPI, selección de directorios y subida FTP.
+- api/plugins_api.php: gestor protegido de PRX y edición por secciones de
+  plugins.ini; realiza backup local antes de escribir.
+- api/payload_api.php: lista, guarda y envía payloads permitidos al puerto
+  BinLoader 9090, con límite de 16 MB.
 
 Frontend JavaScript
 -------------------
@@ -55,6 +59,8 @@ Frontend JavaScript
 - js/modding.js: portada manual/inteligente y galería local.
 - js/mods.js: ensamblador Minecraft, envío de chunks e index.json.
 - js/transferir.js: cola FTP, colisiones, RPI y métricas de transferencia.
+- js/plugins.js: asignación de PRX a [default] o CUSA y sincronización visual.
+- js/payloads.js: carga y envío confirmado de payloads.
 - js/icon-192.png y js/icon-512.png: iconos estáticos de la PWA.
 
 Módulos HTML/PHP
@@ -68,6 +74,8 @@ Módulos HTML/PHP
 - modulos/mods.php: selector de juego y entornos Minecraft/AFR.
 - modulos/transferir.php: RPI, FTP, cola y métricas visuales.
 - modulos/wallpapers.php: fondos animados configurables.
+- modulos/plugins.php: interfaz de administración de plugins GoldHEN.
+- modulos/payloads.php: interfaz de Payload Loader.
 
 Hallazgos y mejoras futuras
 ---------------------------

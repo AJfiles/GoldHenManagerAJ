@@ -118,3 +118,17 @@ Actualización visual y de instalación 3.1
   motores implementados actualmente; evita el panel confuso de motor ausente.
 - modulos/ajustes.php conserva sólo el tamaño de texto y eleva los menús de
   fondos/intros para que se superpongan correctamente.
+
+Módulos avanzados de GoldHEN 3.1
+-------------------------------
+- api/plugins_api.php, modulos/plugins.php y js/plugins.js añaden un gestor
+  de plugins PRX. Lista plugins del proyecto/usuario y de la consola, sube
+  exclusivamente nombres .prx seguros y actualiza una sola entrada de
+  plugins.ini por sección. Antes de cada modificación se guarda una copia en
+  user/backups/plugins/.
+- api/payload_api.php, modulos/payloads.php y js/payloads.js añaden Payload
+  Loader. Puede listar payloads .bin/.payload locales y remotos, guardar uno
+  desde el teléfono y enviarlo por TCP al BinLoader de GoldHEN (puerto 9090).
+- Los dos módulos validan IP, nombres y directorios para que no acepten rutas
+  arbitrarias. El reinicio de GoldHEN/PS4 sigue siendo necesario al cambiar
+  plugins; los payloads sólo deben venir de fuentes de confianza.

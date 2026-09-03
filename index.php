@@ -108,7 +108,7 @@ header('X-Author: ' . $firma);
         
         <div class="text-center w-full pt-1 shrink-0 z-10 flex flex-col items-center">
             <div class="flex items-center justify-center gap-2 mb-1.5 hover:opacity-100 transition-opacity">
-                <span class="text-[8px] font-black tracking-[0.25em] text-gray-400 uppercase">Developed By SeBaS • Mod AJ</span>
+                <span class="text-[8px] font-black tracking-[0.25em] text-gray-400 uppercase">GoldHen Manager AJ</span>
                 <div class="flex flex-col w-3.5 h-2.5 justify-between opacity-60">
                     <div class="h-[33%] bg-[#74ACDF]"></div>
                     <div class="h-[34%] bg-white flex items-center justify-center"><div class="w-[3px] h-[3px] bg-[#F1B517] rounded-full"></div></div>
@@ -164,6 +164,8 @@ header('X-Author: ' . $firma);
             <div onclick="abrirModulo('transferir')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-amber-900/30 text-amber-400 flex items-center justify-center mb-3 border border-amber-500/10"><i class="fa-solid fa-cloud-arrow-up text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Transferencias</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Chunks de PKG</span></div>
             <div onclick="abrirModuloNativo('mods')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-indigo-900/30 text-indigo-400 flex items-center justify-center mb-3 border border-indigo-500/10"><i class="fa-solid fa-cubes text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Game Mods</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Trucos y Parches</span></div>
             <div onclick="abrirModulo('ajustes')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-gray-700/30 text-gray-300 flex items-center justify-center mb-3 border border-gray-500/10"><i class="fa-solid fa-sliders text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Ajustes</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Live BGs e Intros</span></div>
+            <div onclick="abrirModulo('plugins')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-violet-900/30 text-violet-400 flex items-center justify-center mb-3 border border-violet-500/10"><i class="fa-solid fa-plug text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Plugins</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">GoldHEN Loader</span></div>
+            <div onclick="abrirModulo('payloads')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-amber-900/30 text-amber-400 flex items-center justify-center mb-3 border border-amber-500/10"><i class="fa-solid fa-rocket text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Payloads</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">BinLoader 9090</span></div>
         </div>
 
         <div class="w-full text-center pt-2 pb-1 shrink-0 opacity-40 text-[9px] tracking-widest font-mono uppercase">SANTIAGO DEL ESTERO • ARGENTINA</div>
@@ -203,6 +205,8 @@ header('X-Author: ' . $firma);
     <?php include 'modulos/transferir.php'; ?>
     <?php include 'modulos/mods.php'; ?>
     <?php include 'modulos/ajustes.php'; ?>
+    <?php include 'modulos/plugins.php'; ?>
+    <?php include 'modulos/payloads.php'; ?>
 
     <script src="js/app.js"></script>
     <script src="js/biblioteca.js"></script>
@@ -211,6 +215,8 @@ header('X-Author: ' . $firma);
     <script src="js/transferir.js"></script>
     <script src="js/mods.js"></script>
     <script src="js/afr_mods.js"></script>
+    <script src="js/plugins.js"></script>
+    <script src="js/payloads.js"></script>
 
     <script>
         history.replaceState({ page: 'launcher' }, "Launcher", "");
@@ -234,7 +240,10 @@ header('X-Author: ' . $firma);
             const target = document.getElementById('layer-' + idModulo);
             if (target) {
                 target.classList.remove('hidden');
-                setTimeout(() => { target.classList.add('active', 'flex'); }, 10);
+                setTimeout(() => { target.classList.add('active', 'flex');
+                    if (idModulo === 'plugins' && typeof pluginsRecargar === 'function') pluginsRecargar();
+                    if (idModulo === 'payloads' && typeof payloadsRecargar === 'function') payloadsRecargar();
+                }, 10);
             }
         }
 

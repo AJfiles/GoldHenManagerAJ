@@ -60,7 +60,7 @@ else
 
     export DEBIAN_FRONTEND=noninteractive
     ejecutar_paso "Actualizando repositorios..." pkg update -y -o Dpkg::Options::="--force-confold"
-    ejecutar_paso "Instalando Git, PHP y Termux API..." pkg install -y -o Dpkg::Options::="--force-confold" git php termux-api
+    ejecutar_paso "Instalando dependencias..." pkg install -y -o Dpkg::Options::="--force-confold" git php php-zip termux-api
 
     echo -e "${CYAN}• Creando estructura de datos...${NC}"
     mkdir -p /sdcard/GoldHenManager/user
