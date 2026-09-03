@@ -92,7 +92,31 @@ if ($action === 'upload_local') {
     if (!move_uploaded_file($_FILES['plugin']['tmp_name'], $target_dir . '/' . $name)) responder_plugins(['status' => 'error', 'message' => 'No se pudo guardar el plugin.']);
     responder_plugins(['status' => 'success']);
 }
+if ($action === 'download_ini') {
+    if (!validar_host_plugins($host)) responder_plugins(['status' => 'error', 'message' => 'IP de PS4 inválida.']);
+    $ini = ftp_get_plugins($host, $ini_path);
+    if ($ini === false) responder_plugins(['status' => 'error', 'message' => 'No se pudo leer plugins.ini.']);
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Content-Disposition: attachment; filename="plugins.ini"');
+    echo $ini; exit;
+}
 if (!validar_host_plugins($host)) responder_plugins(['status' => 'error', 'message' => 'IP de PS4 inválida.']);
+if ($action === 'import_ini') {
+    if (!isset($_FILES['ini']) || $_FILES['ini']['error'] !== UPLOAD_ERR_OK || $_FILES['ini']['size'] > 524288) responder_plugins(['status' => 'error', 'message' => 'Selecciona un plugins.ini de hasta 512 KB.']);
+    $new = file_get_contents($_FILES['ini']['tmp_name']);
+    $current = null;
+    foreach (preg_split('/\R/', (string)$new) as $line) {
+        $trim = trim($line);
+        if ($trim === '' || $trim[0] === '#' || $trim[0] === ';') continue;
+        if (preg_match('/^\[([^\]]+)\]$/', $trim, $m)) { $current = $m[1]; if (!seccion_valida($current)) responder_plugins(['status' => 'error', 'message' => 'El archivo contiene una sección no permitida.']); continue; }
+        if ($current === null || !preg_match('#^/data/GoldHEN/plugins/[A-Za-z0-9._-]+\.prx$#i', $trim)) responder_plugins(['status' => 'error', 'message' => 'El archivo contiene una ruta de plugin no permitida.']);
+    }
+    $old = ftp_get_plugins($host, $ini_path); if ($old === false) $old = '';
+    $backup_dir = __DIR__ . '/../user/backups/plugins'; @mkdir($backup_dir, 0777, true);
+    @file_put_contents($backup_dir . '/plugins_antes_importar_' . date('Ymd_His') . '.ini', $old);
+    if (!ftp_put_plugins($host, $ini_path, rtrim($new) . "\n")) responder_plugins(['status' => 'error', 'message' => 'No se pudo restaurar plugins.ini.']);
+    responder_plugins(['status' => 'success', 'sections' => parse_ini_plugins($new)]);
+}
 if ($action === 'list_remote') responder_plugins(['status' => 'success', 'data' => array_values(array_filter(ftp_list_plugins($host, $remote_dir), fn($f) => !$f['is_dir'] && nombre_prx($f['name'])))]);
 if ($action === 'get_ini') responder_plugins(['status' => 'success', 'sections' => parse_ini_plugins(ftp_get_plugins($host, $ini_path) ?: '')]);
 if ($action === 'upload_plugin') {
