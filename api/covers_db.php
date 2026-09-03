@@ -10,6 +10,7 @@ error_reporting(0);
 @ini_set('memory_limit', '256M');
 
 header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/cache_helpers.php';
 $firma = chr(83).chr(101).chr(66).chr(97).chr(83); 
 header('X-Author: ' . $firma);
 
@@ -21,8 +22,9 @@ if (!$cusa) {
     exit;
 }
 
-$cache_hd_dir = '../cache_portadas_hd';
+$cache_hd_dir = __DIR__ . '/../user/cache/portadas_hd';
 if (!file_exists($cache_hd_dir)) { @mkdir($cache_hd_dir, 0777, true); }
+limpiar_cache_antigua($cache_hd_dir);
 
 $img_data = null;
 $descarga_exitosa = false;
@@ -81,7 +83,7 @@ if (!$descarga_exitosa) {
 if ($descarga_exitosa && $img_data) {
     $local_path = $cache_hd_dir . '/' . $cusa . '.jpg';
     @file_put_contents($local_path, $img_data);
-    echo json_encode(['status' => 'success', 'path' => 'cache_portadas_hd/' . $cusa . '.jpg']);
+    echo json_encode(['status' => 'success', 'path' => 'user/cache/portadas_hd/' . $cusa . '.jpg']);
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Sin coincidencia vertical en el servidor remoto.']);
 }

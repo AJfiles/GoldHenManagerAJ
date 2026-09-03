@@ -12,6 +12,7 @@ error_reporting(0);
 set_time_limit(300);
 
 header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/cache_helpers.php';
 $firma = chr(83).chr(101).chr(66).chr(97).chr(83); 
 header('X-Author: ' . $firma);
 
@@ -21,13 +22,14 @@ $cusa_id = strtoupper(trim($_POST['cusa_id'] ?? $_GET['cusa_id'] ?? ''));
 $port = isset($_POST['port']) ? (int)$_POST['port'] : 2121;
 
 // 🔥 RUTA CORREGIDA HACIA LA NUEVA ESTRUCTURA USER
-$cache_dir = '../user/cache/biblioteca';
+$cache_dir = __DIR__ . '/../user/cache/biblioteca';
 if (!file_exists($cache_dir)) { 
     @mkdir($cache_dir, 0777, true); 
 }
 if (!file_exists($cache_dir . '/.nomedia')) { 
     @file_put_contents($cache_dir . '/.nomedia', ''); 
 }
+limpiar_cache_antigua($cache_dir);
 
 $db_categorias_file = $cache_dir . '/custom_categories.json';
 $custom_cats = [];
@@ -208,7 +210,7 @@ if ($action === 'scan') {
                     @unlink($cache_dir . '/' . $cusa_local . '.png');
                     @unlink($sfo_path);
                     @unlink($cache_dir . '/sizes_' . $cusa_local . '.txt');
-                    @unlink('../user/.iconos/' . $cusa_local . '.jpg');
+                    @unlink(__DIR__ . '/../user/.iconos/' . $cusa_local . '.jpg');
                     if (isset($custom_cats[$cusa_local])) { unset($custom_cats[$cusa_local]); }
                 }
             }

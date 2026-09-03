@@ -7,6 +7,7 @@
  */
 error_reporting(0);
 @set_time_limit(120);
+require_once __DIR__ . '/cache_helpers.php';
 
 $ip = $_GET['ip'] ?? '';
 $path = $_GET['path'] ?? '';
@@ -16,6 +17,7 @@ if (!$ip || !$path) { http_response_code(400); exit; }
 
 $cache_dir = __DIR__ . '/../user/cache/capturas';
 if (!file_exists($cache_dir)) { @mkdir($cache_dir, 0777, true); }
+limpiar_cache_antigua($cache_dir);
 
 // 🔥 FIX: Blindaje para que Android ignore las capturas de la Play
 @file_put_contents($cache_dir . '/.nomedia', ''); 

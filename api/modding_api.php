@@ -9,14 +9,15 @@ error_reporting(0);
 set_time_limit(60);
 
 header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/cache_helpers.php';
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 $host_ip = $_POST['host_ip'] ?? '';
 $cusa = strtoupper(trim($_POST['cusa_id'] ?? ''));
 $port = 2121;
 
-$backup_dir = '../user/cache/backups_portadas';
-$iconos_dir = '../user/portadas_custom';
+$backup_dir = __DIR__ . '/../user/cache/backups_portadas';
+$iconos_dir = __DIR__ . '/../user/portadas_custom';
 
 if (!file_exists($backup_dir)) { @mkdir($backup_dir, 0777, true); }
 // 🔥 FIX: Blindaje para que Android ignore los backups de portadas
@@ -25,6 +26,8 @@ if (!file_exists($backup_dir)) { @mkdir($backup_dir, 0777, true); }
 if (!file_exists($iconos_dir)) { @mkdir($iconos_dir, 0777, true); }
 // 🔥 FIX: Blindaje para que Android ignore las portadas editadas
 @file_put_contents($iconos_dir . '/.nomedia', ''); 
+limpiar_cache_antigua($backup_dir);
+limpiar_cache_antigua($iconos_dir);
 
 function curl_download($ip, $port, $remote_path, $local_path) {
     $ch = curl_init("ftp://$ip:$port$remote_path");

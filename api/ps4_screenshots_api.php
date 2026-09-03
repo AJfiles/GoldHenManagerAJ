@@ -10,6 +10,7 @@ error_reporting(0);
 set_time_limit(120);
 
 header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/cache_helpers.php';
 
 $action = $_POST['action'] ?? '';
 $host_ip = $_POST['host_ip'] ?? '';
@@ -22,14 +23,16 @@ if (!$host_ip) {
     exit; 
 }
 
-$cache_dir = '../user/cache/biblioteca';
-$capturas_dir = '../user/cache/capturas'; 
+$cache_dir = __DIR__ . '/../user/cache/biblioteca';
+$capturas_dir = __DIR__ . '/../user/cache/capturas'; 
 
 if (!file_exists($cache_dir)) { @mkdir($cache_dir, 0777, true); }
 if (!file_exists($capturas_dir)) { 
     @mkdir($capturas_dir, 0777, true); 
     @file_put_contents($capturas_dir . '/.nomedia', '');
 }
+limpiar_cache_antigua($cache_dir);
+limpiar_cache_antigua($capturas_dir);
 
 $is_global = ($action === 'get_all_caps');
 $cache_file = $is_global ? $cache_dir . "/galeria_ALL.json" : $cache_dir . "/galeria_{$cusa}.json";
