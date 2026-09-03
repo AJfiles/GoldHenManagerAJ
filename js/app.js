@@ -1,7 +1,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER AJ 🚀 (PS4) - NÚCLEO DE CONTROL CENTRAL (CORE)
- * DEVELOPED By SeBaS - Mod AJ
+ * Mantenido por AJ · Basado en proyecto original de SeBaS
  * ====================================================================
  */
 const CREATOR_ATTRIBUTION = "by AJ · basado en el trabajo original de SeBaS";
@@ -211,24 +211,17 @@ function guardarAjustesSonidos(element) {
     if(element.checked) emitirEfectoSonidoNativo('click');
 }
 
-function toggleCustomSelect() {
-    emitirEfectoSonidoNativo('click');
-    const options = document.getElementById('custom-select-options');
-    const icon = document.getElementById('custom-select-icon');
-    
-    if (options.classList.contains('scale-y-0')) {
-        options.classList.remove('scale-y-0', 'opacity-0', 'pointer-events-none');
-        colocarDesplegableFlotante(options, document.getElementById('custom-select-container'));
-        icon.style.transform = 'rotate(180deg)';
-    } else {
-        options.classList.add('scale-y-0', 'opacity-0', 'pointer-events-none');
-        icon.style.transform = 'rotate(0deg)';
-    }
-}
+function cambiarEstadoModalAjuste(id, mostrar) { const modal = document.getElementById(id); if (!modal) return; modal.classList.toggle('hidden', !mostrar); modal.classList.toggle('flex', mostrar); }
+function abrirSelectorFondo() { emitirEfectoSonidoNativo('click'); cambiarEstadoModalAjuste('modal-selector-fondo', true); }
+function cerrarSelectorFondo() { cambiarEstadoModalAjuste('modal-selector-fondo', false); }
+function abrirSelectorIntro() { emitirEfectoSonidoNativo('click'); cambiarEstadoModalAjuste('modal-selector-intro', true); }
+function cerrarSelectorIntro() { cambiarEstadoModalAjuste('modal-selector-intro', false); }
+/* Compatibilidad con posibles llamadas antiguas. */
+function toggleCustomSelect() { abrirSelectorFondo(); }
 
 function seleccionarFondoCustom(idFondo, nombreVisible) {
     document.getElementById('custom-select-label').innerText = nombreVisible;
-    toggleCustomSelect();
+    cerrarSelectorFondo();
     emitirEfectoSonidoNativo('ps-ui'); 
     if (typeof changeDynamicWallpaper === 'function') {
         changeDynamicWallpaper(idFondo);
@@ -236,34 +229,11 @@ function seleccionarFondoCustom(idFondo, nombreVisible) {
     }
 }
 
-function toggleCustomSelectIntro() {
-    emitirEfectoSonidoNativo('click');
-    const options = document.getElementById('custom-select-intro-options');
-    const icon = document.getElementById('custom-select-intro-icon');
-    
-    if (options.classList.contains('scale-y-0')) {
-        options.classList.remove('scale-y-0', 'opacity-0', 'pointer-events-none');
-        colocarDesplegableFlotante(options, document.getElementById('custom-select-intro-options')?.parentElement);
-        icon.style.transform = 'rotate(180deg)';
-    } else {
-        options.classList.add('scale-y-0', 'opacity-0', 'pointer-events-none');
-        icon.style.transform = 'rotate(0deg)';
-    }
-}
-
-function colocarDesplegableFlotante(menu, ancla) {
-    if (!menu || !ancla) return;
-    const rect = ancla.getBoundingClientRect();
-    menu.style.position = 'fixed';
-    menu.style.left = `${Math.max(12, rect.left)}px`;
-    menu.style.width = `${Math.min(window.innerWidth - 24, rect.width)}px`;
-    menu.style.top = `${Math.min(window.innerHeight - 230, rect.bottom + 8)}px`;
-    menu.style.zIndex = '10000';
-}
+function toggleCustomSelectIntro() { abrirSelectorIntro(); }
 
 function seleccionarIntroCustom(idIntro, nombreVisible) {
     document.getElementById('custom-select-intro-label').innerText = nombreVisible;
-    toggleCustomSelectIntro();
+    cerrarSelectorIntro();
     localStorage.setItem('ps4_selected_intro', idIntro);
     emitirEfectoSonidoNativo('ps-ui');
     sysNotification("AJUSTES", `Intro seleccionada. Se verá al reiniciar la app.`, "fa-play");

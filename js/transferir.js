@@ -1,7 +1,7 @@
 /**
  * ====================================================================
  * GOLD HEN SUITE PRO 🚀 - CONTROLADOR TRANSFERENCIAS Y RPI
- * DEVELOPED By SeBaS - RUTA: js/transferir.js
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: js/transferir.js
  * ====================================================================
  */
 

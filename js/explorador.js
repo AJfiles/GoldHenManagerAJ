@@ -1,7 +1,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER V3.0 🚀 - CONTROLADOR DEL EXPLORADOR FTP
- * DEVELOPED By SeBaS - RUTA: js/explorador.js
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: js/explorador.js
  * ====================================================================
  */
 

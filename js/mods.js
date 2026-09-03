@@ -1,7 +1,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER V3.0 🚀 - LÓGICA MOTOR MINECRAFT
- * DEVELOPED By SeBaS - RUTA: js/mods.js
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: js/mods.js
  * ====================================================================
  */
 

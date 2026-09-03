@@ -1,7 +1,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER V2.1 🚀 - CONTROLADOR MAESTRO DE BIBLIOTECA
- * DEVELOPED By SeBaS - RUTA: js/biblioteca.js
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: js/biblioteca.js
  * ====================================================================
  */
 
