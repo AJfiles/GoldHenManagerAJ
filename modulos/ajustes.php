@@ -114,6 +114,25 @@
             </div>
         </div>
 
+        <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
+            <div class="flex items-center gap-2 border-b border-white/5 pb-2">
+                <i class="fas fa-universal-access text-violet-400 text-sm"></i>
+                <span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Visual y accesibilidad</span>
+            </div>
+            <label class="flex flex-col gap-1.5 text-[9px] font-mono text-gray-400 uppercase tracking-wider">
+                Tema
+                <select id="cfg-tema" onchange="guardarTema(this.value)" class="bg-[#111827] border border-white/10 rounded-xl px-3 py-2.5 text-[11px] font-bold text-white outline-none">
+                    <option value="dark">Oscuro</option>
+                    <option value="light">Claro</option>
+                    <option value="auto">Automático</option>
+                </select>
+            </label>
+            <label class="flex flex-col gap-2 text-[9px] font-mono text-gray-400 uppercase tracking-wider">
+                Tamaño del texto <span id="lbl-tamano-texto" class="text-cyan-400">100%</span>
+                <input id="cfg-tamano-texto" type="range" min="85" max="130" step="5" value="100" oninput="guardarTamanoTexto(this.value)" class="w-full accent-cyan-500">
+            </label>
+        </div>
+
         <!-- Créditos (nuevo) -->
         <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-2">
             <div class="flex items-center gap-2 border-b border-white/5 pb-2">

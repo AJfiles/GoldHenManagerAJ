@@ -54,7 +54,8 @@
                     <span class="text-[9px] font-bold text-gray-300 uppercase tracking-wider text-center">Backup<br>Originales</span>
                 </button>
                 <!-- Botón de instalación inicialmente BLOQUEADO por seguridad -->
-                <button id="btn-instalar-afr" onclick="instalarPluginsAFR()" class="bg-indigo-600/20 border border-indigo-500/40 p-3 rounded-xl flex flex-col items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(79,70,229,0.15)] opacity-40 pointer-events-none">
+                <input type="file" id="input-install-afr-zip" accept=".zip" class="hidden" onchange="procesarInstalacionPlugins(event)">
+                <button id="btn-afr-install" onclick="document.getElementById('input-install-afr-zip').click()" class="bg-indigo-600/20 border border-indigo-500/40 p-3 rounded-xl flex flex-col items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(79,70,229,0.15)] opacity-40 pointer-events-none">
                     <i class="fa-solid fa-bolt text-indigo-400 text-lg"></i>
                     <span class="text-[9px] font-bold text-indigo-300 uppercase tracking-wider text-center">Instalar<br>Plugins AFR</span>
                 </button>

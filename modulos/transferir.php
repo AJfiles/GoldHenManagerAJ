@@ -101,7 +101,7 @@
             <div class="w-full h-2.5 bg-black rounded-full overflow-hidden mb-4 border border-white/5">
                 <div id="transfer-bar" class="h-full bg-gradient-to-r from-amber-600 to-yellow-400 w-0 transition-all"></div>
             </div>
-            <div class="grid grid-cols-2 gap-3 text-center">
+            <div class="grid grid-cols-3 gap-2 text-center">
                 <div class="flex flex-col bg-black/40 p-2 rounded-xl border border-white/5">
                     <span class="text-[8px] font-bold text-gray-500 uppercase">Velocidad</span>
                     <span class="text-[11px] font-mono text-white" id="transfer-speed">0.00 MB/s</span>
@@ -109,6 +109,10 @@
                 <div class="flex flex-col bg-black/40 p-2 rounded-xl border border-white/5">
                     <span class="text-[8px] font-bold text-gray-500 uppercase">Restante</span>
                     <span class="text-[11px] font-mono text-white" id="transfer-eta">--:--</span>
+                </div>
+                <div class="flex flex-col bg-black/40 p-2 rounded-xl border border-white/5">
+                    <span class="text-[8px] font-bold text-gray-500 uppercase">Transcurrido</span>
+                    <span class="text-[11px] font-mono text-white" id="transfer-duration">00:00</span>
                 </div>
             </div>
             <div class="flex justify-between items-center mt-3 px-1">
