@@ -133,13 +133,20 @@
             </div>
             <div class="flex flex-col items-center py-2">
                 <span class="text-[9px] font-mono text-gray-500 tracking-widest">GoldHen Manager AJ</span>
-                <span class="text-[8px] font-mono text-gray-600 tracking-wider">Versión 3.0 • Modificado por AJ</span>
+                <span class="text-[8px] font-mono text-gray-600 tracking-wider">Versión 3.2 • Mantenido por AJ</span>
                 <span class="text-[7px] font-mono text-gray-700 mt-1">Basado en el trabajo original de SeBaS</span>
                 <div class="flex gap-3 mt-2">
                     <span class="text-[8px] font-mono text-cyan-500/50">❤️ Comunidad</span>
                     <span class="text-[8px] font-mono text-cyan-500/50">🔓 Código Abierto</span>
                 </div>
             </div>
+        </div>
+
+        <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
+            <div class="flex items-center gap-2 border-b border-white/5 pb-2"><i class="fas fa-cloud-arrow-down text-emerald-400 text-sm"></i><span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Actualizaciones</span></div>
+            <p id="update-status" class="text-[9px] text-gray-500 font-mono">Comprueba cambios publicados en GitHub.</p>
+            <div class="grid grid-cols-2 gap-2"><button onclick="comprobarActualizacion()" class="py-3 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-wider text-gray-300"><i class="fas fa-rotate-right"></i> Verificar</button><button id="btn-aplicar-update" onclick="aplicarActualizacion()" disabled class="py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black uppercase tracking-wider text-emerald-400 opacity-40">Actualizar</button></div>
+            <button onclick="mostrarInstalacionPWA()" class="py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-[9px] font-black uppercase tracking-wider text-cyan-400"><i class="fas fa-mobile-screen-button"></i> Instalar app en el teléfono</button>
         </div>
 
     </div>

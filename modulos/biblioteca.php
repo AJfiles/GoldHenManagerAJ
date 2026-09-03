@@ -258,9 +258,6 @@
                     <h2 id="panel-game-title" class="text-[18px] font-black uppercase text-white leading-tight drop-shadow-md">---</h2>
                     <span id="panel-game-cusa" class="text-[13px] font-mono font-black text-cyan-400 tracking-widest mt-1.5 uppercase">---</span>
                     <p id="panel-game-version" class="text-[12px] font-medium text-gray-300 uppercase tracking-widest mt-1">---</p>
-                    <div id="panel-game-size" class="text-[12px] font-medium text-gray-300 uppercase tracking-widest mt-2 flex items-center gap-1.5">
-                        <i class="fa-solid fa-server text-emerald-400"></i> ---
-                    </div>
                 </div>
             </div>
 
