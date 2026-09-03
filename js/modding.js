@@ -316,6 +316,7 @@ function renderizarGaleriaModding() {
         const div = document.createElement('div');
         div.className = "w-[80px] h-[80px] shrink-0 rounded-2xl border border-white/5 cursor-pointer active:scale-90 transition-all shadow-md bg-cover bg-center skeleton-modding hover:border-purple-500/50";
         div.setAttribute('data-src', img.full_url);
+        div.innerHTML = `<div class="w-full h-full flex items-end justify-end gap-1 p-1 opacity-0 hover:opacity-100 transition-opacity bg-black/35 rounded-2xl"><button title="Descargar" class="w-6 h-6 rounded-full bg-black/70 text-white text-[9px]" onclick="event.stopPropagation(); descargarImagenModding('${img.full_url}', '${img.name}')"><i class="fa-solid fa-download"></i></button><button title="Eliminar" class="w-6 h-6 rounded-full bg-red-600/80 text-white text-[9px]" onclick="event.stopPropagation(); eliminarImagenModding('${img.name}', '${moddingTabActiva}')"><i class="fa-solid fa-trash"></i></button></div>`;
         div.onclick = () => {
             moddingSourceType = 'server';
             moddingServerPath = img.path_relativo;
@@ -326,6 +327,32 @@ function renderizarGaleriaModding() {
         observerModding.observe(div);
     });
 }
+
+window.descargarImagenModding = function(url, nombre) {
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = nombre || 'portada.png';
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+};
+
+window.eliminarImagenModding = async function(nombre, tipo) {
+    if (!confirm(`¿Eliminar ${nombre}?`)) return;
+    try {
+        const fd = new FormData();
+        fd.append('action', 'eliminar_imagen');
+        fd.append('tipo', tipo);
+        fd.append('nombre', nombre);
+        const respuesta = await fetch('api/modding_api.php', { method: 'POST', body: fd });
+        const data = await respuesta.json();
+        if (data.status !== 'success') throw new Error(data.message || 'No se pudo eliminar la imagen.');
+        await cargarGaleriaDesdeServidor(tipo === 'backups' ? 'listar_backups' : 'listar_local');
+        if (typeof ps5Notification === 'function') ps5Notification('ELIMINADO', 'Imagen retirada de la galería.', 'fa-trash');
+    } catch (error) {
+        if (typeof ps5Notification === 'function') ps5Notification('ERROR', error.message, 'fa-triangle-exclamation');
+    }
+};
 
 function procesarImagenConLienzo(srcUrl) {
     return new Promise((resolve, reject) => {

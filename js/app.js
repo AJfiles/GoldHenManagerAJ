@@ -56,19 +56,12 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function aplicarPreferenciasDeAccesibilidad() {
-    const tema = localStorage.getItem('cfg_tema') || 'auto';
     const fuente = Math.max(85, Math.min(130, parseInt(localStorage.getItem('cfg_tamano_texto') || '100', 10)));
-    const temaResuelto = tema === 'auto'
-        ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
-        : tema;
-
-    document.documentElement.dataset.theme = temaResuelto;
+    document.documentElement.dataset.theme = 'dark';
     document.documentElement.style.fontSize = `${fuente}%`;
 
-    const selectorTema = document.getElementById('cfg-tema');
     const selectorFuente = document.getElementById('cfg-tamano-texto');
     const etiquetaFuente = document.getElementById('lbl-tamano-texto');
-    if (selectorTema) selectorTema.value = tema;
     if (selectorFuente) selectorFuente.value = fuente;
     if (etiquetaFuente) etiquetaFuente.innerText = `${fuente}%`;
 }
@@ -583,12 +576,12 @@ window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
 
-    if (!document.getElementById('btn-pwa-install')) {
+    if (!document.getElementById('btn-pwa-install') && !sessionStorage.getItem('pwa_install_prompt_seen')) {
         const btn = document.createElement('button');
         btn.id = 'btn-pwa-install';
         
-        btn.className = "fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[9999] bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black tracking-widest text-[11px] uppercase px-6 py-4 rounded-full shadow-[0_10px_30px_rgba(6,182,212,0.6)] flex items-center gap-3 animate-bounce active:scale-95 transition-all";
-        btn.innerHTML = `<i class="fa-solid fa-download text-lg"></i> Instalar App en el Celular`;
+        btn.className = "fixed top-4 left-4 z-[9999] max-w-[280px] bg-[#0d1321]/95 backdrop-blur-md border border-cyan-500/30 text-white text-left px-4 py-3 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.45)] flex items-center gap-3 active:scale-95 transition-all";
+        btn.innerHTML = `<i class="fa-solid fa-mobile-screen-button text-cyan-400 text-lg"></i><span><b class="block text-[10px] tracking-widest uppercase">¿Instalar la app?</b><span class="text-[9px] text-gray-400">Acceso rápido desde tu pantalla de inicio</span></span>`;
         
         btn.onclick = async () => {
             btn.style.display = 'none';
@@ -601,7 +594,13 @@ window.addEventListener('beforeinstallprompt', (e) => {
             }
             deferredPrompt = null;
         };
-        document.body.appendChild(btn);
+        setTimeout(() => {
+            if (deferredPrompt) {
+                sessionStorage.setItem('pwa_install_prompt_seen', 'true');
+                document.body.appendChild(btn);
+                setTimeout(() => btn.remove(), 9000);
+            }
+        }, 12000);
     }
 });
 

@@ -260,6 +260,15 @@ async function forzarSincronizacionManual() {
 function aborpZELkorMwhkkpShF5PvT8YnqRCupnLTNG() { if (bibliotecaAbortController) { bibliotecaAbortController.abort(); } closeSincronizacionModal(); }
 function closeSincronizacionModal() { const modal = document.getElementById('modal-sincronizacion-progreso'); if (modal) { modal.classList.remove('opacity-100'); setTimeout(()=>modal.classList.add('hidden'), 300); } }
 
+window.cerrarFichaJuego = function() {
+    const modal = document.getElementById('sheet-detalles-juego');
+    const contenido = document.getElementById('sheet-content-card');
+    if (!modal) return;
+    modal.classList.remove('opacity-100');
+    if (contenido) contenido.classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+};
+
 function aplicarOrdenamientoInterno() {
     if (criterioOrdenGlobal === 'nombre_az') {
         listadoJuegos.sort((a, b) => a.nombre.localeCompare(b.nombre));
