@@ -83,4 +83,21 @@ if ($action === 'listar_backups' || $action === 'listar_local') {
     echo json_encode(['status' => 'success', 'data' => $resultado]);
     exit;
 }
+
+if ($action === 'eliminar_imagen') {
+    $tipo = $_POST['tipo'] ?? '';
+    $nombre = basename($_POST['nombre'] ?? '');
+    $dir = $tipo === 'backups' ? $backup_dir : ($tipo === 'local' ? $iconos_dir : '');
+    if (!$dir || !$nombre || !preg_match('/\.(png|jpe?g)$/i', $nombre)) {
+        echo json_encode(['status' => 'error', 'message' => 'Archivo no válido.']);
+        exit;
+    }
+    $archivo = $dir . '/' . $nombre;
+    if (!is_file($archivo) || !@unlink($archivo)) {
+        echo json_encode(['status' => 'error', 'message' => 'No se pudo eliminar el archivo.']);
+        exit;
+    }
+    echo json_encode(['status' => 'success']);
+    exit;
+}
 ?>
