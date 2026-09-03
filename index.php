@@ -164,7 +164,7 @@ header('X-Author: ' . $firma);
             <div onclick="abrirModulo('payloads')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-amber-900/30 text-amber-400 flex items-center justify-center mb-3 border border-amber-500/10"><i class="fa-solid fa-rocket text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Payloads</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">BinLoader 9090</span></div>
         </div>
 
-        <div class="w-full text-center pt-2 pb-1 shrink-0 opacity-40 text-[9px] tracking-widest font-mono uppercase">SANTIAGO DEL ESTERO • ARGENTINA</div>
+        <div class="w-full text-center pt-2 pb-1 shrink-0 text-[9px] tracking-widest font-mono uppercase text-cyan-300/70">GoldHen Manager AJ <span class="text-gray-500">· Base de SeBaS</span></div>
     </div>
 
     <div id="modal-radar-emergente" class="fixed inset-0 z-[150] bg-black/90 backdrop-blur-sm hidden flex items-center justify-center p-6 opacity-0 transition-opacity duration-300">

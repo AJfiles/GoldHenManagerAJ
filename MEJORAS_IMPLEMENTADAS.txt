@@ -150,6 +150,17 @@ Actualización 3.2
   --ff-only y un botón de instalación PWA. Si hay cambios locales, no los
   sobrescribe y muestra el error para resolverlo desde Termux.
 - Identidad visual y documentación actualizadas a versión 3.2.
+- Plugins permite seleccionar visualmente un juego/app, muestra su icono y
+  versión, ordena primero los PRX activos y destaca recomendaciones conocidas
+  para YouTube, GTA V, juegos y entorno general. También exporta e importa
+  `plugins.ini` con copia previa y validación estricta de secciones/rutas.
+- El Explorador FTP incorpora búsqueda por nombre dentro de la carpeta actual
+  y un árbol ligero de rutas visitadas para volver rápidamente a carpetas ya
+  exploradas, sin escanear de forma recursiva toda la consola.
+- Las notificaciones del navegador se solicitan tras el primer toque del
+  usuario y avisan, si se conceden, al detectar la PS4 o acabar una cola FTP.
+- `COMPARATIVA_BASE_V3.md` documenta las diferencias verificadas frente a la
+  base original analizada en modo lectura.
 
 Módulos avanzados de GoldHEN 3.2
 -------------------------------
