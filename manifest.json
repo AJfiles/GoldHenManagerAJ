@@ -1,7 +1,7 @@
 {
   "id": "/index.php",
-  "name": "GoldHen Manager V3.0",
-  "short_name": "GoldHen V3",
+  "name": "GoldHen Manager AJ 3.1",
+  "short_name": "GoldHen AJ",
   "description": "Gestor Autónomo de PS4 y Modding",
   "start_url": "/index.php",
   "scope": "/",

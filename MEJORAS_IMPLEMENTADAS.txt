@@ -102,3 +102,19 @@ Limitación de validación local
 ------------------------------
 El entorno de edición no dispone de PHP, Node.js ni una PS4/GoldHEN accesible.
 La validación final debe hacerse con la prueba anterior en Termux.
+
+Actualización visual y de instalación 3.1
+-----------------------------------------
+- goldhen.sh ahora usa un spinner nativo y clonado superficial para reducir
+  salida y tiempo de descarga. Si un paso falla, muestra las últimas líneas
+  del registro de instalación.
+- js/app.js muestra la invitación PWA como una pregunta discreta arriba a la
+  izquierda, doce segundos después de cargar y sólo una vez por sesión.
+- modulos/biblioteca.php y js/biblioteca.js incluyen una X visible para cerrar
+  la ficha de juego.
+- modulos/modding.php, js/modding.js y api/modding_api.php permiten descargar
+  o eliminar imágenes de la galería sin impedir seleccionarlas para inyección.
+- modulos/mods.php limita el selector a Minecraft y Resident Evil, los únicos
+  motores implementados actualmente; evita el panel confuso de motor ausente.
+- modulos/ajustes.php conserva sólo el tamaño de texto y eleva los menús de
+  fondos/intros para que se superpongan correctamente.

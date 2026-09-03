@@ -12,14 +12,35 @@ ROJO='\033[1;31m'
 BLANCO='\033[1;37m'
 NC='\033[0m'
 
+spinner() {
+    local pid=$1 message=$2 spin='⣾⣽⣻⢿⡿⣟⣯⣷' i=0
+    while kill -0 "$pid" 2>/dev/null; do
+        i=$(( (i + 1) % 8 ))
+        printf "\r\033[K${CYAN}%s${NC} %s" "${spin:$i:1}" "$message"
+        sleep 0.1
+    done
+}
+
+ejecutar_paso() {
+    local mensaje=$1
+    shift
+    "$@" >"$HOME/.goldhen-install.log" 2>&1 &
+    local pid=$!
+    spinner "$pid" "$mensaje"
+    if wait "$pid"; then
+        printf "\r\033[K${VERDE}✓${NC} %s\n" "$mensaje"
+    else
+        printf "\n${ROJO}Error durante: %s${NC}\n" "$mensaje"
+        tail -n 20 "$HOME/.goldhen-install.log"
+        exit 1
+    fi
+}
+
 clear
-echo -e "${VERDE}  ____      _    _  _               ${NC}"
-echo -e "${VERDE} / ___| ___| |__| || |___ _ __      ${NC}"
-echo -e "${VERDE}| |  _ / _ \ |/ _\` | '__/ _ \ '_ \  ${NC}"
-echo -e "${VERDE}| |_| |  __/ | (_| | | |  __/ | | | ${NC}"
-echo -e "${VERDE} \____|\___|_|\__,_|_|  \___|_| |_| ${NC}"
-echo -e "${CYAN}        M A N A G E R   V 3 . 0     ${NC}"
-echo -e "${BLANCO}             [ By SeBaS ]           ${NC}\n"
+echo -e "${CYAN}╭────────────────────────────────────╮${NC}"
+echo -e "${CYAN}│${NC}      ${BLANCO}GOLDHEN MANAGER AJ${NC} ${CYAN}v3.1      │${NC}"
+echo -e "${CYAN}│${NC}       ${AMARILLO}PS4 • Termux • Local FTP${NC}       ${CYAN}│${NC}"
+echo -e "${CYAN}╰────────────────────────────────────╯${NC}\n"
 
 # Verificar si es instalación o actualización
 REPO_DIR="$HOME/GoldHenManagerAJ"
@@ -27,26 +48,22 @@ REPO_DIR="$HOME/GoldHenManagerAJ"
 if [ -d "$REPO_DIR" ]; then
     echo -e "${AMARILLO}[*] Actualización detectada. Descargando nuevos módulos...${NC}"
     cd "$REPO_DIR"
-    git fetch --all
-    git reset --hard origin/main
+    ejecutar_paso "Buscando actualizaciones..." git fetch --all
+    ejecutar_paso "Aplicando actualización..." git reset --hard origin/main
 else
     echo -e "${AMARILLO}[*] Instalación desde cero. Configurando entorno...${NC}"
-    echo -e "${AMARILLO}[*] Abriendo brecha en el sistema (Permisos)...${NC}"
-    echo -e "${ROJO}[!] ATENCIÓN: Toca 'PERMITIR' en tu pantalla.${NC}"
+    echo -e "${AMARILLO}Se solicitará permiso de almacenamiento una sola vez.${NC}"
     termux-setup-storage
     sleep 4
 
-    echo -e "\n${AMARILLO}[*] Inyectando dependencias (PHP, Git, API)...${NC}"
     export DEBIAN_FRONTEND=noninteractive
-    pkg update -y -o Dpkg::Options::="--force-confold"
-    pkg install -y -o Dpkg::Options::="--force-confold" git php termux-api
-    pkg install -y php-zip
+    ejecutar_paso "Actualizando paquetes..." pkg update -y -o Dpkg::Options::="--force-confold"
+    ejecutar_paso "Instalando dependencias..." pkg install -y -o Dpkg::Options::="--force-confold" git php termux-api php-zip
 
-    echo -e "\n${AMARILLO}[*] Creando estructura de datos en Android...${NC}"
+    echo -e "${CYAN}• Preparando almacenamiento...${NC}"
     mkdir -p /sdcard/GoldHenManager/user
 
-    echo -e "${AMARILLO}[*] Clonando repositorio maestro...${NC}"
-    git clone https://github.com/AJfiles/GoldHenManagerAJ.git "$REPO_DIR"
+    ejecutar_paso "Descargando GoldHen Manager AJ..." git clone --depth 1 https://github.com/AJfiles/GoldHenManagerAJ.git "$REPO_DIR"
 fi
 
 # Configuración común (symlink y .bashrc)
@@ -68,9 +85,7 @@ imprimir_logo() {
     echo -e "${VERDE} / ___| ___| |__| || |___ _ __      ${NC}"
     echo -e "${VERDE}| |  _ / _ \ |/ _\` | '__/ _ \ '_ \  ${NC}"
     echo -e "${VERDE}| |_| |  __/ | (_| | | |  __/ | | | ${NC}"
-    echo -e "${VERDE} \____|\___|_|\__,_|_|  \___|_| |_| ${NC}"
-    echo -e "${CYAN}        M A N A G E R   V 3 . 0     ${NC}"
-    echo -e "${BLANCO}             [ By SeBaS ]           ${NC}\n"
+    echo -e "${CYAN}        GOLDHEN MANAGER AJ v3.1      ${NC}\n"
 }
 
 pkill -f "php -S" > /dev/null 2>&1
@@ -118,7 +133,5 @@ if [ -d "$APP_DIR" ]; then
 fi
 EOF
 
-echo -e "\n${VERDE}=================================================${NC}"
-echo -e "${VERDE}  ¡PROCESO COMPLETADO!                           ${NC}"
-echo -e "${VERDE}=================================================${NC}"
-echo -e "${CYAN}Cierra Termux por completo y vuélvelo a abrir para ver la magia.${NC}"
+echo -e "\n${VERDE}✓ Instalación completada.${NC}"
+echo -e "${CYAN}Cierra y vuelve a abrir Termux para iniciar GoldHen Manager AJ.${NC}"
