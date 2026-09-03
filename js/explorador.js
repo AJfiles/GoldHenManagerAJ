@@ -7,6 +7,8 @@
 
 let exploradorRutaActual = '/';
 let ftpCurrentItems = [];
+let ftpCurrentFolders = [], ftpCurrentFiles = [];
+let ftpTreeVisited = new Set(['/']);
 
 // 🔥 NUEVO CLIPBOARD MÚLTIPLE
 let ftpClipboard = { type: null, sourcePath: null, isDir: false, isMulti: false, sourcePaths: [] };
@@ -110,12 +112,16 @@ async function cargarRutaFtp(rutaDestino, esNavegacionAtras = false) {
                 history.pushState({ page: 'ftp_folder', ruta: exploradorRutaActual }, "Carpeta FTP", "");
             }
 
-            ftpCurrentItems = [...data.data.carpetas, ...data.data.archivos];
+            ftpCurrentFolders = data.data.carpetas || []; ftpCurrentFiles = data.data.archivos || [];
+            ftpCurrentItems = [...ftpCurrentFolders, ...ftpCurrentFiles];
+            ftpCurrentFolders.forEach(folder => ftpTreeVisited.add(normalizePath(exploradorRutaActual + '/' + folder.name)));
+            const search = document.getElementById('ftp-search-current'); if (search) search.value = '';
 
             if (ftpClipboard.type) { document.getElementById('btn-paste-top').classList.remove('hidden'); }
             else { document.getElementById('btn-paste-top').classList.add('hidden'); }
 
-            renderizarListaExplorador(data.data.carpetas, data.data.archivos);
+            renderizarListaExplorador(ftpCurrentFolders, ftpCurrentFiles);
+            renderizarArbolFtp();
         } else {
             window.ps5Notification("ERROR", data.message, "fas fa-exclamation-triangle");
             container.innerHTML = `<div class="w-full p-4 text-center text-[10px] font-mono text-red-400 uppercase">Error al leer</div>`;
@@ -126,6 +132,20 @@ async function cargarRutaFtp(rutaDestino, esNavegacionAtras = false) {
         loader.classList.add('hidden'); loader.classList.remove('flex');
     }
 }
+
+function filtrarExploradorActual() {
+    const term = (document.getElementById('ftp-search-current')?.value || '').trim().toLowerCase();
+    const match = item => !term || item.name.toLowerCase().includes(term);
+    renderizarListaExplorador(ftpCurrentFolders.filter(match), ftpCurrentFiles.filter(match));
+}
+
+function renderizarArbolFtp() {
+    const panel = document.getElementById('ftp-tree-panel'); if (!panel) return;
+    const rutas = [...ftpTreeVisited].sort((a,b)=>a.localeCompare(b));
+    panel.innerHTML = rutas.map(ruta => { const nivel=Math.max(0,ruta.split('/').filter(Boolean).length-1); const nombre=ruta==='/'?'Raíz /':ruta.split('/').filter(Boolean).pop(); return `<button class="block w-full text-left truncate py-1 text-[9px] ${ruta===exploradorRutaActual?'text-violet-300 font-bold':'text-gray-400'}" style="padding-left:${8+nivel*14}px" onclick="cargarRutaFtp('${ruta}',true)"><i class="fas fa-folder mr-1"></i>${nombre}</button>`; }).join('');
+}
+
+function toggleArbolFtp() { const panel=document.getElementById('ftp-tree-panel'); if(!panel)return; panel.classList.toggle('hidden'); if(!panel.classList.contains('hidden'))renderizarArbolFtp(); }
 
 function renderizarListaExplorador(carpetas, archivos) {
     const container = document.getElementById('ftp-list-container');

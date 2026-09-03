@@ -26,6 +26,15 @@ let globalAudioCtx = null;
 let radarTimeoutId = null; // Para controlar el cierre automático del radar
 let pwaInstallPrompt = null;
 
+function notificacionNavegador(titulo, cuerpo) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try { new Notification(titulo, { body: cuerpo, icon: 'js/icon-192.png', tag: 'goldhen-manager-aj' }); } catch (_) {}
+}
+window.solicitarNotificacionesNavegador = function() {
+    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+};
+document.addEventListener('pointerdown', () => window.solicitarNotificacionesNavegador(), { once: true, passive: true });
+
 const introNamesMap = {
     'none': 'Sin Intro (Rápido)',
     'intro-ps4': 'PlayStation 4',
@@ -247,6 +256,7 @@ function configurarEventosDashboard() {
             if (validarEstructuraIP(nuevaIP)) {
                 globalAppConfig.ipConsola = nuevaIP;
                 localStorage.setItem('sebas_ip_final_libre', nuevaIP);
+                notificacionNavegador('PS4 detectada', `Conectada en ${nuevaIP}.`);
                 sysNotification("AJUSTES", "Dirección IP actualizada.", "fa-network-wired");
                 verificarRadarInicial();
             } else {

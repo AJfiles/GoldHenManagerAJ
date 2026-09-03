@@ -217,6 +217,7 @@ function abortarTransferenciaActiva() {
 function procesarSiguienteEnLaCola() {
     if (colaDeArchivos.length === 0) {
         window.ps5Notification("FTP MULTIPLE", "Todos los archivos procesados.", "fa-check-double");
+        if (typeof notificacionNavegador === 'function') notificacionNavegador('Transferencia terminada', 'Todos los archivos se enviaron a la PS4.');
         document.getElementById('transfer-queue-status').innerText = "Cola Finalizada";
         document.getElementById('transfer-filename').innerText = "Transferencia Exitosa";
         resetTransferUI(true);
