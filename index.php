@@ -84,6 +84,17 @@ header('X-Author: ' . $firma);
         .hide-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+        html[data-theme="light"] { background: #e8edf5; color: #101827; }
+        html[data-theme="light"] body { color: #101827; }
+        html[data-theme="light"] .app-layer,
+        html[data-theme="light"] .glass-premium,
+        html[data-theme="light"] .app-layer .bg-\[\#0a0f1a\],
+        html[data-theme="light"] .app-layer .bg-\[\#02040a\] { background-color: rgba(237, 242, 247, .94) !important; }
+        html[data-theme="light"] .app-layer .text-white { color: #101827 !important; }
+        html[data-theme="light"] .app-layer .text-gray-200,
+        html[data-theme="light"] .app-layer .text-gray-300,
+        html[data-theme="light"] .app-layer .text-gray-400 { color: #4b5563 !important; }
     </style>
 </head>
 <body class="text-white select-none hide-scrollbar bg-radial-glow">

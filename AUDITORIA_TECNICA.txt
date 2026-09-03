@@ -1,0 +1,88 @@
+AUDITORÍA TÉCNICA ESTÁTICA - GOLDHEN MANAGER AJ
+================================================
+
+Alcance y criterio
+------------------
+Se revisó la estructura, las inclusiones, las rutas locales y las llamadas
+entre HTML, JavaScript y PHP de todos los archivos fuente presentes. Esta es
+una auditoría estática: este equipo no contiene PHP ni Node.js y no tiene una
+PS4/GoldHEN accesible, por lo que la sintaxis de ejecución y el FTP deben
+confirmarse siguiendo GUIA_DE_USO.md.
+
+Raíz
+----
+- index.php: punto de entrada; carga módulos y controladores en orden. Añade
+  estilos de tema claro y conserva el modo oscuro original. Probar apertura,
+  navegación de módulos y carga de recursos CDN.
+- goldhen.sh: instala dependencias, clona/inicia GoldHenManagerAJ y crea el
+  enlace user. Probar exclusivamente en Termux; requiere permiso de storage.
+- sw.js: Service Worker de red directa, sin sintaxis duplicada. Probar
+  recargando la PWA después de limpiar versiones antiguas del Service Worker.
+- manifest.json: metadatos e iconos PWA. Probar instalación desde Chrome.
+- MEJORAS_IMPLEMENTADAS.txt: registro de cambios previos.
+- README.md, GUIA_DE_USO.md y este archivo: documentación, no ejecutables.
+
+APIs PHP
+--------
+- api/afr_api.php: backup, instalación de plugins, bóveda AFR y subida
+  reanudable. Depende de FTP y de la estructura del juego compatible.
+- api/cache_helpers.php: limpia cada 24 h los archivos de caché con más de
+  30 días; conserva .nomedia. No borra contenido de la consola.
+- api/covers_db.php: descarga portadas HD y las deja en user/cache/portadas_hd.
+  Depende de servicios externos y de conectividad.
+- api/dlc_update_biblioteca.php: explora DLC/updates y permite borrado bajo
+  rutas patch/addcont. Requiere máxima precaución antes de borrar.
+- api/explorador_api.php: lista, sube, crea, borra, mueve, copia y descarga
+  por FTP. Las operaciones destructivas requieren rutas verificadas.
+- api/inyector_portadas.php: valida MIME e inyecta portadas en rutas PS4.
+- api/library_biblioteca.php: escaneo de títulos, SFO, iconos y categorías.
+- api/modding_api.php: backups y galería de portadas locales.
+- api/mods_api.php: bóveda Minecraft, chunks e índice JSON de archivos.
+- api/ps4_screenshots_api.php: escanea capturas y usa caché local.
+- api/radar_api.php: busca el puerto FTP en la subred local.
+- api/scanner.php: verifica una IP/puerto FTP.
+- api/stream_image_api.php: descarga y cachea una captura bajo demanda.
+- api/tech_info_biblioteca.php: calcula tamaño y ubicación de juegos.
+- api/transferir_api.php: RPI, selección de directorios y subida FTP.
+
+Frontend JavaScript
+-------------------
+- js/app.js: inicio, conexión, alertas, audio, accesibilidad y vibración.
+  Mantiene el alias ps5Notification para módulos heredados.
+- js/afr_mods.js: interfaz AFR, categorías, grupos, subida y conmutación.
+- js/biblioteca.js: caché, sincronización, filtros, vistas y modal de juego.
+- js/explorador.js: navegación, selección múltiple, acciones y subidas FTP.
+- js/modding.js: portada manual/inteligente y galería local.
+- js/mods.js: ensamblador Minecraft, envío de chunks e index.json.
+- js/transferir.js: cola FTP, colisiones, RPI y métricas de transferencia.
+- js/icon-192.png y js/icon-512.png: iconos estáticos de la PWA.
+
+Módulos HTML/PHP
+----------------
+- modulos/afr_mods.php: panel de plugins AFR y selector ZIP oculto.
+- modulos/ajustes.php: audio, notificaciones, fondos, accesibilidad.
+- modulos/biblioteca.php: vistas, filtros, paneles y progreso de biblioteca.
+- modulos/explorador.php: listado, FAB, menús contextuales y modales FTP.
+- modulos/intros.php: animaciones de arranque.
+- modulos/modding.php: selector, galería e inyección de portadas.
+- modulos/mods.php: selector de juego y entornos Minecraft/AFR.
+- modulos/transferir.php: RPI, FTP, cola y métricas visuales.
+- modulos/wallpapers.php: fondos animados configurables.
+
+Hallazgos y mejoras futuras
+---------------------------
+- Posible mejora: autenticación opcional por PIN para redes compartidas. Debe
+  implementarse como middleware y pantalla de inicio, nunca activarse sin PIN.
+- Posible mejora: ZIP de carpetas, editor de texto y lightbox del Explorador.
+  Requieren límites de tamaño, rutas permitidas y pruebas en FTP real.
+- Posible mejora: perfiles de mods y versionado. Requiere un formato de datos
+  compatible por juego y migración de la bóveda actual.
+- No viable con el FTP actual: CPU/GPU/temperatura de PS4.
+- No fiable: transferencias FTP largas en segundo plano de una PWA suspendida.
+
+Resultado esperado de la prueba
+--------------------------------
+goldhen.sh debe dejar un servidor PHP local en el puerto 8080. Al abrir la
+interfaz, las operaciones sin consola deben fallar con mensajes controlados;
+con una PS4 GoldHEN compatible deben poder listar, transferir y modificar
+solamente las rutas autorizadas por cada módulo.

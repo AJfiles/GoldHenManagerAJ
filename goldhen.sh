@@ -22,7 +22,7 @@ echo -e "${CYAN}        M A N A G E R   V 3 . 0     ${NC}"
 echo -e "${BLANCO}             [ By SeBaS ]           ${NC}\n"
 
 # Verificar si es instalación o actualización
-REPO_DIR="$HOME/GoldHenManager-v3"
+REPO_DIR="$HOME/GoldHenManagerAJ"
 
 if [ -d "$REPO_DIR" ]; then
     echo -e "${AMARILLO}[*] Actualización detectada. Descargando nuevos módulos...${NC}"
@@ -40,12 +40,13 @@ else
     export DEBIAN_FRONTEND=noninteractive
     pkg update -y -o Dpkg::Options::="--force-confold"
     pkg install -y -o Dpkg::Options::="--force-confold" git php termux-api
+    pkg install -y php-zip
 
     echo -e "\n${AMARILLO}[*] Creando estructura de datos en Android...${NC}"
     mkdir -p /sdcard/GoldHenManager/user
 
     echo -e "${AMARILLO}[*] Clonando repositorio maestro...${NC}"
-    git clone https://github.com/AJfiles/GoldHenManager-v3.git "$REPO_DIR"
+    git clone https://github.com/AJfiles/GoldHenManagerAJ.git "$REPO_DIR"
 fi
 
 # Configuración común (symlink y .bashrc)
@@ -74,7 +75,7 @@ imprimir_logo() {
 
 pkill -f "php -S" > /dev/null 2>&1
 
-APP_DIR="$HOME/GoldHenManager-v3"
+APP_DIR="$HOME/GoldHenManagerAJ"
 PUERTO=8080
 
 if [ -d "$APP_DIR" ]; then

@@ -1,0 +1,104 @@
+GOLDHEN MANAGER AJ - CAMBIOS Y PRUEBAS
+========================================
+
+Objetivo
+--------
+Este documento registra los cambios aplicados y el resultado esperado al
+instalar o actualizar el proyecto mediante goldhen.sh en Termux.
+
+Instalación en Termux
+---------------------
+- goldhen.sh usa https://github.com/AJfiles/GoldHenManagerAJ.git.
+- El proyecto se clona y ejecuta desde $HOME/GoldHenManagerAJ.
+- Se instala php-zip para las funciones ZIP del servidor PHP.
+- El directorio user se enlaza a /sdcard/GoldHenManager/user.
+
+Archivos modificados
+--------------------
+- sw.js
+  Service Worker reducido a red directa. Evita el código duplicado y los
+  errores de sintaxis anteriores.
+
+- goldhen.sh
+  Ruta de clonación y de arranque unificadas en GoldHenManagerAJ. Incluye
+  php-zip para ZipArchive.
+
+- modulos/afr_mods.php y js/afr_mods.js
+  El botón de instalación de plugins AFR abre el selector oculto
+  input-install-afr-zip. El input acepta ZIP y llama a la función de subida.
+  El identificador del botón coincide con la lógica de desbloqueo posterior
+  al backup.
+
+- api/covers_db.php
+  La caché de portadas HD se guarda en user/cache/portadas_hd y la respuesta
+  devuelve la URL pública coherente con esa carpeta.
+
+- api/library_biblioteca.php, api/modding_api.php,
+  api/ps4_screenshots_api.php, api/stream_image_api.php y api/covers_db.php
+  Usan rutas basadas en __DIR__ y ejecutan mantenimiento diario. Los archivos
+  de caché sin uso durante más de 30 días se eliminan; .nomedia se conserva.
+
+- api/cache_helpers.php
+  Nueva utilidad común para la limpieza segura y periódica de cachés.
+
+- js/app.js, modulos/ajustes.php e index.php
+  Se añaden preferencias persistentes de tema oscuro, claro o automático y
+  tamaño de letra entre 85% y 130%. También hay vibración breve al mantener
+  pulsados botones y tarjetas en dispositivos compatibles.
+
+- js/biblioteca.js
+  El modal de sincronización informa de las etapas reales: conexión,
+  lectura de títulos, descarga de iconos/metadatos, escritura de caché y
+  finalización.
+
+- js/transferir.js y modulos/transferir.php
+  La transferencia calcula velocidad media real usando el tiempo transcurrido
+  desde el inicio del archivo. La interfaz muestra velocidad, tiempo restante
+  y tiempo total transcurrido.
+
+- js/mods.js y api/mods_api.php
+  La subida de mods de Minecraft genera index.json con file_registry al
+  finalizar. Los nombres de campos del frontend coinciden con la API para
+  que activar y desactivar utilice el registro correcto.
+
+- js/modding.js y js/app.js
+  Se elimina una llamada inexistente a renderizarBiblioteca y se expone el
+  alias global ps5Notification.
+
+Archivos eliminados
+-------------------
+- instalar.sh
+- actualizar.sh
+- modulos/±_
+
+Funciones no implementadas a propósito
+--------------------------------------
+- Transferencias FTP en segundo plano: los Service Workers no pueden mantener
+  de forma fiable subidas multipart largas ni conexiones FTP cuando Android
+  suspende la PWA. Simularlo podría corromper archivos.
+- Monitor de CPU/GPU/temperatura: el FTP de GoldHEN no ofrece esos datos. Hace
+  falta instalar y definir una API de homebrew compatible.
+- Gestor de saves, perfiles genéricos de mods, editor FTP y ZIP de carpetas:
+  requieren definir rutas concretas, permisos y casos de recuperación con una
+  PS4 real; no se activan sin esa validación para no sobrescribir datos.
+- PIN/token global: no se habilita sin que el propietario elija un PIN y un
+  flujo de inicio de sesión. Activarlo sin interfaz bloquearía las APIs.
+
+Prueba recomendada
+------------------
+1. En Termux ejecuta: bash goldhen.sh
+2. Cierra y vuelve a abrir Termux para iniciar el servidor local.
+3. Abre http://localhost:8080/index.php.
+4. Comprueba en Ajustes el tema y el tamaño de texto; mantén pulsado un botón
+   en Android para verificar la vibración.
+5. Sincroniza la Biblioteca y confirma que los mensajes de progreso cambian
+   por cada fase.
+6. Realiza una transferencia pequeña y verifica velocidad media, restante y
+   tiempo transcurrido.
+7. En Game Mods, tras crear el backup AFR, usa Instalar Plugins AFR y elige
+   un archivo ZIP.
+
+Limitación de validación local
+------------------------------
+El entorno de edición no dispone de PHP, Node.js ni una PS4/GoldHEN accesible.
+La validación final debe hacerse con la prueba anterior en Termux.
