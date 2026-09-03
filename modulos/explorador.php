@@ -42,7 +42,10 @@
             <button id="btn-paste-top" onclick="ejecutarPegado()" class="hidden ml-2 w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 active:scale-90 shrink-0">
                 <i class="fas fa-paste"></i>
             </button>
+            <button onclick="toggleArbolFtp()" class="ml-2 w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center text-violet-300 active:scale-90 shrink-0" title="Árbol de carpetas"><i class="fas fa-sitemap"></i></button>
         </div>
+        <div class="mt-2 flex items-center gap-2 rounded-xl bg-[#0a0f1a] border border-white/10 px-3"><i class="fas fa-magnifying-glass text-gray-500 text-[10px]"></i><input id="ftp-search-current" oninput="filtrarExploradorActual()" placeholder="Buscar en esta carpeta..." class="w-full bg-transparent py-2.5 text-[10px] text-white outline-none"></div>
+        <div id="ftp-tree-panel" class="hidden mt-2 max-h-36 overflow-y-auto rounded-xl bg-[#0a0f1a] border border-violet-500/20 p-2"></div>
     </div>
 
     <div id="explorador-header-multiselect" class="hidden w-full items-center justify-between z-30 shrink-0 pt-1 mb-4 bg-cyan-900/40 border border-cyan-500/40 rounded-2xl p-3 shadow-lg">
