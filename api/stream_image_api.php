@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER V2.1 🚀 - API: STREAMING Y CACHÉ DE CAPTURAS
- * DEVELOPED By SeBaS - RUTA: api/stream_image_api.php
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: api/stream_image_api.php
  * ====================================================================
  */
 error_reporting(0);

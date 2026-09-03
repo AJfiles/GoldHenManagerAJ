@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER V2.1 🚀 - API: RESPALDOS Y GALERÍA LOCAL
- * DEVELOPED By SeBaS - RUTA: api/modding_api.php
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: api/modding_api.php
  * ====================================================================
  */
 error_reporting(0);

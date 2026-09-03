@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER V3.0 🚀 - API: VERIFICADOR DE CONEXIÓN EN VIVO
- * DEVELOPED By SeBaS - RUTA: api/scanner.php
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: api/scanner.php
  * ====================================================================
  */
 error_reporting(0);

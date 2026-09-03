@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLD HEN SUITE PRO 🚀 - API DOWNLOADER DE PORTADAS PREMIUM (HD)
- * DEVELOPED By SeBaS - RUTA: api/covers_db.php
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: api/covers_db.php
  * ====================================================================
  */
 error_reporting(0);

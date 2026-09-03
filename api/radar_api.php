@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER AJ 🚀 - API: RADAR DE RED DINÁMICO Y PARALELO
- * DEVELOPED By SeBaS - Mod AJ
+ * Mantenido por AJ · Basado en proyecto original de SeBaS
  * RUTA: api/radar_api.php
  * ====================================================================
  */

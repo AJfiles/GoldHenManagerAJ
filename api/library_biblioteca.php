@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER AJ 🚀 - API CORE DE LA BIBLIOTECA
- * DEVELOPED By SeBaS - Mod AJ
+ * Mantenido por AJ · Basado en proyecto original de SeBaS
  * RUTA: api/library_biblioteca.php
  * ====================================================================
  */

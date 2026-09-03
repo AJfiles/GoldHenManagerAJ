@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER AJ 🚀 - API: INYECTOR DE PORTADAS FTP
- * DEVELOPED By SeBaS - Mod AJ
+ * Mantenido por AJ · Basado en proyecto original de SeBaS
  * RUTA: api/inyector_portadas.php
  * ====================================================================
  */

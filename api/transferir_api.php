@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER V3.0 🚀 - API: TRANSFERENCIA Y RPI
- * DEVELOPED By SeBaS - RUTA: api/transferir_api.php
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: api/transferir_api.php
  * ====================================================================
  */
 ob_start();

@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER V3.0 🚀 - API: MOTOR DEL EXPLORADOR Y DESCOMPRESIÓN
- * DEVELOPED By SeBaS - RUTA: api/explorador_api.php
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: api/explorador_api.php
  * ====================================================================
  */
 error_reporting(0);

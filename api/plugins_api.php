@@ -49,14 +49,31 @@ function parse_ini_plugins($text) {
     if (!isset($sections['default'])) $sections = ['default' => []] + $sections;
     return $sections;
 }
-function render_ini_plugins($sections) {
-    $out = "; GoldHen Manager AJ - plugins.ini\n; Reinicia GoldHEN o la consola para aplicar cambios.\n\n";
-    foreach ($sections as $section => $plugins) {
-        $out .= '[' . $section . "]\n";
-        foreach (array_values(array_unique($plugins)) as $plugin) $out .= $plugin . "\n";
-        $out .= "\n";
+/* Modifica únicamente la sección y la ruta exactas solicitadas. Así se
+   preservan comentarios, secciones desconocidas y asignaciones ajenas. */
+function actualizar_ini_plugins($text, $section, $plugin_path, $enabled) {
+    $lines = preg_split('/\R/', (string)$text);
+    $out = []; $inside = false; $found_section = false; $inserted = false;
+    foreach ($lines as $line) {
+        if (preg_match('/^\s*\[([^\]]+)\]\s*$/', $line, $m)) {
+            if ($inside && $enabled && !$inserted) { $out[] = $plugin_path; $inserted = true; }
+            $inside = strcasecmp(trim($m[1]), $section) === 0;
+            if ($inside) $found_section = true;
+            $out[] = $line;
+            continue;
+        }
+        /* Quita solo duplicados de este plugin dentro del destino elegido. */
+        if ($inside && trim($line) === $plugin_path) continue;
+        $out[] = $line;
     }
-    return $out;
+    if ($found_section) {
+        if ($enabled && !$inserted) $out[] = $plugin_path;
+    } elseif ($enabled) {
+        if (count($out) && trim(end($out)) !== '') $out[] = '';
+        $out[] = '[' . $section . ']';
+        $out[] = $plugin_path;
+    }
+    return rtrim(implode("\n", $out)) . "\n";
 }
 
 if ($action === 'list_local') {
@@ -93,13 +110,10 @@ if ($action === 'update_ini') {
     $old = ftp_get_plugins($host, $ini_path); if ($old === false) $old = '';
     $backup_dir = __DIR__ . '/../user/backups/plugins'; @mkdir($backup_dir, 0777, true);
     @file_put_contents($backup_dir . '/plugins_' . date('Ymd_His') . '.ini', $old);
-    $sections = parse_ini_plugins($old); if (!isset($sections[$section])) $sections[$section] = [];
     $path = "$remote_dir/$name";
-    $sections[$section] = array_values(array_filter($sections[$section], fn($line) => $line !== $path));
-    if ($enabled) $sections[$section][] = $path;
-    $new = render_ini_plugins($sections);
+    $new = actualizar_ini_plugins($old, $section, $path, $enabled);
     if (!ftp_put_plugins($host, $ini_path, $new)) responder_plugins(['status' => 'error', 'message' => 'No se pudo escribir plugins.ini.']);
-    responder_plugins(['status' => 'success', 'sections' => $sections]);
+    responder_plugins(['status' => 'success', 'sections' => parse_ini_plugins($new)]);
 }
 responder_plugins(['status' => 'error', 'message' => 'Acción no válida.']);
 ?>

@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER V2.1 🚀 - API: EXCAVADOR DE IMÁGENES MEDIA (SEGURO)
- * DEVELOPED By SeBaS - RUTA: api/ps4_screenshots_api.php
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: api/ps4_screenshots_api.php
  * ====================================================================
  */
 error_reporting(0);

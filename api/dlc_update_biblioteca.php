@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER AJ 🚀 - API: DETECTOR Y GESTOR DE DLCS
- * DEVELOPED By SeBaS - Mod AJ
+ * Mantenido por AJ · Basado en proyecto original de SeBaS
  * RUTA: api/dlc_update_biblioteca.php
  * ====================================================================
  */
