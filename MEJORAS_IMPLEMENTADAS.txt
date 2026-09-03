@@ -43,10 +43,10 @@ Archivos modificados
 - api/cache_helpers.php
   Nueva utilidad común para la limpieza segura y periódica de cachés.
 
-- js/app.js, modulos/ajustes.php e index.php
-  Se añaden preferencias persistentes de tema oscuro, claro o automático y
-  tamaño de letra entre 85% y 130%. También hay vibración breve al mantener
-  pulsados botones y tarjetas en dispositivos compatibles.
+- js/app.js y modulos/ajustes.php
+  Se conserva el tamaño de letra entre 85% y 130%. Los selectores de fondos
+  animados y animaciones de inicio ahora son modales independientes, por lo
+  que se muestran por delante del contenido y no quedan ocultos por el scroll.
 
 - js/biblioteca.js
   El modal de sincronización informa de las etapas reales: conexión,
@@ -66,6 +66,23 @@ Archivos modificados
 - js/modding.js y js/app.js
   Se elimina una llamada inexistente a renderizarBiblioteca y se expone el
   alias global ps5Notification.
+
+- modulos/payloads.php y js/payloads.js
+  Cada payload se presenta con una acción comprensible, su nombre real de
+  archivo y una breve explicación. Los payloads Linux siguen disponibles sin
+  cambios en su envío: deben utilizarse únicamente con una configuración Linux
+  compatible para la PS4.
+
+- modulos/plugins.php, js/plugins.js y api/plugins_api.php
+  El destino se elige visualmente entre el entorno general y los juegos/apps
+  detectados, usando sus carátulas. Los plugins instalados en PS4 aparecen
+  primero y marcan su estado activo para ese destino; después se muestran los
+  PRX del teléfono/proyecto. La edición de plugins.ini preserva comentarios,
+  secciones y líneas ajenas, y solo añade o retira la ruta exacta elegida.
+
+- modulos/intros.php
+  Todas las animaciones de inicio y sus textos dinámicos muestran la versión
+  3.2, incluida la secuencia CRT.
 
 Archivos eliminados
 -------------------
@@ -134,7 +151,7 @@ Actualización 3.2
   sobrescribe y muestra el error para resolverlo desde Termux.
 - Identidad visual y documentación actualizadas a versión 3.2.
 
-Módulos avanzados de GoldHEN 3.1
+Módulos avanzados de GoldHEN 3.2
 -------------------------------
 - api/plugins_api.php, modulos/plugins.php y js/plugins.js añaden un gestor
   de plugins PRX. Lista plugins del proyecto/usuario y de la consola, sube

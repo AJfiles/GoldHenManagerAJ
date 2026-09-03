@@ -42,7 +42,8 @@ APIs PHP
 - api/radar_api.php: busca el puerto FTP en la subred local.
 - api/scanner.php: verifica una IP/puerto FTP.
 - api/stream_image_api.php: descarga y cachea una captura bajo demanda.
-- api/tech_info_biblioteca.php: calcula tamaño y ubicación de juegos.
+- El cálculo de tamaño de juegos fue retirado: en algunas configuraciones FTP
+  quedaba indefinidamente en "CALCULANDO" y ofrecía resultados poco fiables.
 - api/transferir_api.php: RPI, selección de directorios y subida FTP.
 - api/plugins_api.php: gestor protegido de PRX y edición por secciones de
   plugins.ini; realiza backup local antes de escribir.
