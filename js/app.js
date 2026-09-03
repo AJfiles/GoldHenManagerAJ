@@ -42,6 +42,7 @@ const introNamesMap = {
 
 document.addEventListener("DOMContentLoaded", () => {
     cargarConfiguracionesLocales();
+    aplicarPreferenciasDeAccesibilidad();
     configurarEventosDashboard();
     verificarRadarInicial();
     inicializarValoresInterfazAjustes();
@@ -53,6 +54,48 @@ document.addEventListener("DOMContentLoaded", () => {
         if (wrap) wrap.style.display = 'none';
     }
 });
+
+function aplicarPreferenciasDeAccesibilidad() {
+    const tema = localStorage.getItem('cfg_tema') || 'auto';
+    const fuente = Math.max(85, Math.min(130, parseInt(localStorage.getItem('cfg_tamano_texto') || '100', 10)));
+    const temaResuelto = tema === 'auto'
+        ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+        : tema;
+
+    document.documentElement.dataset.theme = temaResuelto;
+    document.documentElement.style.fontSize = `${fuente}%`;
+
+    const selectorTema = document.getElementById('cfg-tema');
+    const selectorFuente = document.getElementById('cfg-tamano-texto');
+    const etiquetaFuente = document.getElementById('lbl-tamano-texto');
+    if (selectorTema) selectorTema.value = tema;
+    if (selectorFuente) selectorFuente.value = fuente;
+    if (etiquetaFuente) etiquetaFuente.innerText = `${fuente}%`;
+}
+
+function guardarTema(valor) {
+    localStorage.setItem('cfg_tema', valor);
+    aplicarPreferenciasDeAccesibilidad();
+}
+
+function guardarTamanoTexto(valor) {
+    localStorage.setItem('cfg_tamano_texto', valor);
+    aplicarPreferenciasDeAccesibilidad();
+}
+
+function configurarVibracionMantenida() {
+    let temporizador = null;
+    const cancelar = () => { if (temporizador) { clearTimeout(temporizador); temporizador = null; } };
+    document.addEventListener('pointerdown', (evento) => {
+        if (!evento.target.closest('button, .launcher-card, [role="button"]') || !navigator.vibrate) return;
+        temporizador = setTimeout(() => navigator.vibrate(18), 500);
+    }, { passive: true });
+    document.addEventListener('pointerup', cancelar, { passive: true });
+    document.addEventListener('pointercancel', cancelar, { passive: true });
+    document.addEventListener('pointerleave', cancelar, { passive: true });
+}
+
+configurarVibracionMantenida();
 
 function cargarConfiguracionesLocales() {
     const ipGuardada = localStorage.getItem('sebas_ip_final_libre');
@@ -569,3 +612,5 @@ window.addEventListener('appinstalled', () => {
         sysNotification("SISTEMA", "¡Instalación completada! Abre la app desde tu cajón de aplicaciones.", "fa-check");
     }
 });
+
+window.ps5Notification = sysNotification;

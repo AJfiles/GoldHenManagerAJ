@@ -69,12 +69,6 @@ function forzarActualizacionDeCacheVisual() {
         });
     }
     
-    if (typeof renderizarBiblioteca === 'function' && typeof listadoJuegos !== 'undefined') {
-        const contenedorBiblio = document.getElementById('grid-biblioteca');
-        if (contenedorBiblio) {
-            renderizarBiblioteca(listadoJuegos);
-        }
-    }
 }
 
 async function inicializarModuloModding() {

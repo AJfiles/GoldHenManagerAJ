@@ -172,7 +172,7 @@ async function forzarSincronizacionManual() {
     if (title) title.innerText = "Sincronizando";
     if (bar) bar.style.width = "0%";
     if (pctLabel) pctLabel.innerText = "0%";
-    if (bytesLabel) bytesLabel.innerText = "Iniciando escaneo...";
+    if (bytesLabel) bytesLabel.innerText = "Conectando con la consola...";
 
     if (bibliotecaAbortController) { bibliotecaAbortController.abort(); }
     bibliotecaAbortController = new AbortController();
@@ -191,6 +191,8 @@ async function forzarSincronizacionManual() {
         let jsonScan = await resScan.json();
         if (jsonScan.status !== 'success' || !jsonScan.games) { closeSincronizacionModal(); return; }
 
+        if (bytesLabel) bytesLabel.innerText = "Leyendo lista de juegos y aplicaciones...";
+
         let mapJuegos = jsonScan.games;
         let colaCUSA = Object.keys(mapJuegos);
         const total = colaCUSA.length;
@@ -204,6 +206,8 @@ async function forzarSincronizacionManual() {
             if (signal.aborted) break;
             let lote = colaCUSA.splice(0, 3);
             let promesas = [];
+
+            if (text) text.innerText = `Descargando iconos y metadatos: ${lote.join(', ')}`;
 
             lote.forEach(cusa => {
                 let f = new FormData();
@@ -222,7 +226,7 @@ async function forzarSincronizacionManual() {
             let calcPct = (procesados / total) * 100;
             if (bar) bar.style.width = calcPct + '%';
             if (pctLabel) pctLabel.innerText = Math.round(calcPct) + '%';
-            if (bytesLabel) bytesLabel.innerText = `${procesados} / ${total} Analizados`;
+            if (bytesLabel) bytesLabel.innerText = `${procesados} / ${total} títulos procesados — guardando caché local...`;
 
             let respuestasLote = await Promise.all(promesas);
             respuestasLote.forEach(res => {
@@ -238,10 +242,15 @@ async function forzarSincronizacionManual() {
             });
         }
 
-        closeSincronizacionModal();
+        if (title) title.innerText = "FINALIZANDO";
+        if (text) text.innerText = "Actualizando la biblioteca local...";
+        if (bytesLabel) bytesLabel.innerText = "Sincronización completada.";
+        if (bar) bar.style.width = "100%";
+        setTimeout(closeSincronizacionModal, 450);
         listadoJuegos.forEach(j => { if (j.tipo && !categoriasDinamicas.includes(j.tipo)) { categoriasDinamicas.push(j.tipo); } });
         actualizarInterfazFiltros();
         recompilarTodo();
+        setTimeout(closeSincronizacionModal, 450);
     } catch (e) {
         closeSincronizacionModal(); 
         levantarCacheLocalBiblioteca();

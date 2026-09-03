@@ -62,7 +62,7 @@ window.escanearBovedaMods = async function() {
             }
 
             data.data.forEach(mod => {
-                localStorage.setItem(`mod_reg_${cusa}_${mod.name}`, mod.files_registry);
+                localStorage.setItem(`mod_reg_${cusa}_${mod.name}`, JSON.stringify(mod.file_registry || []));
                 
                 let isChecked = localStorage.getItem(`mod_state_${cusa}_${mod.id}`) === 'true';
                 let checkAttr = isChecked ? 'checked' : '';
@@ -86,12 +86,12 @@ window.escanearBovedaMods = async function() {
                             </div>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
-                            <input type="checkbox" class="sr-only peer" onchange="conmutarModConsola('${mod.name}', '${mod.id}', this, ${mod.file_count})" ${checkAttr}>
+                            <input type="checkbox" class="sr-only peer" onchange="conmutarModConsola('${mod.name}', '${mod.id}', this, ${mod.total_files || 0})" ${checkAttr}>
                             <div class="w-11 h-6 bg-gray-800 border border-white/5 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white"></div>
                         </label>
                     </div>
                     <div class="mt-3 pt-2 border-t border-white/5 flex justify-between items-center text-[8px] font-mono text-gray-500 uppercase tracking-wider">
-                        <span>${mod.file_count} Archivo(s) en PS4</span>
+                        <span>${mod.total_files || 0} Archivo(s) en PS4</span>
                         <span id="ruta-dinamica-${mod.id}" class="text-indigo-400 font-bold">${rutaText}</span>
                     </div>
                 `;
@@ -256,6 +256,28 @@ window.confirmarEnsambleMod = async function() {
                 if (data.status !== 'success') throw new Error(data.message);
             }
         }
+
+        const indice = {
+            total_files: archivosEnEnsamblador.length,
+            file_registry: archivosEnEnsamblador.map(({ name, folder }) => ({ name, folder }))
+        };
+        const indiceBlob = new Blob([JSON.stringify(indice)], { type: 'application/json' });
+        const indiceFormData = new FormData();
+        indiceFormData.append('action', 'guardar_indice');
+        indiceFormData.append('host_ip', ip);
+        indiceFormData.append('cusa', cusa);
+        indiceFormData.append('mod_name', nombre);
+        indiceFormData.append('file', indiceBlob, 'index.json');
+
+        const indiceResponse = await fetch('api/mods_api.php', {
+            method: 'POST',
+            body: indiceFormData,
+            signal: moddingUploadAbortController.signal
+        });
+        const indiceData = await indiceResponse.json();
+        if (indiceData.status !== 'success') {
+            throw new Error(indiceData.message || 'No se pudo guardar el índice del mod.');
+        }
         
         cerrarEnsambladorMod();
         lanzarNotificacionMods("ÉXITO", "Archivos alojados a salvo dentro de la bóveda en PS4.", "fa-check-circle");
@@ -321,7 +343,7 @@ window.conmutarModConsola = async function(modName, modId, checkbox, countFiles)
         fd.append('cusa', cusa);
         fd.append('mod_name', modName);
         fd.append('estado', estado);
-        fd.append('archivos', registroArchivosStr);
+        fd.append('file_registry', registroArchivosStr);
 
         let res = await fetch('api/mods_api.php', { method: 'POST', body: fd });
         let rawText = await res.text();

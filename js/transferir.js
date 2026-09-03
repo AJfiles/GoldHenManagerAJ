@@ -15,6 +15,7 @@ let colaDeArchivos = [];
 let totalArchivosEnCola = 0;
 let archivoActualBlob = null;
 let archivoActualNombreFinal = "";
+let transferenciaInicio = 0;
 
 document.addEventListener("DOMContentLoaded", () => {
     const capaTrans = document.getElementById('layer-transferir');
@@ -174,6 +175,8 @@ function prepararArchivoTransferencia(event) {
     document.getElementById('transfer-bar').style.width = '0%';
     document.getElementById('transfer-speed').innerText = '0.00 MB/s';
     document.getElementById('transfer-eta').innerText = '--:--';
+    const duracion = document.getElementById('transfer-duration');
+    if (duracion) duracion.innerText = '00:00';
 
     const btn = document.getElementById('btn-iniciar-transferencia');
     btn.disabled = false;
@@ -297,6 +300,7 @@ async function ejecutarSubidaUnica() {
     transferAbortController = new AbortController();
     const totalChunks = Math.ceil(archivoActualBlob.size / CHUNK_SIZE);
     let bytesSent = 0; // bytes ya enviados en chunks completos
+    transferenciaInicio = Date.now();
 
     document.getElementById('transfer-total').innerText = formatearTamanoBytes(archivoActualBlob.size);
 
@@ -387,16 +391,12 @@ async function ejecutarSubidaUnica() {
 
 function actualizarMetricas(bytesSent, totalBytes, chunkStartTime, chunkSize) {
     const percent = ((bytesSent / totalBytes) * 100).toFixed(1);
-    // Calcular velocidad basada en el tiempo transcurrido desde el inicio del chunk actual
-    // Usamos un enfoque simple: velocidad = bytes enviados en este evento / tiempo desde el inicio del chunk
-    // Si chunkSize es 0 (llamada final), no actualizamos velocidad
+    // Velocidad media del archivo completo: es estable incluso entre fragmentos.
     let speedMB = 0;
-    if (chunkSize > 0) {
-        const timeElapsed = (Date.now() - chunkStartTime) / 1000;
-        if (timeElapsed > 0) {
-            const speedBytesPerSec = chunkSize / timeElapsed;
-            speedMB = speedBytesPerSec / (1024 * 1024);
-        }
+    const timeElapsed = (Date.now() - transferenciaInicio) / 1000;
+    if (bytesSent > 0 && timeElapsed > 0) {
+        const speedBytesPerSec = bytesSent / timeElapsed;
+        speedMB = speedBytesPerSec / (1024 * 1024);
     }
     const speedText = speedMB > 0 ? `${speedMB.toFixed(2)} MB/s` : 'Calculando...';
 
@@ -414,6 +414,11 @@ function actualizarMetricas(bytesSent, totalBytes, chunkStartTime, chunkSize) {
     document.getElementById('transfer-sent').innerText = formatearTamanoBytes(bytesSent);
     document.getElementById('transfer-speed').innerText = speedText;
     document.getElementById('transfer-eta').innerText = etaString;
+    const duracion = document.getElementById('transfer-duration');
+    if (duracion) {
+        const segundos = Math.floor(timeElapsed || 0);
+        duracion.innerText = `${Math.floor(segundos / 60).toString().padStart(2, '0')}:${(segundos % 60).toString().padStart(2, '0')}`;
+    }
 }
 
 function resetTransferUI(success = false) {
