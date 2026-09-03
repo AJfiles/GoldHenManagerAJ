@@ -4,7 +4,7 @@
  * DEVELOPED By SeBaS - Mod AJ
  * ====================================================================
  */
-const CREATOR_ATTRIBUTION = "by SeBaS (Mod AJ)";
+const CREATOR_ATTRIBUTION = "by AJ · basado en el trabajo original de SeBaS";
 console.log(`%c GOLDHEN MANAGER AJ - Developed ${CREATOR_ATTRIBUTION} `, "background: #111827; color: #22d3ee; font-weight: bold; padding: 4px;");
 
 if ('serviceWorker' in navigator) {
@@ -217,6 +217,7 @@ function toggleCustomSelect() {
     
     if (options.classList.contains('scale-y-0')) {
         options.classList.remove('scale-y-0', 'opacity-0', 'pointer-events-none');
+        colocarDesplegableFlotante(options, document.getElementById('custom-select-container'));
         icon.style.transform = 'rotate(180deg)';
     } else {
         options.classList.add('scale-y-0', 'opacity-0', 'pointer-events-none');
@@ -241,11 +242,22 @@ function toggleCustomSelectIntro() {
     
     if (options.classList.contains('scale-y-0')) {
         options.classList.remove('scale-y-0', 'opacity-0', 'pointer-events-none');
+        colocarDesplegableFlotante(options, document.getElementById('custom-select-intro-options')?.parentElement);
         icon.style.transform = 'rotate(180deg)';
     } else {
         options.classList.add('scale-y-0', 'opacity-0', 'pointer-events-none');
         icon.style.transform = 'rotate(0deg)';
     }
+}
+
+function colocarDesplegableFlotante(menu, ancla) {
+    if (!menu || !ancla) return;
+    const rect = ancla.getBoundingClientRect();
+    menu.style.position = 'fixed';
+    menu.style.left = `${Math.max(12, rect.left)}px`;
+    menu.style.width = `${Math.min(window.innerWidth - 24, rect.width)}px`;
+    menu.style.top = `${Math.min(window.innerHeight - 230, rect.bottom + 8)}px`;
+    menu.style.zIndex = '10000';
 }
 
 function seleccionarIntroCustom(idIntro, nombreVisible) {
