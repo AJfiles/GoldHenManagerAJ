@@ -246,6 +246,7 @@
 
 <div id="sheet-detalles-juego" onclick="cerrarBottomSheet(event)" class="fixed inset-0 z-[500] bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
     <div id="sheet-content-card" onclick="event.stopPropagation()" class="relative w-full max-w-[400px] rounded-[2rem] border border-white/10 overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.9)] transform scale-95 transition-transform duration-300 flex flex-col bg-[#050810]">
+        <button onclick="cerrarFichaJuego()" aria-label="Cerrar ficha del juego" class="absolute top-4 right-4 z-30 w-9 h-9 rounded-full bg-black/50 border border-white/15 text-white flex items-center justify-center hover:bg-red-500/30 active:scale-90 transition-all"><i class="fa-solid fa-xmark"></i></button>
         
         <div id="panel-bg-blur" class="absolute top-0 left-0 right-0 h-[220px] bg-cover bg-center opacity-30 blur-md pointer-events-none transition-all duration-500"></div>
         <div class="absolute top-0 left-0 right-0 h-[220px] bg-gradient-to-b from-[#050810]/10 via-[#050810]/70 to-[#050810] pointer-events-none"></div>

@@ -481,8 +481,10 @@
             if (typeof aplicarEstadoBotonesPlugins === 'function') aplicarEstadoBotonesPlugins();
         } 
         else {
-            document.getElementById('entorno-nosoportado').classList.remove('hidden');
-            document.getElementById('entorno-nosoportado').classList.add('flex');
+            document.getElementById('entorno-vacio-placeholder').classList.remove('hidden');
+            document.getElementById('entorno-vacio-placeholder').classList.add('flex');
+            document.getElementById('mod-global-title').innerText = "Juego no compatible";
+            document.getElementById('mod-global-cusa').innerText = "Selecciona Minecraft o Resident Evil";
         }
     }
 
@@ -492,7 +494,8 @@
             if (typeof levantarCacheLocalBiblioteca === 'function') await levantarCacheLocalBiblioteca();
         }
         document.getElementById('buscador-juegos-mods').value = '';
-        renderizarListaSelectorMods([...(listadoJuegos || [])].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+        const compatibles = (listadoJuegos || []).filter(j => /minecraft|resident evil/i.test(j.nombre));
+        renderizarListaSelectorMods(compatibles.sort((a, b) => a.nombre.localeCompare(b.nombre)));
 
         const modal = document.getElementById('modal-selector-juegos-mods');
         modal.classList.remove('hidden');
@@ -543,7 +546,7 @@
     function filtrarSelectorModsGlobal() {
         const query = document.getElementById('buscador-juegos-mods').value.toLowerCase().trim();
         const filtrados = (listadoJuegos || []).filter(j => 
-            j.nombre.toLowerCase().includes(query) || j.id.toLowerCase().includes(query)
+            /minecraft|resident evil/i.test(j.nombre) && (j.nombre.toLowerCase().includes(query) || j.id.toLowerCase().includes(query))
         ).sort((a, b) => a.nombre.localeCompare(b.nombre));
         renderizarListaSelectorMods(filtrados);
     }

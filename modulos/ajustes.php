@@ -27,7 +27,7 @@
     <div class="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-4 pb-10 z-20">
 
         <!-- Notificaciones -->
-        <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
+        <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3 relative z-[100]">
             <div class="flex items-center gap-2 border-b border-white/5 pb-2">
                 <i class="fas fa-bell text-cyan-400 text-sm"></i>
                 <span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Alertas del Sistema</span>
@@ -72,7 +72,7 @@
                     <i id="custom-select-icon" class="fas fa-chevron-down text-cyan-400 transition-transform duration-300"></i>
                 </div>
                 
-                <div id="custom-select-options" class="absolute w-full mt-2 bg-[#0a0f1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 origin-top transform scale-y-0 opacity-0 transition-all duration-300 max-h-[220px] overflow-y-auto custom-scrollbar flex flex-col pointer-events-none">
+                <div id="custom-select-options" class="absolute w-full mt-2 bg-[#0a0f1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[200] origin-top transform scale-y-0 opacity-0 transition-all duration-300 max-h-[220px] overflow-y-auto custom-scrollbar flex flex-col pointer-events-none">
                     <div onclick="seleccionarFondoCustom('none', 'Apagar Fondos')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider cursor-pointer transition-colors">Apagar Fondos</div>
                     <div onclick="seleccionarFondoCustom('bg-ps4', 'Olas Líquidas (PS4)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-blue-400 uppercase tracking-wider cursor-pointer transition-colors">Olas Líquidas (PS4)</div>
                     <div onclick="seleccionarFondoCustom('bg-ps2', 'Cubos 3D (PS2)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-indigo-400 uppercase tracking-wider cursor-pointer transition-colors">Cubos 3D (PS2)</div>
@@ -85,7 +85,7 @@
         </div>
 
         <!-- Animaciones de Inicio (Boot) -->
-        <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
+        <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3 relative z-[90]">
             <div class="flex items-center gap-2 border-b border-white/5 pb-2">
                 <i class="fas fa-play-circle text-green-400 text-sm"></i>
                 <span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Animaciones de Inicio (Boot)</span>
@@ -97,7 +97,7 @@
                     <i id="custom-select-intro-icon" class="fas fa-chevron-down text-green-400 transition-transform duration-300"></i>
                 </div>
                 
-                <div id="custom-select-intro-options" class="absolute w-full mt-2 bg-[#0a0f1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[60] origin-top transform scale-y-0 opacity-0 transition-all duration-300 max-h-[220px] overflow-y-auto custom-scrollbar flex flex-col pointer-events-none">
+                <div id="custom-select-intro-options" class="absolute w-full mt-2 bg-[#0a0f1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[200] origin-top transform scale-y-0 opacity-0 transition-all duration-300 max-h-[220px] overflow-y-auto custom-scrollbar flex flex-col pointer-events-none">
                     <div onclick="seleccionarIntroCustom('none', 'Sin Intro (Rápido)')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider cursor-pointer transition-colors">Sin Intro (Rápido)</div>
                     <div onclick="seleccionarIntroCustom('intro-ps4', 'PlayStation 4')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-blue-400 uppercase tracking-wider cursor-pointer transition-colors">PlayStation 4</div>
                     <div onclick="seleccionarIntroCustom('intro-glitch', 'Glitch Hacker')" class="p-3.5 border-b border-white/5 hover:bg-white/5 text-[10.5px] font-bold text-fuchsia-400 uppercase tracking-wider cursor-pointer transition-colors">Glitch Hacker</div>
@@ -116,17 +116,9 @@
 
         <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
             <div class="flex items-center gap-2 border-b border-white/5 pb-2">
-                <i class="fas fa-universal-access text-violet-400 text-sm"></i>
-                <span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Visual y accesibilidad</span>
+                <i class="fas fa-text-height text-violet-400 text-sm"></i>
+                <span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Tamaño de texto</span>
             </div>
-            <label class="flex flex-col gap-1.5 text-[9px] font-mono text-gray-400 uppercase tracking-wider">
-                Tema
-                <select id="cfg-tema" onchange="guardarTema(this.value)" class="bg-[#111827] border border-white/10 rounded-xl px-3 py-2.5 text-[11px] font-bold text-white outline-none">
-                    <option value="dark">Oscuro</option>
-                    <option value="light">Claro</option>
-                    <option value="auto">Automático</option>
-                </select>
-            </label>
             <label class="flex flex-col gap-2 text-[9px] font-mono text-gray-400 uppercase tracking-wider">
                 Tamaño del texto <span id="lbl-tamano-texto" class="text-cyan-400">100%</span>
                 <input id="cfg-tamano-texto" type="range" min="85" max="130" step="5" value="100" oninput="guardarTamanoTexto(this.value)" class="w-full accent-cyan-500">

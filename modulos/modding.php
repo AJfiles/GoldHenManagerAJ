@@ -130,7 +130,7 @@ if (is_dir($carpeta_vieja)) {
 
                     <button onclick="document.getElementById('input-modding-file').click()" class="flex flex-col items-center justify-center rounded-[1.5rem] bg-[#111827] border border-white/5 active:scale-95 transition-all shadow-lg hover:border-cyan-500/30 group p-1">
                         <div class="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400 mb-1.5 group-hover:scale-110 transition-transform"><i class="fa-solid fa-image text-sm"></i></div>
-                        <span class="text-[8px] font-black tracking-widest text-gray-300 uppercase text-center leading-tight">Archivo<br>Suelto</span>
+                        <span class="text-[8px] font-black tracking-widest text-gray-300 uppercase text-center leading-tight">Elegir<br>Portada</span>
                     </button>
                 </div>
                 
