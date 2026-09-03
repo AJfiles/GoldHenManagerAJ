@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLD HEN SUITE PRO 🚀 (PS5/PS4) - MÓDULO DE MODDING (PORTADAS)
- * DEVELOPED By SeBaS - RUTA: modulos/modding.php
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: modulos/modding.php
  * ====================================================================
  */
 

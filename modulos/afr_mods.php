@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER V3.0 🚀 - MÓDULO GESTOR DE MODS AFR (PS4)
- * DEVELOPED By SeBaS - RUTA: modulos/afr_mods.php
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: modulos/afr_mods.php
  * ====================================================================
  */
 ?>

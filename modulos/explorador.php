@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLDHEN MANAGER V3.0 🚀 - MÓDULO EXPLORADOR FTP
- * DEVELOPED By SeBaS - RUTA: modulos/explorador.php
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: modulos/explorador.php
  * ====================================================================
  */
 ?>

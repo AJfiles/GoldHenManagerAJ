@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLD HEN SUITE PRO 🚀 (PS5/PS4) - COMPONENTE CAPA BIBLIOTECA
- * DEVELOPED By SeBaS - RUTA: modulos/biblioteca.php
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: modulos/biblioteca.php
  * ====================================================================
  */
 ?>

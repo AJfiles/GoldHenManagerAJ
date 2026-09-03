@@ -2,7 +2,7 @@
 /**
  * ====================================================================
  * GOLD HEN SUITE PRO 🚀 - MÓDULO TRANSFERENCIAS Y RPI
- * DEVELOPED By SeBaS - RUTA: modulos/transferir.php
+ * Mantenido por AJ · Basado en proyecto original de SeBaS · RUTA: modulos/transferir.php
  * ====================================================================
  */
 ?>
