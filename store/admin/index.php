@@ -6,7 +6,7 @@ if (!store_admin_authorized()) { http_response_code(403); ?>
 <!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="https://cdn.tailwindcss.com"></script><body class="min-h-screen bg-[#060913] text-white grid place-items-center p-5"><main class="max-w-md rounded-3xl border border-white/10 bg-white/5 p-7 text-center"><h1 class="text-xl font-black">Administración de Store</h1><p class="mt-3 text-sm text-gray-400">Este panel solo se abre mediante el comando <code class="text-cyan-300">store-admin</code> en Termux. El enlace local generado por ese comando concede una sesión temporal.</p></main></body></html><?php exit; }
 
 // ============================================================
-// FUNCIÓN DE EXTRACCIÓN DE ENLACES MEDIAFIRE
+// FUNCIÓN DE EXTRACCIÓN DE ENLACES MEDIAFIRE (MEJORADA)
 // ============================================================
 /**
  * Extrae enlace directo de MediaFire (.pkg) desde una URL de página web
@@ -22,20 +22,23 @@ function extraerEnlaceMediaFire($url) {
         return $url;
     }
     
-    // Intentar extraer el enlace directo
+    // Intentar extraer el enlace directo con cURL
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_HEADER, false);
+    curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
     
     $html = curl_exec($ch);
+    $error = curl_error($ch);
     curl_close($ch);
     
-    if (!$html) {
+    if (!$html || !empty($error)) {
         return $url;
     }
     
@@ -62,6 +65,11 @@ function extraerEnlaceMediaFire($url) {
         return $matches[1];
     }
     
+    // Buscar en el atributo data-link (a veces usado por MediaFire)
+    if (preg_match('/data-link=["\']([^"\']+\.pkg[^"\']*)["\']/i', $html, $matches)) {
+        return $matches[1];
+    }
+    
     // Si no se encontró nada, devolver la URL original
     return $url;
 }
@@ -70,15 +78,14 @@ $message = ''; $changedUpdated = $_SESSION['store_updated'] ?? []; $changedDelet
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'] ?? '';
-        if ($action === 'download') store_admin_zip($changedUpdated, $changedDeleted);
-        $catalog = store_admin_catalog();
         
         // ============================================================
         // MANEJADOR PARA EL BOTÓN "EXTRAER" (AJAX)
+        // DEBE IR ANTES DE CUALQUIER OTRA ACCIÓN
         // ============================================================
         if ($action === 'extract') {
-            $url = store_admin_url((string)($_POST['url'] ?? ''));
             header('Content-Type: application/json');
+            $url = store_admin_url((string)($_POST['url'] ?? ''));
             if (empty($url)) {
                 echo json_encode(['success' => false, 'message' => 'URL vacía']);
                 exit;
@@ -92,12 +99,18 @@ try {
             exit;
         }
         
+        // ============================================================
+        // LAS DEMÁS ACCIONES (download, save, delete, check)
+        // ============================================================
+        if ($action === 'download') store_admin_zip($changedUpdated, $changedDeleted);
+        $catalog = store_admin_catalog();
+        
         if ($action === 'save') {
             $original = strtoupper(trim((string)($_POST['original_id'] ?? ''))); $position = null; foreach ($catalog as $i => $row) if (($row['id'] ?? '') === $original) $position = $i;
             $before = $position === null ? null : $catalog[$position];
             
             // ============================================================
-            // EXTRACCIÓN AUTOMÁTICA AL GUARDAR (OPCIONAL)
+            // EXTRACCIÓN AUTOMÁTICA AL GUARDAR
             // ============================================================
             $pkg_url = store_admin_url((string)($_POST['pkg'] ?? ''));
             // Si es MediaFire, extraer automáticamente
@@ -105,7 +118,6 @@ try {
                 $extraido = extraerEnlaceMediaFire($pkg_url);
                 if ($extraido !== $pkg_url) {
                     $_POST['pkg'] = $extraido;
-                    // Añadir mensaje de éxito (se mostrará después)
                     $message = '✅ Enlace extraído automáticamente. ';
                 }
             }
@@ -156,7 +168,7 @@ function h($value): string { return htmlspecialchars((string)$value, ENT_QUOTES,
 <section class="rounded-3xl border border-white/10 bg-white/5 p-4"><div class="mb-3 flex items-center justify-between"><h2 class="font-bold">Catálogo publicado</h2><span class="text-xs text-gray-400"><?= count($catalog) ?> elementos</span></div><div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"><?php foreach ($catalog as $row): ?><article class="rounded-2xl bg-black/25 p-3"><div class="mb-2 aspect-[3/2] overflow-hidden rounded-xl bg-black/30"><?php if (!empty($row['cover'])): ?><img class="h-full w-full object-cover" src="../<?= h($row['cover']) ?>" onerror="this.remove()"><?php endif; ?></div><b class="block truncate text-sm"><?= h($row['titulo'] ?? '') ?></b><span class="text-xs text-cyan-300"><?= h($row['id'] ?? '') ?> · v<?= h($row['version'] ?? '1.00') ?></span><p class="mt-1 text-xs text-gray-400"><?= h($row['peso_gb'] ?? '?') ?> GB · <?= h($row['servidor'] ?? '') ?></p><div class="mt-3 flex gap-2"><a class="rounded-lg bg-white/10 px-3 py-2 text-xs" href="?edit=<?= urlencode((string)$row['id']) ?>">Editar</a><form method="post" onsubmit="return confirm('¿Retirar este elemento?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= h($row['id']) ?>"><button class="rounded-lg bg-red-500/15 px-3 py-2 text-xs text-red-200">Eliminar</button></form></div></article><?php endforeach; ?><?php if (!$catalog): ?><p class="text-sm text-gray-500">El catálogo está vacío.</p><?php endif; ?></div></section></section></main>
 
 <!-- ============================================================ -->
-<!-- JAVASCRIPT PARA EL BOTÓN "EXTRAER" -->
+<!-- JAVASCRIPT PARA EL BOTÓN "EXTRAER" (CORREGIDO) -->
 <!-- ============================================================ -->
 <script>
 function extraerEnlace() {
@@ -175,11 +187,22 @@ function extraerEnlace() {
     formData.append('action', 'extract');
     formData.append('url', url);
     
-    fetch('', {
+    // Usamos 'index.php' en lugar de '' para asegurar que la petición vaya al script correcto
+    fetch('index.php', {
         method: 'POST',
         body: formData
     })
-    .then(res => res.json())
+    .then(res => {
+        // Verificar si la respuesta es JSON válido
+        return res.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch(e) {
+                console.error('Respuesta no válida:', text);
+                throw new Error('El servidor devolvió una respuesta inválida');
+            }
+        });
+    })
     .then(data => {
         if (data.success) {
             input.value = data.direct_link;
@@ -188,8 +211,9 @@ function extraerEnlace() {
             resultado.innerHTML = '<span class="text-red-400">❌ ' + data.message + '</span>';
         }
     })
-    .catch(() => {
-        resultado.innerHTML = '<span class="text-red-400">❌ Error al conectar con el servidor</span>';
+    .catch((error) => {
+        console.error('Error:', error);
+        resultado.innerHTML = '<span class="text-red-400">❌ ' + error.message + '</span>';
     });
 }
 </script>
