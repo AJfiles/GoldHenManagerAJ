@@ -1,0 +1,126 @@
+GOLDHEN MANAGER AJ 3.2 - FUNCIONES Y GUIAS
+===========================================
+
+Este documento sirve como referencia rápida para quien mantiene el repositorio
+y para quien usa la aplicación desde Termux. GoldHen Manager AJ es una aplicación
+web local: el teléfono ejecuta PHP y se comunica con una PS4 GoldHEN por la red
+local. No necesita subir el contenido de la consola a un servicio externo.
+
+1. INSTALACION DEL USUARIO FINAL
+--------------------------------
+En Termux ejecute una sola vez:
+
+curl -sL https://raw.githubusercontent.com/AJfiles/GoldHenManagerAJ/main/goldhen.sh | bash
+
+El instalador concede acceso de almacenamiento, instala las dependencias
+necesarias, clona el repositorio en $HOME/GoldHenManagerAJ y deja disponible el
+comando goldhen. Su salida es compacta y muestra un spinner; si algún paso falla,
+el propio instalador muestra el registro reciente.
+
+Después de instalar, cierre y abra Termux. Ejecute:
+
+goldhen
+
+Abra http://localhost:8080/index.php, introduzca la IP de la PS4 y conecte con
+GoldHEN/FTP activo. Compatibilidad comprobada: PS4 Pro, firmware 9.00 y GoldHEN
+v2.4b18.10. Otras versiones pueden usar rutas, permisos o servicios distintos.
+
+2. MODULOS PRINCIPALES
+----------------------
+- Biblioteca: sincroniza títulos de la consola, consulta iconos, categorías,
+  actualizaciones, DLC y capturas. Usa mensajes de progreso y sus fichas tienen
+  un botón X visible para cerrar.
+- Explorador FTP: navega por archivos de la PS4, permite operaciones FTP
+  disponibles, tiene búsqueda por nombre dentro de la carpeta actual y un árbol
+  ligero de carpetas visitadas. Trabaje únicamente sobre rutas que conozca.
+- Transferencias: permite cargas FTP y envíos compatibles con Remote Package
+  Installer; muestra velocidad, tiempo transcurrido y estimaciones cuando el
+  protocolo entrega datos suficientes.
+- Modding: extrae, respalda e inyecta portadas. Las imágenes de respaldo pueden
+  descargarse, eliminarse o volver a seleccionarse para inyección.
+- Game Mods/AFR: organiza los motores implementados para Minecraft y Resident
+  Evil. Cree siempre una copia antes de aplicar mods.
+- Plugins: lista PRX locales y remotos, muestra asignaciones por aplicación o
+  por [default], y edita plugins.ini sin duplicar la línea exacta. Conserva una
+  copia local antes de modificarlo. GoldHEN debe reiniciarse tras un cambio.
+- Payloads: lista payloads locales/remotos y los envía al BinLoader de GoldHEN
+  por el puerto 9090. Solo use payloads compatibles y de procedencia conocida.
+- Ajustes: tamaño de texto, vibración, fondos/intros, actualización segura y
+  la instalación PWA. Las elecciones de fondo e intro se abren en diálogos para
+  no quedar escondidas detrás de la interfaz.
+- Store: consulta un catálogo de enlaces directos autorizados y puede enviar el
+  enlace a un instalador RPI compatible de la PS4. El teléfono no descarga el
+  PKG para instalarlo.
+
+3. GUIA DEL MANTENEDOR: ADMINISTRAR LA TIENDA
+---------------------------------------------
+El panel es exclusivamente local y no se publica dentro de la interfaz de
+usuarios. Tras instalar o actualizar el proyecto, abra una nueva sesión de
+Termux y ejecute:
+
+store-admin
+
+El comando abre http://127.0.0.1:8081. Genera una credencial temporal y no
+escucha en la red Wi-Fi, por lo que no debe compartirse esa dirección.
+
+Para añadir o editar un elemento:
+1. Escriba un ID de título o aplicación. Se admiten CUSA, SLUS, SLES, NP,
+   homebrew u otros IDs de 3 a 32 caracteres con letras, números, punto, guion
+   o guion bajo. Ejemplo válido: SLUS21004.
+2. Complete título, categoría, versión, peso, descripción, créditos y proveedor
+   según corresponda. El título es obligatorio; el resto de metadatos es libre.
+3. Pegue una URL directa http(s) que termine en .pkg y que esté autorizada para
+   publicar. El botón Verificar enlace comprueba disponibilidad y puede informar
+   el tamaño cuando el servidor lo expone.
+4. Update y DLC son opcionales. Déjelos vacíos o escriba No aplica; el catálogo
+   los guarda como ausentes. Para varios DLC, escriba una URL directa por línea.
+5. Opcionalmente suba una carátula JPG/PNG/WebP de hasta 5 MB. El panel la
+   convierte a WebP y la limita a 400 px manteniendo su proporción.
+6. Marque la confirmación de autorización y guarde.
+7. Pulse Descargar cambios ZIP. El navegador descarga un ZIP con:
+     store/data/catalogo.json
+     store/covers/(solo las carátulas modificadas)
+     store-changes.json
+   El manifiesto indica también carátulas eliminadas que se deben borrar del
+   repositorio. Extraiga el ZIP en la raíz del repositorio y publique esos
+   cambios. Los usuarios solo deben abrir Store y pulsar Actualizar.
+
+No se admite extracción automática ni uso de páginas de descarga intermedias.
+Use un enlace directo de una fuente que controle o que esté autorizada. Esto
+evita depender de páginas cambiantes y evita que el panel actúe como proxy.
+
+4. PRUEBA RECOMENDADA ANTES DE PUBLICAR
+---------------------------------------
+1. Ejecute goldhen y compruebe que la interfaz abre en localhost:8080.
+2. Con una PS4 propia disponible, conecte por FTP y abra Biblioteca.
+3. Compruebe Explorador, una transferencia pequeña y la notificación final.
+4. Abra Plugins, confirme que plugins.ini se lee antes de activar o desactivar
+   una sola asignación y reinicie GoldHEN solo después de cambios reales.
+5. Abra Payloads; antes de enviar uno, confirme modelo, firmware y compatibilidad
+   con GoldHEN.
+6. Ejecute store-admin y añada un elemento de prueba autorizado con un ID que no
+   sea CUSA, por ejemplo SLUS21004. Confirme que Update/DLC vacíos se guardan,
+   descargue el ZIP y revise store-changes.json.
+7. Recargue la Store pública y confirme que el elemento solo aparece si conserva
+   licencia_confirmada y una URL directa válida.
+
+5. SEGURIDAD Y LIMITACIONES
+---------------------------
+- No exponga el servidor PHP de Termux a Internet. Use una red local de confianza.
+- Las operaciones FTP, PRX y payloads afectan datos y procesos reales de la PS4.
+- El proyecto no calcula el tamaño de juegos por FTP: se retiró por lento e
+  impreciso. El peso de Store es el dato editorial del mantenedor.
+- Una PWA no puede garantizar transferencias FTP largas si Android suspende la
+  aplicación.
+- No hay lectura de temperatura/CPU/GPU solo mediante el FTP de GoldHEN.
+- Las URLs y contenidos de la Store deben ser legales, autorizados y compatibles
+  con el instalador configurado en la consola.
+
+6. ARCHIVOS DE REFERENCIA
+-------------------------
+- README.md: visión general, instalación y seguridad.
+- GUIA_DE_USO.md: recorrido operativo y prueba de aceptación.
+- MEJORAS_IMPLEMENTADAS.txt: historial de mejoras del proyecto AJ.
+- COMPARATIVA_BASE_V3.md: diferencias frente al proyecto base analizado en modo
+  lectura, con el crédito correspondiente.
+- AUDITORIA_TECNICA.txt: alcance de las comprobaciones y limitaciones del entorno.

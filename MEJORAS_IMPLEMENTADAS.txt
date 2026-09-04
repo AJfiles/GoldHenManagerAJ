@@ -167,6 +167,11 @@ Actualización 3.2
   validación de enlaces directos, conversión WebP y ZIP de cambios con
   manifiesto de eliminaciones. La API pública de Store no ofrece CRUD para no
   exponer la edición del catálogo a la red local.
+- El administrador de Store acepta IDs de título o aplicación de 3 a 32
+  caracteres (por ejemplo CUSA, SLUS/SLES, NP y homebrew), por lo que ya no se
+  limita a CUSA. Update y DLC pueden dejarse vacíos o marcarse como `No aplica`;
+  se guardan correctamente como ausencia de enlace. Los PKG mantienen la
+  validación de URL directa autorizada para evitar páginas intermedias.
 
 Módulos avanzados de GoldHEN 3.2
 -------------------------------

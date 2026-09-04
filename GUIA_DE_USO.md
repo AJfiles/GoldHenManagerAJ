@@ -55,12 +55,15 @@
 1. Como mantenedor, abre una nueva sesión de Termux y escribe `store-admin`.
 2. Se abre automáticamente el panel local `http://127.0.0.1:8081`; no uses
    esa dirección como enlace público ni la compartas.
-3. Añade o edita los metadatos, una URL directa autorizada que termine en
-   `.pkg`, y opcionalmente una carátula JPG/PNG/WebP.
-4. Confirma que tienes autorización de distribución y guarda el elemento.
-5. Pulsa **Descargar cambios ZIP**. Contiene el catálogo, las carátulas
+3. Añade o edita los metadatos. El ID puede ser CUSA, SLUS/SLES, una aplicación
+   o homebrew; no está limitado a CUSA. Usa una URL directa autorizada que
+   termine en `.pkg`, y opcionalmente una carátula JPG/PNG/WebP.
+4. Update y DLC son opcionales: déjalos vacíos o escribe `No aplica` cuando no
+   correspondan.
+5. Confirma que tienes autorización de distribución y guarda el elemento.
+6. Pulsa **Descargar cambios ZIP**. Contiene el catálogo, las carátulas
    modificadas y `store-changes.json`, que indica las carátulas eliminadas.
-6. Sube el contenido a las mismas rutas del repositorio. Los usuarios solo
+7. Sube el contenido a las mismas rutas del repositorio. Los usuarios solo
    abren Store y pulsan **Actualizar** para consultar el nuevo catálogo.
 
 La tienda no acepta enlaces de páginas intermedias ni extrae enlaces de

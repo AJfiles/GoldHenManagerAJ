@@ -2,6 +2,11 @@
 
 Aplicación web local para Termux orientada a administrar una PS4 con GoldHEN mediante FTP. Se ejecuta en el teléfono y abre una interfaz PWA para consultar juegos, explorar archivos, transferir contenido y gestionar mods.
 
+GoldHen Manager AJ parte del proyecto GoldHenManager-v3 como base reconocida y lo
+extiende con correcciones, módulos y flujos propios. La comparación técnica y el
+alcance de esas diferencias están documentados en
+[COMPARATIVA_BASE_V3.md](COMPARATIVA_BASE_V3.md).
+
 ## Funciones
 
 - Biblioteca de juegos: escaneo de títulos, iconos, categorías, DLC, actualizaciones y capturas.

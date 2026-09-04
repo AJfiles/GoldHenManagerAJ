@@ -18,15 +18,22 @@ function store_admin_save(array $catalog): void {
     rename($temp, STORE_CATALOG_FILE);
 }
 function store_admin_text(string $name, int $max = 800): string { $value = trim((string)($_POST[$name] ?? '')); return function_exists('mb_substr') ? mb_substr($value, 0, $max) : substr($value, 0, $max); }
-function store_admin_id(string $id): string { $id = strtoupper(trim($id)); if (!preg_match('/^CUSA\d{5}$/', $id)) throw new RuntimeException('El identificador debe tener el formato CUSA12345.'); return $id; }
+function store_admin_id(string $id): string {
+    $id = strtoupper(trim($id));
+    /* CUSA, SLUS/SLES, NP y otros identificadores de aplicaciones/homebrew. */
+    if (!preg_match('/^[A-Z0-9][A-Z0-9._-]{2,31}$/', $id)) throw new RuntimeException('Usa un ID de 3 a 32 caracteres: letras, números, punto, guion o guion bajo.');
+    return $id;
+}
+function store_admin_not_applicable(string $value): bool { return in_array(strtolower(trim($value)), ['', 'n/a', 'na', 'no aplica', 'none', '-'], true); }
 function store_admin_url(string $url, bool $optional = false): ?string {
-    $url = trim($url); if ($url === '' && $optional) return null;
+    $url = trim($url); if ($optional && store_admin_not_applicable($url)) return null;
     $parts = parse_url($url);
     if (!$parts || !in_array(strtolower((string)($parts['scheme'] ?? '')), ['http', 'https'], true) || empty($parts['host']) || !preg_match('/\.pkg(?:$|[?#])/i', $url)) throw new RuntimeException('Usa una URL directa http(s) que termine en .pkg.');
     return $url;
 }
 function store_admin_dlc(string $value): array {
-    $out = []; foreach (preg_split('/[\r\n,]+/', $value) as $url) { $url = trim($url); if ($url !== '') $out[] = store_admin_url($url); } return array_values(array_unique($out));
+    if (store_admin_not_applicable($value)) return [];
+    $out = []; foreach (preg_split('/[\r\n,]+/', $value) as $url) { $url = trim($url); if (!store_admin_not_applicable($url)) $out[] = store_admin_url($url); } return array_values(array_unique($out));
 }
 function store_admin_cover(string $id, ?string $previous): ?string {
     if (empty($_FILES['cover']) || $_FILES['cover']['error'] === UPLOAD_ERR_NO_FILE) return $previous;
@@ -46,9 +53,11 @@ function store_admin_cover(string $id, ?string $previous): ?string {
 }
 function store_admin_entry(?array $previous = null): array {
     $id = store_admin_id(store_admin_text('id', 20));
+    $title = store_admin_text('titulo', 160);
+    if ($title === '') throw new RuntimeException('El título es obligatorio.');
     $weight = store_admin_text('peso_gb', 20); if ($weight !== '' && !is_numeric($weight)) throw new RuntimeException('El peso debe ser numérico o quedar vacío.');
     if (empty($_POST['licencia_confirmada'])) throw new RuntimeException('Debes confirmar que puedes publicar el contenido y sus enlaces.');
-    return ['id' => $id, 'titulo' => store_admin_text('titulo', 160), 'subtitulo' => store_admin_text('subtitulo', 160), 'categoria' => store_admin_text('categoria', 40) ?: 'PS4', 'version' => store_admin_text('version', 32) ?: '1.00', 'peso_gb' => $weight === '' ? null : (float)$weight, 'descripcion' => store_admin_text('descripcion', 1000), 'creditos' => store_admin_text('creditos', 160), 'servidor' => store_admin_text('servidor', 80), 'licencia_confirmada' => true, 'enlaces' => ['pkg' => store_admin_url(store_admin_text('pkg', 2048)), 'update' => store_admin_url(store_admin_text('update', 2048), true), 'dlc' => store_admin_dlc((string)($_POST['dlc'] ?? ''))], 'cover' => store_admin_cover($id, $previous['cover'] ?? null)];
+    return ['id' => $id, 'titulo' => $title, 'subtitulo' => store_admin_text('subtitulo', 160), 'categoria' => store_admin_text('categoria', 40) ?: 'PS4', 'version' => store_admin_text('version', 32) ?: '1.00', 'peso_gb' => $weight === '' ? null : (float)$weight, 'descripcion' => store_admin_text('descripcion', 1000), 'creditos' => store_admin_text('creditos', 160), 'servidor' => store_admin_text('servidor', 80), 'licencia_confirmada' => true, 'enlaces' => ['pkg' => store_admin_url(store_admin_text('pkg', 2048)), 'update' => store_admin_url(store_admin_text('update', 2048), true), 'dlc' => store_admin_dlc((string)($_POST['dlc'] ?? ''))], 'cover' => store_admin_cover($id, $previous['cover'] ?? null)];
 }
 function store_admin_zip(array $updated, array $deleted): void {
     $files = ['store/data/catalogo.json' => STORE_CATALOG_FILE]; foreach ($updated as $relative) { $path = dirname(STORE_ROOT) . '/' . $relative; if (is_file($path)) $files[$relative] = $path; }
