@@ -45,9 +45,26 @@
 
 ## Ajustes y accesibilidad
 
-- Tema: oscuro, claro o automático.
 - Tamaño de texto: de 85% a 130%.
 - Mantener pulsado botones o tarjetas produce una vibración breve en Android compatible.
+- Los fondos y las intros se eligen desde ventanas emergentes para no quedar
+  ocultos detrás del contenido.
+
+## Administración privada de Store
+
+1. Como mantenedor, abre una nueva sesión de Termux y escribe `store-admin`.
+2. Se abre automáticamente el panel local `http://127.0.0.1:8081`; no uses
+   esa dirección como enlace público ni la compartas.
+3. Añade o edita los metadatos, una URL directa autorizada que termine en
+   `.pkg`, y opcionalmente una carátula JPG/PNG/WebP.
+4. Confirma que tienes autorización de distribución y guarda el elemento.
+5. Pulsa **Descargar cambios ZIP**. Contiene el catálogo, las carátulas
+   modificadas y `store-changes.json`, que indica las carátulas eliminadas.
+6. Sube el contenido a las mismas rutas del repositorio. Los usuarios solo
+   abren Store y pulsan **Actualizar** para consultar el nuevo catálogo.
+
+La tienda no acepta enlaces de páginas intermedias ni extrae enlaces de
+servicios de alojamiento: usa un enlace directo a un paquete autorizado.
 
 ## Prueba de aceptación en Termux
 
@@ -68,5 +85,7 @@ Comprueba en este orden:
    sólo cuando no tengas cambios locales pendientes.
 8. En Payloads, abre Linux o Especial, confirma el envío y comprueba que
    BinLoader esté disponible en el puerto 9090.
+9. Ejecuta `store-admin`, guarda un elemento de prueba autorizado y verifica
+   que el ZIP contiene `store/data/catalogo.json` y `store-changes.json`.
 
 Si falla una operación, conserva el mensaje mostrado y verifica IP, puerto, red Wi-Fi, GoldHEN y permisos de almacenamiento de Termux.

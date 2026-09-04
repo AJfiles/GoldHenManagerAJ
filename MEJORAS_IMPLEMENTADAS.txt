@@ -161,6 +161,12 @@ Actualización 3.2
   usuario y avisan, si se conceden, al detectar la PS4 o acabar una cola FTP.
 - `COMPARATIVA_BASE_V3.md` documenta las diferencias verificadas frente a la
   base original analizada en modo lectura.
+- Store se reorganiza en `store/data`, `store/covers`, `store/store.php` y un
+  panel privado `store/admin`. El comando `store-admin` abre dicho panel en
+  127.0.0.1:8081 con una credencial temporal. Permite CRUD del catálogo,
+  validación de enlaces directos, conversión WebP y ZIP de cambios con
+  manifiesto de eliminaciones. La API pública de Store no ofrece CRUD para no
+  exponer la edición del catálogo a la red local.
 
 Módulos avanzados de GoldHEN 3.2
 -------------------------------

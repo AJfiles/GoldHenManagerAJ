@@ -12,6 +12,7 @@ Aplicación web local para Termux orientada a administrar una PS4 con GoldHEN me
 - Ajustes: notificaciones, audio, fondos, intros, tema y tamaño de texto.
 - Plugins: sube `.prx`, consulta los instalados y asigna plugins a `[default]` o a CUSA mediante `plugins.ini`.
 - Payload Loader: lista payloads locales/remotos y los envía al BinLoader de GoldHEN en el puerto `9090`.
+- Store: catálogo privado de paquetes autorizados; puede enviar un PKG directo al instalador compatible de la PS4 sin guardar el paquete en el teléfono.
 
 ## Requisitos
 
@@ -71,6 +72,31 @@ El módulo Plugins realiza una copia local de `plugins.ini` antes de editarlo. P
 - Controladores frontend: `js/`.
 
 Consulta [GUIA_DE_USO.md](GUIA_DE_USO.md) para un recorrido operativo y [AUDITORIA_TECNICA.txt](AUDITORIA_TECNICA.txt) para el estado de revisión de archivos.
+
+## Administración privada de Store
+
+El catálogo de la tienda está separado de la aplicación de usuarios en
+`store/data/catalogo.json`. Como mantenedor, tras actualizar o instalar el
+proyecto, abre Termux y escribe:
+
+```bash
+store-admin
+```
+
+El comando abre un panel local en `http://127.0.0.1:8081`; no queda expuesto a
+otros dispositivos de la red. Cada inicio genera una credencial temporal y el
+navegador se abre automáticamente. Desde allí puedes añadir, editar, comprobar
+o retirar elementos, subir una carátula y descargar un ZIP de cambios.
+
+El ZIP incluye `store/data/catalogo.json`, las carátulas que se modificaron y
+`store-changes.json`. Este último registra las carátulas eliminadas para que
+puedas retirarlas también del repositorio. Sube el contenido del ZIP a la raíz
+del proyecto respetando las rutas indicadas. Los usuarios verán el catálogo al
+usar la tienda y pulsar **Actualizar**.
+
+Solo se aceptan enlaces directos `http(s)` a archivos `.pkg` y se exige que el
+mantenedor confirme tener autorización para publicar el contenido. El proyecto
+no extrae ni intermedia enlaces de páginas de alojamiento de terceros.
 
 ## Limitaciones conocidas
 

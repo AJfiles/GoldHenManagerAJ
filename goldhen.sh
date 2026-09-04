@@ -50,7 +50,7 @@ if [ -d "$REPO_DIR" ]; then
     echo -e "${AMARILLO}[*] Actualización detectada.${NC}"
     cd "$REPO_DIR"
     ejecutar_paso "Buscando actualizaciones..." git fetch --all
-    ejecutar_paso "Aplicando cambios..." git reset --hard origin/main
+    ejecutar_paso "Aplicando cambios..." git pull --ff-only origin main
 else
     echo -e "${AMARILLO}[*] Instalación desde cero.${NC}"
     
@@ -72,6 +72,7 @@ fi
 echo -e "${AMARILLO}• Configurando enlace de datos...${NC}"
 rm -rf "$REPO_DIR/user" 2>/dev/null
 ln -s /sdcard/GoldHenManager/user "$REPO_DIR/user"
+chmod +x "$REPO_DIR/store/admin.sh" "$REPO_DIR/store-admin.sh" 2>/dev/null || true
 
 # Configurar .bashrc
 echo -e "${AMARILLO}• Configurando arranque automático...${NC}"
@@ -81,6 +82,10 @@ CYAN='\033[1;36m'
 AMARILLO='\033[1;33m'
 BLANCO='\033[1;37m'
 NC='\033[0m'
+
+store-admin() {
+    bash "$HOME/GoldHenManagerAJ/store/admin.sh"
+}
 
 imprimir_logo() {
     clear
