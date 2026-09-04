@@ -51,6 +51,8 @@ v2.4b18.10. Otras versiones pueden usar rutas, permisos o servicios distintos.
 - Store: consulta un catálogo de enlaces directos autorizados y puede enviar el
   enlace a un instalador RPI compatible de la PS4. El teléfono no descarga el
   PKG para instalarlo.
+- Respaldo: exporta/importa configuración seleccionada en ZIP. Incluye ajustes,
+  catálogo, PRX y payloads personales; excluye juegos, caché, saves y perfiles.
 
 3. GUIA DEL MANTENEDOR: ADMINISTRAR LA TIENDA
 ---------------------------------------------
@@ -85,9 +87,14 @@ Para añadir o editar un elemento:
    repositorio. Extraiga el ZIP en la raíz del repositorio y publique esos
    cambios. Los usuarios solo deben abrir Store y pulsar Actualizar.
 
-No se admite extracción automática ni uso de páginas de descarga intermedias.
-Use un enlace directo de una fuente que controle o que esté autorizada. Esto
-evita depender de páginas cambiantes y evita que el panel actúe como proxy.
+El administrador incluye Buscar actualizaciones y Actualizar Store Admin. La
+actualización consulta origin/main y usa git pull --ff-only. Si existen cambios
+locales, se cancela antes de modificar archivos: primero publique o resuelva sus
+cambios y después reinicie store-admin.
+
+Use únicamente enlaces y contenido que controle o esté autorizado a publicar.
+La disponibilidad y las condiciones de los servicios externos pueden cambiar;
+verifique el resultado antes de publicar una entrada en el catálogo.
 
 4. PRUEBA RECOMENDADA ANTES DE PUBLICAR
 ---------------------------------------

@@ -11,6 +11,8 @@ alcance de esas diferencias están documentados en
 
 - Biblioteca de juegos: escaneo de títulos, iconos, categorías, DLC, actualizaciones y capturas.
 - Explorador FTP: navegación, subida por fragmentos, creación, renombrado, copia, movimiento, eliminación y accesos rápidos.
+- Búsqueda global: localiza módulos, juegos sincronizados, archivos de la carpeta FTP actual, plugins y payloads cargados.
+- Respaldo de configuración: exporta/importa ajustes, catálogo Store y recursos personales permitidos mediante ZIP.
 - Transferencias: cargas FTP de archivos grandes y envío de PKG mediante Remote Package Installer.
 - Modding: respaldo e inyección de portadas, procesado de imágenes y galerías locales.
 - Game Mods: bóveda de mods de Minecraft e integración AFR para juegos compatibles.
@@ -99,9 +101,9 @@ puedas retirarlas también del repositorio. Sube el contenido del ZIP a la raíz
 del proyecto respetando las rutas indicadas. Los usuarios verán el catálogo al
 usar la tienda y pulsar **Actualizar**.
 
-Solo se aceptan enlaces directos `http(s)` a archivos `.pkg` y se exige que el
-mantenedor confirme tener autorización para publicar el contenido. El proyecto
-no extrae ni intermedia enlaces de páginas de alojamiento de terceros.
+Solo se aceptan enlaces `http(s)` que resuelvan a archivos `.pkg` y se exige que
+el mantenedor confirme tener autorización para publicar el contenido. La
+disponibilidad de servicios externos puede cambiar sin previo aviso.
 
 ## Limitaciones conocidas
 

@@ -172,6 +172,10 @@ Actualización 3.2
   limita a CUSA. Update y DLC pueden dejarse vacíos o marcarse como `No aplica`;
   se guardan correctamente como ausencia de enlace. Los PKG mantienen la
   validación de URL directa autorizada para evitar páginas intermedias.
+- El panel privado Store incorpora **Buscar actualizaciones** y **Actualizar
+  Store Admin**. Consulta `origin/main` y aplica solo un `git pull --ff-only`;
+  antes de modificar el proyecto comprueba cambios locales y se cancela sin
+  sobrescribirlos. Tras actualizar se debe reiniciar `store-admin`.
 
 Módulos avanzados de GoldHEN 3.2
 -------------------------------
@@ -186,3 +190,16 @@ Módulos avanzados de GoldHEN 3.2
 - Los dos módulos validan IP, nombres y directorios para que no acepten rutas
   arbitrarias. El reinicio de GoldHEN/PS4 sigue siendo necesario al cambiar
   plugins; los payloads sólo deben venir de fuentes de confianza.
+
+Mejoras de productividad y seguridad
+------------------------------------
+- Se añadió Respaldo y migración de configuración: exporta/importa un ZIP con
+  ajustes del navegador, catálogo Store y plugins/payloads personales permitidos.
+  No incluye juegos, cachés, saves ni datos de perfil de PS4.
+- El launcher incorpora búsqueda global sobre módulos, Biblioteca sincronizada,
+  contenido de la carpeta FTP actual, plugins y payloads cargados.
+- Explorador FTP incluye cola secuencial de descargas de archivos y editor para
+  texto UTF-8 de hasta 1 MB (`ini`, `cfg`, `json`, `xml`, etc.), con advertencia
+  y confirmación antes de sobrescribir en la consola.
+- `ANALISIS_PERFIL_18A95DDF.md` registra una auditoría de solo lectura del
+  perfil temporal y define una ruta segura para el futuro gestor de saves.

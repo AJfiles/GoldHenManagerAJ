@@ -639,3 +639,30 @@ window.addEventListener('appinstalled', () => {
 });
 
 window.ps5Notification = sysNotification;
+
+// ============ BÚSQUEDA GLOBAL ============
+let resultadosBusquedaGlobal = [];
+const modulosBusquedaGlobal = [
+    ['Biblioteca', 'Juegos, iconos y capturas', 'biblioteca'], ['Explorador FTP', 'Archivos de la consola', 'explorador'],
+    ['Transferencias', 'Subidas y Remote Package Installer', 'transferir'], ['Modding', 'Portadas y respaldos', 'modding'],
+    ['Game Mods', 'Mods compatibles', 'mods'], ['Plugins', 'Asignaciones plugins.ini', 'plugins'],
+    ['Payloads', 'BinLoader GoldHEN', 'payloads'], ['Ajustes', 'Preferencias y actualización', 'ajustes'],
+    ['Store', 'Catálogo autorizado', 'store']
+];
+function escaparBusquedaGlobal(texto) { const node = document.createElement('span'); node.textContent = String(texto || ''); return node.innerHTML; }
+window.abrirBusquedaGlobal = function() { const modal=document.getElementById('modal-busqueda-global'), input=document.getElementById('global-search-input'); if(!modal||!input)return; modal.classList.remove('hidden'); modal.classList.add('flex'); input.value=''; resultadosBusquedaGlobal=[]; document.getElementById('global-search-results').innerHTML='<p class="p-3 text-center text-[10px] text-gray-500">Escribe al menos dos caracteres.</p>'; setTimeout(()=>input.focus(),30); };
+window.cerrarBusquedaGlobal = function() { const modal=document.getElementById('modal-busqueda-global'); if(modal){modal.classList.add('hidden');modal.classList.remove('flex');} };
+window.ejecutarBusquedaGlobal = function() {
+    const term=(document.getElementById('global-search-input')?.value||'').trim().toLowerCase(), target=document.getElementById('global-search-results'); if(!target)return;
+    if(term.length<2){target.innerHTML='<p class="p-3 text-center text-[10px] text-gray-500">Escribe al menos dos caracteres.</p>';return;}
+    const groups=[]; const add=(grupo,items)=>{if(items.length)groups.push([grupo,items]);};
+    add('Módulos',modulosBusquedaGlobal.filter(x=>(x[0]+' '+x[1]).toLowerCase().includes(term)).map(x=>({tipo:'module',valor:x[2],titulo:x[0],detalle:x[1]})));
+    add('Biblioteca',(typeof listadoJuegos!=='undefined'?listadoJuegos:[]).filter(j=>`${j.nombre||''} ${j.id||''}`.toLowerCase().includes(term)).slice(0,30).map(j=>({tipo:'game',valor:j.id,titulo:j.nombre||j.id,detalle:j.id||'Juego'})));
+    add('Explorador FTP',(typeof ftpCurrentItems!=='undefined'?ftpCurrentItems:[]).filter(x=>(x.name||'').toLowerCase().includes(term)).slice(0,30).map(x=>({tipo:'file',valor:x.name,titulo:x.name,detalle:'Archivo/carpeta de la ruta actual'})));
+    add('Plugins',[...(typeof pluginsRemotos!=='undefined'?pluginsRemotos:[]),...(typeof pluginsLocales!=='undefined'?pluginsLocales:[])].filter(x=>(x.name||'').toLowerCase().includes(term)).slice(0,30).map(x=>({tipo:'module',valor:'plugins',titulo:x.name,detalle:'Plugin PRX'})));
+    const payloadList=[...(typeof payloadsLocales!=='undefined'?payloadsLocales:[]),...(typeof payloadsRemotos!=='undefined'?payloadsRemotos:[])];
+    add('Payloads',payloadList.filter(x=>(x.name||'').toLowerCase().includes(term)).slice(0,30).map(x=>({tipo:'module',valor:'payloads',titulo:x.name,detalle:'Payload'})));
+    resultadosBusquedaGlobal=groups.flatMap(x=>x[1]); let index=0;
+    target.innerHTML=groups.length?groups.map(([grupo,items])=>`<section><h3 class="mb-1 text-[9px] font-black uppercase tracking-widest text-violet-300">${grupo}</h3>${items.map(item=>{const i=index++;return `<button onclick="abrirResultadoBusquedaGlobal(${i})" class="mb-1 flex w-full items-center gap-3 rounded-xl bg-white/[.035] p-3 text-left hover:bg-white/[.08]"><i class="fa-solid fa-arrow-right text-[10px] text-violet-300"></i><span class="min-w-0"><b class="block truncate text-[11px] text-white">${escaparBusquedaGlobal(item.titulo)}</b><small class="block truncate text-[9px] text-gray-500">${escaparBusquedaGlobal(item.detalle)}</small></span></button>`;}).join('')}</section>`).join(''):'<p class="p-3 text-center text-[10px] text-gray-500">Sin resultados en los datos cargados.</p>';
+};
+window.abrirResultadoBusquedaGlobal = function(index) { const item=resultadosBusquedaGlobal[index]; if(!item)return; cerrarBusquedaGlobal(); if(item.tipo==='file'){abrirModulo('explorador');return;} if(item.valor==='store'){window.location.href='store/store.php';return;} if(item.valor==='mods'&&typeof abrirModuloNativo==='function'){abrirModuloNativo('mods');return;} abrirModulo(item.valor); };

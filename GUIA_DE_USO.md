@@ -66,8 +66,13 @@
 7. Sube el contenido a las mismas rutas del repositorio. Los usuarios solo
    abren Store y pulsan **Actualizar** para consultar el nuevo catálogo.
 
-La tienda no acepta enlaces de páginas intermedias ni extrae enlaces de
-servicios de alojamiento: usa un enlace directo a un paquete autorizado.
+El panel también incluye **Buscar actualizaciones** y **Actualizar Store Admin**.
+Este último hace una actualización lineal desde GitHub y se detiene si detecta
+cambios locales, para no sobrescribir ediciones sin publicar. Reinicia
+`store-admin` cuando finalice.
+
+Usa únicamente enlaces y contenido cuya publicación estés autorizado a realizar.
+Los servicios externos pueden cambiar su disponibilidad o sus condiciones.
 
 ## Prueba de aceptación en Termux
 

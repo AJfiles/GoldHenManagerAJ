@@ -57,6 +57,7 @@
             <button onclick="ejecutarAccionMultiple('copiar')" class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center active:scale-90"><i class="far fa-copy"></i></button>
             <button onclick="ejecutarAccionMultiple('cortar')" class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center active:scale-90"><i class="fas fa-cut"></i></button>
             <button onclick="ejecutarAccionMultiple('duplicar')" class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center active:scale-90"><i class="far fa-clone"></i></button>
+            <button onclick="ejecutarAccionMultiple('descargar')" class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-300 flex items-center justify-center active:scale-90" title="Descargar seleccionados"><i class="fas fa-download"></i></button>
             <button onclick="ejecutarAccionMultiple('eliminar')" class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center active:scale-90 shadow-[0_0_10px_rgba(239,68,68,0.3)]"><i class="fas fa-trash"></i></button>
         </div>
     </div>
@@ -74,6 +75,7 @@
             <span class="w-16 text-right text-[9px] font-black text-gray-500 uppercase tracking-widest">Tamaño</span>
         </div>
         <div id="ftp-list-container" class="flex-1 overflow-y-auto hide-scrollbar p-2 flex flex-col gap-1 pb-24"></div>
+        <div id="ftp-download-queue" class="hidden shrink-0 border-t border-cyan-500/15 bg-cyan-500/5 px-3 py-2 text-[9px] text-cyan-100"></div>
     </div>
 
     <div class="absolute bottom-6 right-6 z-[100] flex flex-col items-end gap-3">
@@ -150,12 +152,22 @@
             <button onclick="ctxAction('cortar')" class="flex flex-col items-center gap-2.5 text-gray-300 active:scale-90 transition-transform group"><div class="w-14 h-14 rounded-[1.2rem] bg-white/5 flex items-center justify-center text-xl group-hover:bg-orange-500/20 group-hover:text-orange-400 border border-white/5 transition-all"><i class="fas fa-cut"></i></div><span class="text-[9px] font-black uppercase tracking-widest">Cortar</span></button>
             <button onclick="ctxAction('renombrar')" class="flex flex-col items-center gap-2.5 text-gray-300 active:scale-90 transition-transform group"><div class="w-14 h-14 rounded-[1.2rem] bg-white/5 flex items-center justify-center text-xl group-hover:bg-purple-500/20 group-hover:text-purple-400 border border-white/5 transition-all"><i class="fas fa-edit"></i></div><span class="text-[9px] font-black uppercase tracking-widest">Renombrar</span></button>
             <button onclick="ctxAction('duplicar')" class="flex flex-col items-center gap-2.5 text-gray-300 active:scale-90 transition-transform group"><div class="w-14 h-14 rounded-[1.2rem] bg-white/5 flex items-center justify-center text-xl group-hover:bg-emerald-500/20 group-hover:text-emerald-400 border border-white/5 transition-all"><i class="far fa-clone"></i></div><span class="text-[9px] font-black uppercase tracking-widest">Duplicar</span></button>
+            <button id="ctx-edit-file" onclick="ctxAction('editar')" class="hidden flex flex-col items-center gap-2.5 text-gray-300 active:scale-90 transition-transform group"><div class="w-14 h-14 rounded-[1.2rem] bg-white/5 flex items-center justify-center text-xl group-hover:bg-amber-500/20 group-hover:text-amber-300 border border-white/5 transition-all"><i class="fas fa-file-pen"></i></div><span class="text-[9px] font-black uppercase tracking-widest">Editar</span></button>
             <button onclick="ctxAction('compartir')" class="flex flex-col items-center gap-2.5 text-gray-300 active:scale-90 transition-transform group"><div class="w-14 h-14 rounded-[1.2rem] bg-white/5 flex items-center justify-center text-xl group-hover:bg-cyan-500/20 group-hover:text-cyan-400 border border-white/5 transition-all"><i class="fas fa-download"></i></div><span class="text-[9px] font-black uppercase tracking-widest text-center leading-tight">Al Celular</span></button>
             <button onclick="ctxAction('seleccionar')" class="flex flex-col items-center gap-2.5 text-gray-300 active:scale-90 transition-transform group"><div class="w-14 h-14 rounded-[1.2rem] bg-white/5 flex items-center justify-center text-xl group-hover:bg-indigo-500/20 group-hover:text-indigo-400 border border-white/5 transition-all"><i class="fas fa-check-double"></i></div><span class="text-[9px] font-black uppercase tracking-widest text-center leading-tight">Múltiple</span></button>
         </div>
         <div class="w-full mt-6 pt-5 border-t border-white/5 flex justify-center">
             <button onclick="ctxAction('eliminar')" class="w-full py-3.5 flex items-center justify-center gap-3 text-red-400 active:scale-95 transition-transform group bg-red-950/30 rounded-xl border border-red-500/20 hover:bg-red-900/50"><i class="far fa-trash-alt text-lg group-hover:scale-110 transition-transform"></i><span class="text-[11px] font-black uppercase tracking-widest">Eliminar de la Consola</span></button>
         </div>
+    </div>
+</div>
+
+<div id="modal-editor-ftp" class="fixed inset-0 z-[970] hidden items-center justify-center bg-black/90 backdrop-blur-md p-4">
+    <div class="w-full max-w-2xl max-h-[88dvh] rounded-3xl border border-amber-500/30 bg-[#0a0f1a] p-5 flex flex-col shadow-2xl">
+        <div class="flex items-start justify-between gap-3 mb-3"><div><h3 class="text-sm font-black text-amber-300">Editor de texto FTP</h3><p id="ftp-editor-path" class="text-[9px] text-gray-500 break-all"></p></div><button onclick="cerrarEditorFtp()" class="w-9 h-9 rounded-xl bg-white/5 text-gray-300"><i class="fas fa-xmark"></i></button></div>
+        <p class="mb-3 rounded-xl border border-red-500/25 bg-red-500/10 p-3 text-[9px] leading-relaxed text-red-100"><i class="fas fa-triangle-exclamation mr-1"></i> Editar archivos de la PS4 puede romper aplicaciones, plugins o el sistema si no sabes exactamente qué haces. Se sobrescribe el archivo completo al guardar.</p>
+        <textarea id="ftp-editor-content" spellcheck="false" class="min-h-64 flex-1 resize-y rounded-xl border border-white/10 bg-black/40 p-3 font-mono text-[11px] text-gray-100 outline-none focus:border-amber-400"></textarea>
+        <div class="mt-4 flex gap-3"><button onclick="cerrarEditorFtp()" class="flex-1 rounded-xl bg-white/5 py-3 text-[10px] font-black uppercase text-gray-300">Cancelar</button><button onclick="guardarEditorFtp()" class="flex-1 rounded-xl bg-amber-400 py-3 text-[10px] font-black uppercase text-black">Guardar en PS4</button></div>
     </div>
 </div>
 

@@ -24,6 +24,11 @@ let deleteCallback = null;
 
 let uploadAbortController = null;
 let isUploadingExplorer = false;
+let colaDescargasFtp = [];
+let descargaFtpEnCurso = false;
+let rutaEditorFtp = null;
+
+function esArchivoTextoEditable(nombre) { return /\.(ini|cfg|conf|json|xml|txt|log|csv|yml|yaml|properties)$/i.test(nombre || ''); }
 
 function abrirCapaExplorador() {
     document.querySelectorAll('.app-layer').forEach(layer => layer.classList.remove('active', 'flex'));
@@ -232,6 +237,8 @@ function abrirContextMenu(item, isDir, iconCode) {
     document.getElementById('ctx-subtitle').innerText = isDir ? "Carpeta" : formatearTamanoBytes(item.size);
     document.getElementById('ctx-icon').className = `w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-xl`;
     document.getElementById('ctx-icon').innerHTML = `<i class="${iconCode}"></i>`;
+    const editButton = document.getElementById('ctx-edit-file');
+    if (editButton) editButton.classList.toggle('hidden', isDir || !esArchivoTextoEditable(item.name));
 
     const menu = document.getElementById('ctx-menu-sheet');
     const content = document.getElementById('ctx-menu-content');
@@ -277,18 +284,9 @@ function ctxAction(actionStr) {
             activarModoMultiselect();
         } else if (actionStr === 'compartir') {
             if (ctxTargetItem.isDir) { window.ps5Notification("AVISO", "No se puede descargar carpetas enteras aún.", "fas fa-info"); return; }
-            const ip = localStorage.getItem('sebas_ip_final_libre');
-            let downloadUrl = `api/explorador_api.php?action=descargar_directo&host_ip=${ip}&path=${encodeURIComponent(ctxTargetItem.fullPath)}`;
-
-            let iframe = document.getElementById('hidden-downloader-frame');
-            if (!iframe) {
-                iframe = document.createElement('iframe');
-                iframe.id = 'hidden-downloader-frame';
-                iframe.style.display = 'none';
-                document.body.appendChild(iframe);
-            }
-            window.ps5Notification("DESCARGANDO", "Revisa las descargas de tu celular.", "fas fa-download");
-            iframe.src = downloadUrl;
+            agregarColaDescargasFtp([ctxTargetItem.fullPath]);
+        } else if (actionStr === 'editar') {
+            abrirEditorFtp(ctxTargetItem);
         }
     }, 350);
 }
@@ -403,7 +401,74 @@ function ejecutarAccionMultiple(accion) {
             }
             cancelarSeleccionMultiple();
         });
+    } else if (accion === 'descargar') {
+        const archivos = Array.from(multiSelectedPaths.entries()).filter(([, isDir]) => !isDir).map(([path]) => path);
+        if (!archivos.length) { window.ps5Notification('DESCARGAS', 'Selecciona al menos un archivo, no carpetas.', 'fas fa-info'); return; }
+        agregarColaDescargasFtp(archivos);
+        cancelarSeleccionMultiple();
     }
+}
+
+function renderizarColaDescargasFtp() {
+    const panel = document.getElementById('ftp-download-queue'); if (!panel) return;
+    if (!colaDescargasFtp.length && !descargaFtpEnCurso) { panel.classList.add('hidden'); panel.textContent = ''; return; }
+    panel.classList.remove('hidden');
+    const total = colaDescargasFtp.length + (descargaFtpEnCurso ? 1 : 0);
+    const actual = colaDescargasFtp.find(job => job.estado === 'activa') || colaDescargasFtp[0];
+    panel.innerHTML = `<div class="flex justify-between gap-2"><span><i class="fas fa-download mr-1"></i> Cola de descargas: ${total}</span><span class="truncate">${actual ? actual.nombre : 'Finalizada'}</span></div>`;
+}
+
+function agregarColaDescargasFtp(paths) {
+    const existentes = new Set(colaDescargasFtp.map(job => job.path));
+    paths.forEach(path => { if (!existentes.has(path)) colaDescargasFtp.push({ path, nombre: path.split('/').pop(), estado: 'pendiente' }); });
+    renderizarColaDescargasFtp();
+    if (!descargaFtpEnCurso) procesarColaDescargasFtp();
+    window.ps5Notification('DESCARGAS', `${paths.length} archivo(s) añadido(s) a la cola.`, 'fas fa-download');
+}
+
+async function procesarColaDescargasFtp() {
+    if (descargaFtpEnCurso) return;
+    descargaFtpEnCurso = true;
+    while (colaDescargasFtp.length) {
+        const job = colaDescargasFtp[0]; job.estado = 'activa'; renderizarColaDescargasFtp();
+        try { await descargarArchivoFtp(job.path); window.ps5Notification('DESCARGA', `Terminada: ${job.nombre}`, 'fas fa-check'); }
+        catch (_) { window.ps5Notification('DESCARGA', `No se pudo completar: ${job.nombre}`, 'fas fa-triangle-exclamation'); }
+        colaDescargasFtp.shift(); renderizarColaDescargasFtp();
+    }
+    descargaFtpEnCurso = false; renderizarColaDescargasFtp();
+}
+
+function descargarArchivoFtp(path) {
+    return new Promise((resolve, reject) => {
+        const ip = localStorage.getItem('sebas_ip_final_libre'); if (!ip) { reject(new Error('Sin IP')); return; }
+        const frame = document.createElement('iframe'); frame.style.display = 'none';
+        const timeout = setTimeout(() => { frame.remove(); reject(new Error('Tiempo agotado')); }, 10 * 60 * 1000);
+        frame.onload = () => { clearTimeout(timeout); setTimeout(() => frame.remove(), 1000); resolve(); };
+        frame.src = `api/explorador_api.php?action=download_file&host_ip=${encodeURIComponent(ip)}&path=${encodeURIComponent(path)}`;
+        document.body.appendChild(frame);
+    });
+}
+
+async function abrirEditorFtp(item) {
+    if (!item || item.isDir || !esArchivoTextoEditable(item.name)) return;
+    const ip = localStorage.getItem('sebas_ip_final_libre'); if (!ip) { window.ps5Notification('EDITOR', 'Conecta primero la PS4.', 'fas fa-wifi'); return; }
+    const modal = document.getElementById('modal-editor-ftp'), content = document.getElementById('ftp-editor-content');
+    rutaEditorFtp = item.fullPath; document.getElementById('ftp-editor-path').textContent = rutaEditorFtp; content.value = 'Cargando…'; modal.classList.remove('hidden'); modal.classList.add('flex');
+    try {
+        const fd = new FormData(); fd.append('action', 'read_text_file'); fd.append('host_ip', ip); fd.append('path', rutaEditorFtp);
+        const data = await (await fetch('api/explorador_api.php', { method: 'POST', body: fd })).json();
+        if (data.status !== 'success') throw new Error(data.message); content.value = data.content;
+    } catch (error) { content.value = ''; window.ps5Notification('EDITOR', error.message || 'No se pudo abrir el archivo.', 'fas fa-triangle-exclamation'); }
+}
+function cerrarEditorFtp() { document.getElementById('modal-editor-ftp')?.classList.add('hidden'); document.getElementById('modal-editor-ftp')?.classList.remove('flex'); rutaEditorFtp = null; }
+async function guardarEditorFtp() {
+    if (!rutaEditorFtp || !confirm('¿Guardar y sobrescribir este archivo en la PS4?')) return;
+    const ip = localStorage.getItem('sebas_ip_final_libre'), content = document.getElementById('ftp-editor-content').value;
+    try {
+        const fd = new FormData(); fd.append('action', 'write_text_file'); fd.append('host_ip', ip); fd.append('path', rutaEditorFtp); fd.append('content', content);
+        const data = await (await fetch('api/explorador_api.php', { method: 'POST', body: fd })).json(); if (data.status !== 'success') throw new Error(data.message);
+        window.ps5Notification('EDITOR', 'Archivo guardado en la PS4.', 'fas fa-check'); cerrarEditorFtp(); cargarRutaFtp(exploradorRutaActual, true);
+    } catch (error) { window.ps5Notification('EDITOR', error.message || 'No se pudo guardar.', 'fas fa-triangle-exclamation'); }
 }
 
 function abrirDeleteConfirm(targetName, onConfirmCallback) {

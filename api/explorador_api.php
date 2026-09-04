@@ -9,13 +9,13 @@ error_reporting(0);
 ini_set('display_errors', 0);
 set_time_limit(0);
 
-header('Content-Type: application/json; charset=utf-8');
-
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 $host_ip = $_POST['host_ip'] ?? $_GET['host_ip'] ?? '';
 $port = 2121;
 
-if (!$host_ip && $action !== 'descargar_directo') {
+if (!in_array($action, ['descargar_directo', 'download_file'], true)) header('Content-Type: application/json; charset=utf-8');
+
+if (!$host_ip) {
     echo json_encode(['status' => 'error', 'message' => 'Falta la IP de la consola.']);
     exit;
 }
@@ -36,6 +36,20 @@ function enviar_comando_raw_ftp($host, $port, $comandos) {
         curl_close($ch);
     }
     return $res;
+}
+
+function ruta_ftp_segura($path) {
+    $path = str_replace('\\', '/', trim((string)$path));
+    if ($path === '' || $path[0] !== '/' || str_contains($path, "\0") || preg_match('/[\r\n]/', $path)) return false;
+    $parts = explode('/', $path);
+    foreach ($parts as $part) if ($part === '.' || $part === '..') return false;
+    return '/' . implode('/', array_filter($parts, fn($part) => $part !== ''));
+}
+function archivo_texto_permitido($path) {
+    return (bool)preg_match('/\.(ini|cfg|conf|json|xml|txt|log|csv|yml|yaml|properties)$/i', (string)$path);
+}
+function url_ftp_archivo($host, $port, $path) {
+    return "ftp://$host:$port" . implode('/', array_map('rawurlencode', explode('/', $path)));
 }
 
 // =======================================================
@@ -270,15 +284,37 @@ if ($action === 'copiar') {
     exit;
 }
 
-if ($action === 'descargar_directo') {
-    $path = $_GET['path'] ?? '';
-    if (!$path) exit;
-    $filename = basename($path);
-    header("Content-Disposition: attachment; filename=\"" . $filename . "\"");
-    header("Content-Type: application/octet-stream");
-    $url = "ftp://$host_ip:$port" . implode('/', array_map('rawurlencode', explode('/', $path)));
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 300);
+if ($action === 'read_text_file') {
+    $path = ruta_ftp_segura($_POST['path'] ?? '');
+    if (!$path || !archivo_texto_permitido($path)) { echo json_encode(['status'=>'error','message'=>'Solo se pueden abrir archivos de texto permitidos.']); exit; }
+    $ch = curl_init(url_ftp_archivo($host_ip, $port, $path));
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>25, CURLOPT_FAILONERROR=>true]);
+    $content = curl_exec($ch); $error = curl_error($ch); curl_close($ch);
+    if ($content === false || strlen($content) > 1048576) { echo json_encode(['status'=>'error','message'=>$content === false ? "No se pudo leer el archivo: $error" : 'El editor admite archivos de hasta 1 MB.']); exit; }
+    if (!preg_match('//u', $content)) { echo json_encode(['status'=>'error','message'=>'El archivo no parece ser texto UTF-8 editable.']); exit; }
+    echo json_encode(['status'=>'success','content'=>$content]); exit;
+}
+
+if ($action === 'write_text_file') {
+    $path = ruta_ftp_segura($_POST['path'] ?? ''); $content = (string)($_POST['content'] ?? '');
+    if (!$path || !archivo_texto_permitido($path)) { echo json_encode(['status'=>'error','message'=>'Ruta o tipo de archivo no permitido.']); exit; }
+    if (strlen($content) > 1048576 || !preg_match('//u', $content)) { echo json_encode(['status'=>'error','message'=>'El contenido debe ser UTF-8 y no superar 1 MB.']); exit; }
+    $stream = fopen('php://temp', 'r+'); fwrite($stream, $content); rewind($stream);
+    $ch = curl_init(url_ftp_archivo($host_ip, $port, $path));
+    curl_setopt_array($ch, [CURLOPT_UPLOAD=>true, CURLOPT_INFILE=>$stream, CURLOPT_INFILESIZE=>strlen($content), CURLOPT_TIMEOUT=>60]);
+    $ok = curl_exec($ch); $error = curl_error($ch); curl_close($ch); fclose($stream);
+    echo json_encode($ok ? ['status'=>'success'] : ['status'=>'error','message'=>"No se pudo guardar: $error"]); exit;
+}
+
+if ($action === 'descargar_directo' || $action === 'download_file') {
+    $path = ruta_ftp_segura($_GET['path'] ?? '');
+    if (!$path) { http_response_code(400); exit; }
+    $filename = str_replace(['"', "\r", "\n"], '', basename($path));
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Content-Type: application/octet-stream');
+    header('X-Content-Type-Options: nosniff');
+    $ch = curl_init(url_ftp_archivo($host_ip, $port, $path));
+    curl_setopt($ch, CURLOPT_TIMEOUT, 0);
     curl_exec($ch);
     curl_close($ch);
     exit;

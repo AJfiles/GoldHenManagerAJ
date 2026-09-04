@@ -35,6 +35,34 @@ function store_admin_dlc(string $value): array {
     if (store_admin_not_applicable($value)) return [];
     $out = []; foreach (preg_split('/[\r\n,]+/', $value) as $url) { $url = trim($url); if (!store_admin_not_applicable($url)) $out[] = store_admin_url($url); } return array_values(array_unique($out));
 }
+/* Comprueba y aplica únicamente avances lineales del repositorio. No sobrescribe
+   cambios locales del mantenedor, incluidas ediciones manuales del panel. */
+function store_admin_repository_update(bool $apply): string {
+    if (!function_exists('exec')) throw new RuntimeException('PHP no permite ejecutar Git en este servidor.');
+    $root = dirname(STORE_ROOT);
+    $run = static function (string $arguments) use ($root): array {
+        $output = []; $code = 1;
+        exec('git -C ' . escapeshellarg($root) . ' ' . $arguments . ' 2>&1', $output, $code);
+        return [$code, trim(implode("\n", $output))];
+    };
+    [$code, $output] = $run('rev-parse --is-inside-work-tree');
+    if ($code !== 0 || $output !== 'true') throw new RuntimeException('La instalación no es un repositorio Git válido.');
+    if ($apply) {
+        [$code, $dirty] = $run('status --porcelain');
+        if ($code !== 0) throw new RuntimeException('No se pudo consultar el estado de Git.');
+        if ($dirty !== '') throw new RuntimeException('Hay cambios locales. Súbelos o resuélvelos antes de actualizar; no se sobrescribieron.');
+    }
+    [$code, $fetch] = $run('fetch --quiet origin main');
+    if ($code !== 0) throw new RuntimeException('No se pudo consultar GitHub: ' . $fetch);
+    [$code, $counts] = $run('rev-list --left-right --count HEAD...origin/main');
+    if ($code !== 0 || !preg_match('/^(\d+)\s+(\d+)$/', $counts, $matches)) throw new RuntimeException('No se pudo comparar la versión local.');
+    $behind = (int)$matches[2];
+    if (!$apply) return $behind > 0 ? "Hay $behind actualización(es) disponible(s)." : 'Ya tienes la última versión disponible.';
+    if ($behind === 0) return 'Ya tienes la última versión disponible.';
+    [$code, $pull] = $run('pull --ff-only origin main');
+    if ($code !== 0) throw new RuntimeException('La actualización no se aplicó: ' . $pull);
+    return "Actualización aplicada ($behind cambio(s)). Reinicia store-admin para usar los archivos nuevos.";
+}
 function store_admin_cover(string $id, ?string $previous): ?string {
     if (empty($_FILES['cover']) || $_FILES['cover']['error'] === UPLOAD_ERR_NO_FILE) return $previous;
     $upload = $_FILES['cover'];
