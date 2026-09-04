@@ -1,7 +1,7 @@
 # Comparativa técnica: GoldHen Manager AJ 3.2 frente a GoldHenManager-v3
 
 Fecha de análisis: 3 de septiembre de 2026. La carpeta `GoldHenManager-v3-main`
-fue analizada en modo lectura y no fue modificada.
+fue analizada en modo lectura y no fue modificada para esta comparativa
 
 ## Alcance y método
 
