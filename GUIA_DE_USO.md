@@ -96,4 +96,9 @@ Comprueba en este orden:
 9. Ejecuta `store-admin`, guarda un elemento de prueba autorizado y verifica
    que el ZIP contiene `store/data/catalogo.json` y `store-changes.json`.
 
+Para arrancar de forma fiable, ejecuta `goldhen` y espera el mensaje con
+`http://127.0.0.1:8080/index.php` antes de abrir el navegador. No cierres la
+sesión de Termux que mantiene el servidor. `store-admin` abre su propio servidor
+local y no debe ejecutarse en la misma terminal que GoldHen.
+
 Si falla una operación, conserva el mensaje mostrado y verifica IP, puerto, red Wi-Fi, GoldHEN y permisos de almacenamiento de Termux.

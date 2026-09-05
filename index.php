@@ -116,12 +116,15 @@ header('X-Author: ' . $firma);
             </h1>
             <div class="flex items-center justify-center gap-3 mt-2.5 opacity-80">
                 <span class="h-[1px] w-6 bg-gradient-to-r from-transparent to-cyan-500/80"></span>
-                <span class="text-[9px] font-mono tracking-[0.4em] font-bold text-cyan-400">VERSION 3.2 • AJ</span>
+                <span class="text-[9px] font-mono tracking-[0.4em] font-bold text-cyan-400">VERSION 3.3 • AJ</span>
                 <span class="h-[1px] w-6 bg-gradient-to-l from-transparent to-cyan-500/80"></span>
             </div>
         </div>
 
         <div class="w-full max-w-4xl mx-auto z-20 mt-4 shrink-0">
+            <button onclick="abrirBusquedaGlobal()" class="mb-3 flex w-full items-center gap-3 rounded-2xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-left active:scale-[.99] transition-all hover:bg-violet-500/10">
+                <i class="fa-solid fa-magnifying-glass text-violet-300"></i><span class="flex-1 text-[10px] font-bold tracking-wide text-violet-100">Buscar en GoldHen Manager…</span><span class="text-[8px] uppercase tracking-widest text-violet-300/70">Global</span>
+            </button>
             <div class="glass-premium p-4 rounded-[2rem] flex flex-col gap-3 shadow-2xl">
                 
                 <div class="flex items-center justify-between px-1 w-full">
@@ -149,7 +152,6 @@ header('X-Author: ' . $firma);
                     <button onclick="lanzarRadarVentanaEmergente()" class="h-10 px-3 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center gap-1.5 text-cyan-400 font-bold text-[10px] tracking-wider active:scale-95 transition-all shrink-0 hover:bg-cyan-600/30">
                         <i class="fa-solid fa-satellite-dish" id="radar-icon-loop"></i> Radar
                     </button>
-                    <button onclick="abrirBusquedaGlobal()" class="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-300 active:scale-95 transition-all shrink-0" title="Búsqueda global"><i class="fa-solid fa-magnifying-glass"></i></button>
                 </div>
             </div>
         </div>
@@ -160,11 +162,11 @@ header('X-Author: ' . $firma);
             <div onclick="abrirModulo('modding')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-purple-900/30 text-purple-400 flex items-center justify-center mb-3 border border-purple-500/10"><i class="fa-solid fa-wand-magic-sparkles text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Modding</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Inyectar Portadas</span></div>
             <div onclick="abrirModulo('transferir')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-amber-900/30 text-amber-400 flex items-center justify-center mb-3 border border-amber-500/10"><i class="fa-solid fa-cloud-arrow-up text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Transferencias</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Chunks de PKG</span></div>
             <div onclick="abrirModuloNativo('mods')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-indigo-900/30 text-indigo-400 flex items-center justify-center mb-3 border border-indigo-500/10"><i class="fa-solid fa-cubes text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Game Mods</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Trucos y Parches</span></div>
-            <div onclick="abrirModulo('ajustes')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-gray-700/30 text-gray-300 flex items-center justify-center mb-3 border border-gray-500/10"><i class="fa-solid fa-sliders text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Ajustes</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Live BGs e Intros</span></div>
             <div onclick="abrirModulo('plugins')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-violet-900/30 text-violet-400 flex items-center justify-center mb-3 border border-violet-500/10"><i class="fa-solid fa-plug text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Plugins</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">GoldHEN Loader</span></div>
             <div onclick="abrirModulo('payloads')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-amber-900/30 text-amber-400 flex items-center justify-center mb-3 border border-amber-500/10"><i class="fa-solid fa-rocket text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Payloads</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">BinLoader 9090</span></div>
             <div onclick="abrirModulo('backup')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-emerald-900/30 text-emerald-300 flex items-center justify-center mb-3 border border-emerald-500/10"><i class="fa-solid fa-box-archive text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Respaldo</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Migrar Configuración</span></div>
             <div onclick="window.location.href='store/store.php'" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-cyan-900/30 text-cyan-300 flex items-center justify-center mb-3 border border-cyan-500/10"><i class="fa-solid fa-store text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Store</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Catálogo autorizado</span></div>
+            <div onclick="abrirModulo('ajustes')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-gray-700/30 text-gray-300 flex items-center justify-center mb-3 border border-gray-500/10"><i class="fa-solid fa-sliders text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Ajustes</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Live BGs e Intros</span></div>
         </div>
 
         <div class="w-full text-center pt-2 pb-1 shrink-0 text-[9px] tracking-widest font-mono uppercase text-cyan-300/70">GoldHen Manager AJ <span class="text-gray-500">· Base de SeBaS</span></div>

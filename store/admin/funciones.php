@@ -69,15 +69,23 @@ function store_admin_cover(string $id, ?string $previous): ?string {
     if ($upload['error'] !== UPLOAD_ERR_OK || $upload['size'] > STORE_ADMIN_MAX_IMAGE_BYTES) throw new RuntimeException('La carátula debe ser una imagen válida de hasta 5 MB.');
     $info = @getimagesize($upload['tmp_name']); $mime = $info['mime'] ?? '';
     if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) throw new RuntimeException('La carátula debe ser JPG, PNG o WebP.');
-    if (!function_exists('imagecreatetruecolor') || !function_exists('imagewebp')) throw new RuntimeException('PHP GD/WebP no está disponible para convertir la carátula.');
-    $destination = STORE_COVERS_DIR . '/' . $id . '.webp';
+    /* En Termux, GD puede estar ausente o compilarse sin WebP. Si eso ocurre,
+       se conserva la imagen original en formato seguro en vez de bloquear el
+       alta del catálogo. */
+    if (!function_exists('imagecreatetruecolor')) {
+        $extension = $mime === 'image/png' ? 'png' : ($mime === 'image/webp' ? 'webp' : 'jpg');
+        $destination = STORE_COVERS_DIR . '/' . $id . '.' . $extension;
+        if (!move_uploaded_file($upload['tmp_name'], $destination)) throw new RuntimeException('No se pudo guardar la carátula.');
+        return '/store/covers/' . basename($destination);
+    }
     $source = match ($mime) { 'image/jpeg' => @imagecreatefromjpeg($upload['tmp_name']), 'image/png' => @imagecreatefrompng($upload['tmp_name']), 'image/webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($upload['tmp_name']) : false };
-    if (!$source) throw new RuntimeException('No se pudo abrir la carátula para convertirla a WebP.');
+    if (!$source) throw new RuntimeException('No se pudo abrir la carátula. Instala php-gd para convertirla o usa JPG/PNG.');
     $width = imagesx($source); $height = imagesy($source); $scale = min(400 / $width, 400 / $height, 1); $nw = max(1, (int) round($width * $scale)); $nh = max(1, (int) round($height * $scale));
     $canvas = imagecreatetruecolor($nw, $nh); imagealphablending($canvas, false); imagesavealpha($canvas, true); imagecopyresampled($canvas, $source, 0, 0, 0, 0, $nw, $nh, $width, $height);
-    $ok = imagewebp($canvas, $destination, 82); imagedestroy($source); imagedestroy($canvas);
-    if (!$ok) throw new RuntimeException('No se pudo convertir la carátula a WebP.');
-    return 'store/covers/' . $id . '.webp';
+    if (function_exists('imagewebp')) { $destination = STORE_COVERS_DIR . '/' . $id . '.webp'; $ok = @imagewebp($canvas, $destination, 82); }
+    else { $destination = STORE_COVERS_DIR . '/' . $id . '.jpg'; $ok = @imagejpeg($canvas, $destination, 86); }
+    if (!$ok) throw new RuntimeException('No se pudo convertir ni guardar la carátula.');
+    return '/store/covers/' . basename($destination);
 }
 function store_admin_entry(?array $previous = null): array {
     $id = store_admin_id(store_admin_text('id', 20));

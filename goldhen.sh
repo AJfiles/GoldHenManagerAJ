@@ -60,7 +60,7 @@ else
 
     export DEBIAN_FRONTEND=noninteractive
     ejecutar_paso "Actualizando repositorios..." pkg update -y -o Dpkg::Options::="--force-confold"
-    ejecutar_paso "Instalando dependencias..." pkg install -y -o Dpkg::Options::="--force-confold" git php termux-api zip unzip
+    ejecutar_paso "Instalando dependencias..." pkg install -y -o Dpkg::Options::="--force-confold" git php php-gd termux-api zip unzip
 
     echo -e "${CYAN}• Creando estructura de datos...${NC}"
     mkdir -p /sdcard/GoldHenManager/user
@@ -83,7 +83,10 @@ AMARILLO='\033[1;33m'
 BLANCO='\033[1;37m'
 NC='\033[0m'
 
-store-admin() {
+      goldhen() {
+        bash "$HOME/GoldHenManagerAJ/start-goldhen.sh"
+      }
+      store-admin() {
     bash "$HOME/GoldHenManagerAJ/store/admin.sh"
 }
 

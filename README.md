@@ -1,4 +1,4 @@
-# GoldHen Manager AJ
+# GoldHen Manager AJ v3.3
 
 Aplicación web local para Termux orientada a administrar una PS4 con GoldHEN mediante FTP. Se ejecuta en el teléfono y abre una interfaz PWA para consultar juegos, explorar archivos, transferir contenido y gestionar mods.
 
@@ -36,9 +36,9 @@ En Termux, ejecuta un único comando:
 curl -sL https://raw.githubusercontent.com/AJfiles/GoldHenManagerAJ/main/goldhen.sh | bash
 ```
 
-El instalador solicita acceso al almacenamiento, instala Git, PHP y Termux API, descarga el proyecto en `$HOME/GoldHenManagerAJ`, crea `/sdcard/GoldHenManager/user` y configura el arranque local. La salida usa un spinner: si falla un paso, se muestran las últimas líneas del registro para diagnosticarlo.
+El instalador solicita acceso al almacenamiento, instala Git, PHP, PHP GD, ZIP/UNZIP y Termux API, descarga el proyecto en `$HOME/GoldHenManagerAJ`, crea `/sdcard/GoldHenManager/user` y configura los comandos locales. La salida usa un spinner: si falla un paso, se muestran las últimas líneas del registro para diagnosticarlo.
 
-Después de finalizar, cierra Termux por completo y vuelve a abrirlo. La aplicación estará disponible en `http://localhost:8080/index.php`.
+Después de finalizar, cierra Termux por completo y vuelve a abrirlo. Inicia la aplicación con `goldhen`; la terminal mostrará la URL exacta cuando el servidor esté listo. Mantén esa sesión abierta mientras usas la aplicación. El administrador privado se abre con `store-admin`.
 
 Compatibilidad comprobada: PS4 Pro con firmware 9.00 y GoldHEN v2.4b18.10. Otras combinaciones de consola, firmware y GoldHEN pueden requerir rutas o permisos diferentes.
 

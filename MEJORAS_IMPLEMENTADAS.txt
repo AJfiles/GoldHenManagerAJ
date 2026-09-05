@@ -203,3 +203,13 @@ Mejoras de productividad y seguridad
   y confirmación antes de sobrescribir en la consola.
 - `ANALISIS_PERFIL_18A95DDF.md` registra una auditoría de solo lectura del
   perfil temporal y define una ruta segura para el futuro gestor de saves.
+
+Versión 3.3
+-----------
+- El instalador incorpora `php-gd`, `zip` y `unzip`; Store ya no obliga a WebP:
+  convierte a WebP cuando está disponible y usa JPG cuando GD no tiene ese
+  códec. Sin GD conserva la imagen de origen en un formato permitido.
+- Las carátulas nuevas usan rutas absolutas bajo `/store/covers/`, evitando que
+  el administrador las resuelva como una ruta incorrecta y las muestre grises.
+- El launcher reordena sus módulos, sitúa Búsqueda global sobre la información
+  de red y actualiza su identidad visual a GoldHen Manager AJ 3.3.
