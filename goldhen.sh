@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
 # ====================================================================
-# GOLDHEN MANAGER AJ v3.2 🚀 (PS4) - INSTALADOR UNIFICADO
+# GOLDHEN MANAGER AJ v3.3 🚀 (PS4) - INSTALADOR UNIFICADO
 # DEVELOPED By AJ - Basado en SeBaS
 # ====================================================================
 
@@ -40,7 +40,7 @@ ejecutar_paso() {
 
 clear
 echo -e "${CYAN}╭────────────────────────────────────╮${NC}"
-echo -e "${CYAN}│${NC}      ${BLANCO}GOLDHEN MANAGER AJ${NC} ${CYAN}v3.2      │${NC}"
+echo -e "${CYAN}│${NC}      ${BLANCO}GOLDHEN MANAGER AJ${NC} ${CYAN}v3.3      │${NC}"
 echo -e "${CYAN}│${NC}       ${AMARILLO}PS4 • Termux • Local FTP${NC}       ${CYAN}│${NC}"
 echo -e "${CYAN}╰────────────────────────────────────╯${NC}\n"
 
@@ -96,7 +96,7 @@ imprimir_logo() {
     echo -e "${VERDE} / ___| ___| |__| || |___ _ __      ${NC}"
     echo -e "${VERDE}| |  _ / _ \ |/ _\` | '__/ _ \ '_ \  ${NC}"
     echo -e "${VERDE}| |_| |  __/ | (_| | | |  __/ | | | ${NC}"
-    echo -e "${CYAN}        GOLDHEN MANAGER AJ v3.2      ${NC}\n"
+    echo -e "${CYAN}        GOLDHEN MANAGER AJ v3.3      ${NC}\n"
 }
 
 pkill -f "php -S" > /dev/null 2>&1
