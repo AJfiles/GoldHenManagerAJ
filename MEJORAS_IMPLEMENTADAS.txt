@@ -226,3 +226,8 @@ Versión 3.3
 - Instalador: ante un mirror de Termux desincronizado, borra índices temporales
   y reintenta automáticamente con los mirrors oficiales estables. También
   asegura PHP GD, ZIP y UNZIP desde la primera instalación.
+- Arranque: `goldhen` y `store-admin` se instalan como ejecutables reales en
+  `$PREFIX/bin`, por lo que no dependen de que Bash recargue `.bashrc`. La
+  instalación abre GoldHen Manager automáticamente y no expone Store Admin al
+  usuario final. Cuando las dependencias ya existen, omite `pkg update` para
+  hacer las reinstalaciones y actualizaciones más ágiles.

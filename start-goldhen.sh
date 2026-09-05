@@ -15,9 +15,11 @@ if ! command -v php >/dev/null 2>&1; then
 fi
 if command -v curl >/dev/null 2>&1 && curl -fsS --max-time 1 "http://127.0.0.1:${PORT}/index.php" >/dev/null 2>&1; then
   echo "GoldHen Manager ya está abierto: http://127.0.0.1:${PORT}/index.php"
+  command -v termux-open-url >/dev/null 2>&1 && termux-open-url "http://127.0.0.1:${PORT}/index.php"
   exit 0
 fi
 cd "$PROJECT_DIR" || exit 1
 echo "GoldHen Manager AJ v3.3 disponible en http://127.0.0.1:${PORT}/index.php"
 echo "Mantén esta sesión de Termux abierta mientras usas la aplicación."
+(sleep 1; command -v termux-open-url >/dev/null 2>&1 && termux-open-url "http://127.0.0.1:${PORT}/index.php") &
 exec php -d memory_limit=256M -d max_execution_time=0 -S "127.0.0.1:${PORT}" -t "$PROJECT_DIR"
