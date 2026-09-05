@@ -36,9 +36,11 @@ En Termux, ejecuta un único comando:
 curl -sL https://raw.githubusercontent.com/AJfiles/GoldHenManagerAJ/main/goldhen.sh | bash
 ```
 
-El instalador solicita acceso al almacenamiento, instala Git, PHP, PHP GD, ZIP/UNZIP y Termux API, descarga el proyecto en `$HOME/GoldHenManagerAJ`, crea `/sdcard/GoldHenManager/user` y configura los comandos locales. La salida usa un spinner: si falla un paso, se muestran las últimas líneas del registro para diagnosticarlo.
+El instalador solicita acceso al almacenamiento, instala Git, PHP, PHP GD, ZIP/UNZIP y Termux API, descarga el proyecto en `$HOME/GoldHenManagerAJ`, crea `/sdcard/GoldHenManager/user` y configura los comandos locales. La salida usa un spinner silencioso. Si un mirror de Termux está desincronizado, limpia los índices y prueba automáticamente el mirror oficial y un segundo mirror estable antes de detenerse.
 
 Después de finalizar, cierra Termux por completo y vuelve a abrirlo. Inicia la aplicación con `goldhen`; la terminal mostrará la URL exacta cuando el servidor esté listo. Mantén esa sesión abierta mientras usas la aplicación. El administrador privado se abre con `store-admin`.
+
+Para evitar incompatibilidades de paquetes, se recomienda Termux desde [F-Droid](https://f-droid.org/packages/com.termux/) o GitHub oficial, no la versión obsoleta de Play Store.
 
 Compatibilidad comprobada: PS4 Pro con firmware 9.00 y GoldHEN v2.4b18.10. Otras combinaciones de consola, firmware y GoldHEN pueden requerir rutas o permisos diferentes.
 

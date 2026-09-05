@@ -220,3 +220,9 @@ Versión 3.3
   descripción, peso, proveedor, update y DLC publicados.
 - Visual: se aplicó la identidad 3.3 a las intros y se añadieron Aurora AJ y
   Onda clásica como opciones de inicio ligeras basadas en CSS.
+- Actualizador: GoldHen Manager y Store Admin resguardan los cambios locales
+  temporalmente con Git, aplican la actualización y los restauran; un conflicto
+  real queda protegido para resolverlo sin perder catálogo, carátulas ni código.
+- Instalador: ante un mirror de Termux desincronizado, borra índices temporales
+  y reintenta automáticamente con los mirrors oficiales estables. También
+  asegura PHP GD, ZIP y UNZIP desde la primera instalación.

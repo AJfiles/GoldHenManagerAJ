@@ -35,8 +35,9 @@ function store_admin_dlc(string $value): array {
     if (store_admin_not_applicable($value)) return [];
     $out = []; foreach (preg_split('/[\r\n,]+/', $value) as $url) { $url = trim($url); if (!store_admin_not_applicable($url)) $out[] = store_admin_url($url); } return array_values(array_unique($out));
 }
-/* Comprueba y aplica únicamente avances lineales del repositorio. No sobrescribe
-   cambios locales del mantenedor, incluidas ediciones manuales del panel. */
+/* Comprueba y aplica avances lineales sin descartar cambios del mantenedor.
+   Las ediciones locales (catálogo, portada o código) se guardan temporalmente,
+   se actualiza el proyecto y se restauran automáticamente al finalizar. */
 function store_admin_repository_update(bool $apply): string {
     if (!function_exists('exec')) throw new RuntimeException('PHP no permite ejecutar Git en este servidor.');
     $root = dirname(STORE_ROOT);
@@ -47,11 +48,6 @@ function store_admin_repository_update(bool $apply): string {
     };
     [$code, $output] = $run('rev-parse --is-inside-work-tree');
     if ($code !== 0 || $output !== 'true') throw new RuntimeException('La instalación no es un repositorio Git válido.');
-    if ($apply) {
-        [$code, $dirty] = $run('status --porcelain');
-        if ($code !== 0) throw new RuntimeException('No se pudo consultar el estado de Git.');
-        if ($dirty !== '') throw new RuntimeException('Hay cambios locales. Súbelos o resuélvelos antes de actualizar; no se sobrescribieron.');
-    }
     [$code, $fetch] = $run('fetch --quiet origin main');
     if ($code !== 0) throw new RuntimeException('No se pudo consultar GitHub: ' . $fetch);
     [$code, $counts] = $run('rev-list --left-right --count HEAD...origin/main');
@@ -59,9 +55,23 @@ function store_admin_repository_update(bool $apply): string {
     $behind = (int)$matches[2];
     if (!$apply) return $behind > 0 ? "Hay $behind actualización(es) disponible(s)." : 'Ya tienes la última versión disponible.';
     if ($behind === 0) return 'Ya tienes la última versión disponible.';
+    [$code, $dirty] = $run('status --porcelain');
+    if ($code !== 0) throw new RuntimeException('No se pudo consultar el estado de Git.');
+    $hasStash = $dirty !== '';
+    if ($hasStash) {
+        [$code, $stash] = $run('stash push --include-untracked -m goldhen-store-admin-autosave');
+        if ($code !== 0) throw new RuntimeException('No se pudo resguardar los cambios locales: ' . $stash);
+    }
     [$code, $pull] = $run('pull --ff-only origin main');
-    if ($code !== 0) throw new RuntimeException('La actualización no se aplicó: ' . $pull);
-    return "Actualización aplicada ($behind cambio(s)). Reinicia store-admin para usar los archivos nuevos.";
+    if ($code !== 0) {
+        if ($hasStash) $run('stash pop');
+        throw new RuntimeException('La actualización no se aplicó; tus cambios locales fueron conservados: ' . $pull);
+    }
+    if ($hasStash) {
+        [$code, $restore] = $run('stash pop');
+        if ($code !== 0) throw new RuntimeException('La actualización se aplicó, pero Git detectó un conflicto al restaurar tus cambios. Están conservados en la instalación para que los resuelvas.');
+    }
+    return "Actualización aplicada ($behind cambio(s)). Los cambios locales se conservaron automáticamente.";
 }
 function store_admin_cover(string $id, ?string $previous): ?string {
     if (empty($_FILES['cover']) || $_FILES['cover']['error'] === UPLOAD_ERR_NO_FILE) return $previous;

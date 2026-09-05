@@ -1,143 +1,102 @@
 #!/data/data/com.termux/files/usr/bin/bash
+# GoldHen Manager AJ v3.3 — instalador fiable para Termux
+set -u
 
-# ====================================================================
-# GOLDHEN MANAGER AJ v3.3 🚀 (PS4) - INSTALADOR UNIFICADO
-# DEVELOPED By AJ - Basado en SeBaS
-# ====================================================================
+VERDE='\033[1;32m'; CYAN='\033[1;36m'; AMARILLO='\033[1;33m'; ROJO='\033[1;31m'; BLANCO='\033[1;37m'; NC='\033[0m'
+REPO_DIR="$HOME/GoldHenManagerAJ"
+INSTALL_LOG="$HOME/.goldhen-install.log"
 
-VERDE='\033[1;32m'
-CYAN='\033[1;36m'
-AMARILLO='\033[1;33m'
-ROJO='\033[1;31m'
-BLANCO='\033[1;37m'
-NC='\033[0m'
-
-# === SPINNER ELEGANTE ===
 spinner() {
-    local pid=$1 message=$2 spin='⣾⣽⣻⢿⡿⣟⣯⣷' i=0
+    local pid="$1" message="$2" spin='⣾⣽⣻⢿⡿⣟⣯⣷' index=0
     while kill -0 "$pid" 2>/dev/null; do
-        i=$(( (i + 1) % 8 ))
-        printf "\r\033[K${CYAN}%s${NC} %s" "${spin:$i:1}" "$message"
+        index=$(( (index + 1) % 8 ))
+        printf "\r\033[K${CYAN}%s${NC} %s" "${spin:$index:1}" "$message"
         sleep 0.1
     done
 }
 
 ejecutar_paso() {
-    local mensaje=$1
-    shift
-    "$@" >"$HOME/.goldhen-install.log" 2>&1 &
-    local pid=$!
-    spinner "$pid" "$mensaje"
+    local message="$1"; shift
+    "$@" >"$INSTALL_LOG" 2>&1 &
+    local pid=$!; spinner "$pid" "$message"
     if wait "$pid"; then
-        printf "\r\033[K${VERDE}✓${NC} %s\n" "$mensaje"
-    else
-        printf "\n${ROJO}✗ Error durante: %s${NC}\n" "$mensaje"
-        echo "Últimas líneas del log:"
-        tail -n 10 "$HOME/.goldhen-install.log"
-        exit 1
+        printf "\r\033[K${VERDE}✓${NC} %s\n" "$message"; return 0
     fi
+    printf "\r\033[K${ROJO}✗${NC} %s\n" "$message"; return 1
+}
+
+usar_mirror() {
+    local base_url="$1"
+    [ -n "${PREFIX:-}" ] || return 1
+    mkdir -p "$PREFIX/etc/apt"
+    printf 'deb %s stable main\n' "$base_url" > "$PREFIX/etc/apt/sources.list"
+    apt clean >/dev/null 2>&1 || true
+    rm -rf "$PREFIX/var/lib/apt/lists/"* 2>/dev/null || true
+}
+
+actualizar_repositorios() {
+    if ejecutar_paso "Preparando repositorios…" pkg update -y -o Dpkg::Options::="--force-confold"; then return 0; fi
+    printf "${AMARILLO}↻ Sincronizando un mirror estable…${NC}\n"
+    usar_mirror 'https://packages.termux.dev/apt/termux-main' || return 1
+    if ejecutar_paso "Reintentando repositorios…" pkg update -y -o Dpkg::Options::="--force-confold"; then return 0; fi
+    printf "${AMARILLO}↻ Probando un segundo mirror estable…${NC}\n"
+    usar_mirror 'https://packages-cf.termux.dev/apt/termux-main' || return 1
+    ejecutar_paso "Comprobando repositorios…" pkg update -y -o Dpkg::Options::="--force-confold"
+}
+
+instalar_comandos() {
+    local bashrc="$HOME/.bashrc"
+    touch "$bashrc"
+    sed -i '/# >>> GOLDHEN MANAGER AJ >>>/,/# <<< GOLDHEN MANAGER AJ <<</d' "$bashrc"
+    cat >> "$bashrc" <<'EOF'
+
+# >>> GOLDHEN MANAGER AJ >>>
+goldhen() { bash "$HOME/GoldHenManagerAJ/start-goldhen.sh"; }
+store-admin() { bash "$HOME/GoldHenManagerAJ/store/admin.sh"; }
+# <<< GOLDHEN MANAGER AJ <<<
+EOF
 }
 
 clear
-echo -e "${CYAN}╭────────────────────────────────────╮${NC}"
-echo -e "${CYAN}│${NC}      ${BLANCO}GOLDHEN MANAGER AJ${NC} ${CYAN}v3.3      │${NC}"
-echo -e "${CYAN}│${NC}       ${AMARILLO}PS4 • Termux • Local FTP${NC}       ${CYAN}│${NC}"
-echo -e "${CYAN}╰────────────────────────────────────╯${NC}\n"
+printf "${CYAN}╭────────────────────────────────────╮${NC}\n"
+printf "${CYAN}│${NC}      ${BLANCO}GOLDHEN MANAGER AJ${NC} ${CYAN}v3.3      │${NC}\n"
+printf "${CYAN}│${NC}       ${AMARILLO}PS4 • Termux • Local FTP${NC}       ${CYAN}│${NC}\n"
+printf "${CYAN}╰────────────────────────────────────╯${NC}\n\n"
 
-REPO_DIR="$HOME/GoldHenManagerAJ"
+if ! command -v pkg >/dev/null 2>&1; then
+    printf "${ROJO}Este instalador necesita Termux.${NC}\n"
+    printf "Instala la edición actual desde https://f-droid.org/packages/com.termux/ y vuelve a intentarlo.\n"
+    exit 1
+fi
 
-if [ -d "$REPO_DIR" ]; then
-    echo -e "${AMARILLO}[*] Actualización detectada.${NC}"
-    cd "$REPO_DIR"
-    ejecutar_paso "Buscando actualizaciones..." git fetch --all
-    ejecutar_paso "Aplicando cambios..." git pull --ff-only origin main
+export DEBIAN_FRONTEND=noninteractive
+termux-setup-storage >/dev/null 2>&1 || true
+if ! actualizar_repositorios; then
+    printf "${ROJO}No se pudieron preparar los repositorios.${NC} Revisa la conexión y vuelve a ejecutar el mismo comando.\n"
+    exit 1
+fi
+if ! ejecutar_paso "Instalando componentes necesarios…" pkg install -y -o Dpkg::Options::="--force-confold" git php php-gd termux-api zip unzip; then
+    printf "${ROJO}No se pudieron instalar los componentes requeridos.${NC}\n"
+    exit 1
+fi
+
+if [ -d "$REPO_DIR/.git" ]; then
+    if ! ejecutar_paso "Actualizando GoldHen Manager AJ…" git -C "$REPO_DIR" pull --ff-only origin main; then
+        printf "${AMARILLO}Hay cambios locales distintos; la instalación se conservó sin sobrescribirlos.${NC}\n"
+    fi
 else
-    echo -e "${AMARILLO}[*] Instalación desde cero.${NC}"
-    
-    # Permiso de almacenamiento (si ya existe, no pasa nada)
-    echo -e "${AMARILLO}Concediendo acceso a almacenamiento...${NC}"
-    termux-setup-storage > /dev/null 2>&1 || true
-
-    export DEBIAN_FRONTEND=noninteractive
-    ejecutar_paso "Actualizando repositorios..." pkg update -y -o Dpkg::Options::="--force-confold"
-    ejecutar_paso "Instalando dependencias..." pkg install -y -o Dpkg::Options::="--force-confold" git php php-gd termux-api zip unzip
-
-    echo -e "${CYAN}• Creando estructura de datos...${NC}"
-    mkdir -p /sdcard/GoldHenManager/user
-
-    ejecutar_paso "Descargando GoldHen Manager AJ..." git clone --depth 1 https://github.com/AJfiles/GoldHenManagerAJ.git "$REPO_DIR"
+    [ ! -e "$REPO_DIR" ] || { printf "${ROJO}La ruta $REPO_DIR existe pero no es una instalación válida.${NC}\n"; exit 1; }
+    ejecutar_paso "Descargando GoldHen Manager AJ…" git clone --depth 1 https://github.com/AJfiles/GoldHenManagerAJ.git "$REPO_DIR" || exit 1
 fi
 
-# Symlink
-echo -e "${AMARILLO}• Configurando enlace de datos...${NC}"
-rm -rf "$REPO_DIR/user" 2>/dev/null
-ln -s /sdcard/GoldHenManager/user "$REPO_DIR/user"
-chmod +x "$REPO_DIR/store/admin.sh" "$REPO_DIR/store-admin.sh" 2>/dev/null || true
+mkdir -p /sdcard/GoldHenManager/user
+if [ -L "$REPO_DIR/user" ]; then rm "$REPO_DIR/user"; fi
+if [ ! -e "$REPO_DIR/user" ]; then ln -s /sdcard/GoldHenManager/user "$REPO_DIR/user"; fi
+chmod +x "$REPO_DIR/start-goldhen.sh" "$REPO_DIR/store/admin.sh" 2>/dev/null || true
+instalar_comandos
 
-# Configurar .bashrc
-echo -e "${AMARILLO}• Configurando arranque automático...${NC}"
-cat << 'EOF' > $HOME/.bashrc
-VERDE='\033[1;32m'
-CYAN='\033[1;36m'
-AMARILLO='\033[1;33m'
-BLANCO='\033[1;37m'
-NC='\033[0m'
-
-      goldhen() {
-        bash "$HOME/GoldHenManagerAJ/start-goldhen.sh"
-      }
-      store-admin() {
-    bash "$HOME/GoldHenManagerAJ/store/admin.sh"
-}
-
-imprimir_logo() {
-    clear
-    echo -e "${VERDE}  ____      _    _  _               ${NC}"
-    echo -e "${VERDE} / ___| ___| |__| || |___ _ __      ${NC}"
-    echo -e "${VERDE}| |  _ / _ \ |/ _\` | '__/ _ \ '_ \  ${NC}"
-    echo -e "${VERDE}| |_| |  __/ | (_| | | |  __/ | | | ${NC}"
-    echo -e "${CYAN}        GOLDHEN MANAGER AJ v3.3      ${NC}\n"
-}
-
-pkill -f "php -S" > /dev/null 2>&1
-APP_DIR="$HOME/GoldHenManagerAJ"
-PUERTO=8080
-
-if [ -d "$APP_DIR" ]; then
-    cd "$APP_DIR"
-    PHP_CLI_SERVER_WORKERS=5 php -S 0.0.0.0:${PUERTO} > /dev/null 2>&1 &
-    imprimir_logo
-    echo -e "${AMARILLO} [+] Conexión establecida. Iniciando entorno...${NC}\n"
-    echo -e "${CYAN}           ████████   ${NC}"
-    echo -e "${CYAN}                 ██   ${NC}"
-    echo -e "${CYAN}           ████████   ${NC}"
-    echo -e "${CYAN}                 ██   ${NC}"
-    echo -e "${CYAN}           ████████   ${NC}\n"
-    sleep 1
-    imprimir_logo
-    echo -e "${AMARILLO} [+] Conexión establecida. Iniciando entorno...${NC}\n"
-    echo -e "${CYAN}           ████████   ${NC}"
-    echo -e "${CYAN}                 ██   ${NC}"
-    echo -e "${CYAN}           ████████   ${NC}"
-    echo -e "${CYAN}           ██         ${NC}"
-    echo -e "${CYAN}           ████████   ${NC}\n"
-    sleep 1
-    imprimir_logo
-    echo -e "${AMARILLO} [+] Conexión establecida. Iniciando entorno...${NC}\n"
-    echo -e "${CYAN}             ████     ${NC}"
-    echo -e "${CYAN}           ██  ██     ${NC}"
-    echo -e "${CYAN}               ██     ${NC}"
-    echo -e "${CYAN}               ██     ${NC}"
-    echo -e "${CYAN}             ██████   ${NC}\n"
-    sleep 1
-    imprimir_logo
-    echo -e "${VERDE} [+] ¡SISTEMA EN LÍNEA!${NC}\n"
-    echo -e "${CYAN} [i] Escribe 'exit' para apagar el servidor.${NC}\n"
-    termux-open-url "http://localhost:${PUERTO}/index.php"
-fi
-EOF
-
-echo -e "\n${VERDE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${VERDE}  ✅ ¡Instalación completada con éxito!${NC}"
-echo -e "${CYAN}  🔄 Cierra Termux y vuelve a abrirlo.${NC}"
-echo -e "${VERDE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+printf "\n${VERDE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+printf "${VERDE}  ✓ Instalación completada${NC}\n"
+printf "${CYAN}  Escribe ${BLANCO}goldhen${CYAN} para abrir la aplicación.${NC}\n"
+printf "${CYAN}  Escribe ${BLANCO}store-admin${CYAN} para administrar la Store.${NC}\n"
+printf "${VERDE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
