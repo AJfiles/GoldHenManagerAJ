@@ -6,10 +6,11 @@ if (!store_admin_authorized()) { http_response_code(403); ?>
 <!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="https://cdn.tailwindcss.com"></script><body class="min-h-screen bg-[#060913] text-white grid place-items-center p-5"><main class="max-w-md rounded-3xl border border-white/10 bg-white/5 p-7 text-center"><h1 class="text-xl font-black">Administración de Store</h1><p class="mt-3 text-sm text-gray-400">Este panel solo se abre mediante el comando <code class="text-cyan-300">store-admin</code> en Termux. El enlace local generado por ese comando concede una sesión temporal.</p></main></body></html><?php exit; }
 
 // ============================================================
-// FUNCIÓN DE EXTRACCIÓN DE ENLACES MEDIAFIRE
+// FUNCIÓN DE EXTRACCIÓN DE ENLACES MEDIAFIRE (MEJORADA)
 // ============================================================
 /**
  * Extrae enlace directo de MediaFire (.pkg) desde una URL de página web
+ * Con múltiples métodos de extracción para mayor fiabilidad
  */
 function extraerEnlaceMediaFire($url) {
     // Si ya es un enlace directo .pkg, devolverlo
@@ -22,44 +23,56 @@ function extraerEnlaceMediaFire($url) {
         return $url;
     }
     
-    // Intentar extraer el enlace directo
+    // Intentar extraer el enlace directo con cURL
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_HEADER, false);
+    curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
     
     $html = curl_exec($ch);
+    $error = curl_error($ch);
     curl_close($ch);
     
-    if (!$html) {
+    if (!$html || !empty($error)) {
         return $url;
     }
     
-    // Buscar el enlace directo (patrón de MediaFire)
-    // Ejemplo: https://downloadXXXX.mediafire.com/.../archivo.pkg
+    // Método 1: Buscar enlace directo de descarga (patrón de MediaFire)
     if (preg_match('/https?:\/\/download[0-9]+\.mediafire\.com\/[^"\'\s]+\.pkg/i', $html, $matches)) {
         return $matches[0];
     }
     
-    // Buscar cualquier enlace .pkg
+    // Método 2: Buscar enlace que contenga ".pkg" en la página
     if (preg_match('/https?:\/\/[^"\'\s]+\.pkg/i', $html, $matches)) {
         if ($matches[0] !== $url) {
             return $matches[0];
         }
     }
     
-    // Buscar en href de botones de descarga
+    // Método 3: Buscar en href de botones de descarga
     if (preg_match('/href=["\']([^"\']+\.pkg[^"\']*)["\']/i', $html, $matches)) {
         return $matches[1];
     }
     
-    // Buscar en JavaScript (window.location.href)
+    // Método 4: Buscar en JavaScript (window.location.href)
     if (preg_match('/window\.location\.href\s*=\s*["\']([^"\']+)["\']/i', $html, $matches)) {
         return $matches[1];
+    }
+    
+    // Método 5: Buscar en el atributo data-link
+    if (preg_match('/data-link=["\']([^"\']+\.pkg[^"\']*)["\']/i', $html, $matches)) {
+        return $matches[1];
+    }
+    
+    // Método 6: Buscar enlaces que contengan "download" o "get"
+    if (preg_match('/https?:\/\/[^"\'\s]+(?:download|get)[^"\'\s]+\.pkg/i', $html, $matches)) {
+        return $matches[0];
     }
     
     // Si no se encontró nada, devolver la URL original
@@ -70,17 +83,13 @@ $message = ''; $changedUpdated = $_SESSION['store_updated'] ?? []; $changedDelet
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'] ?? '';
-        if ($action === 'download') store_admin_zip($changedUpdated, $changedDeleted);
-        if ($action === 'update_check') { $message = store_admin_repository_update(false); }
-        if ($action === 'update_apply') { $message = store_admin_repository_update(true); }
-        $catalog = store_admin_catalog();
         
         // ============================================================
-        // MANEJADOR PARA EL BOTÓN "EXTRAER" (AJAX)
+        // MANEJADOR PARA EL BOTÓN "EXTRAER" (DEBE IR PRIMERO)
         // ============================================================
         if ($action === 'extract') {
-            $url = store_admin_url((string)($_POST['url'] ?? ''));
             header('Content-Type: application/json');
+            $url = store_admin_url((string)($_POST['url'] ?? ''));
             if (empty($url)) {
                 echo json_encode(['success' => false, 'message' => 'URL vacía']);
                 exit;
@@ -94,12 +103,21 @@ try {
             exit;
         }
         
+        // ============================================================
+        // LAS DEMÁS ACCIONES (download, update, save, delete, check)
+        // ============================================================
+        if ($action === 'download') store_admin_zip($changedUpdated, $changedDeleted);
+        if ($action === 'update_check') { $message = store_admin_repository_update(false); }
+        if ($action === 'update_apply') { $message = store_admin_repository_update(true); }
+        
+        $catalog = store_admin_catalog();
+        
         if ($action === 'save') {
             $original = strtoupper(trim((string)($_POST['original_id'] ?? ''))); $position = null; foreach ($catalog as $i => $row) if (($row['id'] ?? '') === $original) $position = $i;
             $before = $position === null ? null : $catalog[$position];
             
             // ============================================================
-            // EXTRACCIÓN AUTOMÁTICA AL GUARDAR (OPCIONAL)
+            // EXTRACCIÓN AUTOMÁTICA AL GUARDAR
             // ============================================================
             $pkg_url = store_admin_url((string)($_POST['pkg'] ?? ''));
             // Si es MediaFire, extraer automáticamente
@@ -107,7 +125,6 @@ try {
                 $extraido = extraerEnlaceMediaFire($pkg_url);
                 if ($extraido !== $pkg_url) {
                     $_POST['pkg'] = $extraido;
-                    // Añadir mensaje de éxito (se mostrará después)
                     $message = '✅ Enlace extraído automáticamente. ';
                 }
             }
@@ -158,7 +175,7 @@ function h($value): string { return htmlspecialchars((string)$value, ENT_QUOTES,
 <section class="rounded-3xl border border-white/10 bg-white/5 p-4"><div class="mb-3 flex items-center justify-between"><h2 class="font-bold">Catálogo publicado</h2><span class="text-xs text-gray-400"><?= count($catalog) ?> elementos</span></div><div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"><?php foreach ($catalog as $row): ?><article class="rounded-2xl bg-black/25 p-3"><div class="mb-2 aspect-[3/2] overflow-hidden rounded-xl bg-black/30"><?php if (!empty($row['cover'])): ?><img class="h-full w-full object-cover" src="../<?= h($row['cover']) ?>" onerror="this.remove()"><?php endif; ?></div><b class="block truncate text-sm"><?= h($row['titulo'] ?? '') ?></b><span class="text-xs text-cyan-300"><?= h($row['id'] ?? '') ?> · v<?= h($row['version'] ?? '1.00') ?></span><p class="mt-1 text-xs text-gray-400"><?= h($row['peso_gb'] ?? '?') ?> GB · <?= h($row['servidor'] ?? '') ?></p><div class="mt-3 flex gap-2"><a class="rounded-lg bg-white/10 px-3 py-2 text-xs" href="?edit=<?= urlencode((string)$row['id']) ?>">Editar</a><form method="post" onsubmit="return confirm('¿Retirar este elemento?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= h($row['id']) ?>"><button class="rounded-lg bg-red-500/15 px-3 py-2 text-xs text-red-200">Eliminar</button></form></div></article><?php endforeach; ?><?php if (!$catalog): ?><p class="text-sm text-gray-500">El catálogo está vacío.</p><?php endif; ?></div></section></section></main>
 
 <!-- ============================================================ -->
-<!-- JAVASCRIPT PARA EL BOTÓN "EXTRAER" -->
+<!-- JAVASCRIPT PARA EL BOTÓN "EXTRAER" (CORREGIDO) -->
 <!-- ============================================================ -->
 <script>
 function extraerEnlace() {
@@ -177,21 +194,34 @@ function extraerEnlace() {
     formData.append('action', 'extract');
     formData.append('url', url);
     
-    fetch('', {
+    // IMPORTANTE: Usamos la URL completa para asegurar que la petición llegue
+    fetch('index.php', {
         method: 'POST',
         body: formData
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            input.value = data.direct_link;
-            resultado.innerHTML = '<span class="text-green-400">✅ Enlace extraído correctamente</span>';
-        } else {
-            resultado.innerHTML = '<span class="text-red-400">❌ ' + data.message + '</span>';
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error HTTP: ' + response.status);
+        }
+        return response.text();
+    })
+    .then(text => {
+        try {
+            const data = JSON.parse(text);
+            if (data.success) {
+                input.value = data.direct_link;
+                resultado.innerHTML = '<span class="text-green-400">✅ Enlace extraído correctamente</span>';
+            } else {
+                resultado.innerHTML = '<span class="text-red-400">❌ ' + data.message + '</span>';
+            }
+        } catch (e) {
+            console.error('Respuesta no válida:', text);
+            resultado.innerHTML = '<span class="text-red-400">❌ El servidor devolvió una respuesta inválida</span>';
         }
     })
-    .catch(() => {
-        resultado.innerHTML = '<span class="text-red-400">❌ Error al conectar con el servidor</span>';
+    .catch(error => {
+        console.error('Error:', error);
+        resultado.innerHTML = '<span class="text-red-400">❌ Error al conectar con el servidor: ' + error.message + '</span>';
     });
 }
 </script>
