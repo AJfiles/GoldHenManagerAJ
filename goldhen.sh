@@ -36,10 +36,10 @@ usar_mirror() {
 
 actualizar_repositorios() {
     if ejecutar_paso "Preparando repositorios…" pkg update -y -o Dpkg::Options::="--force-confold"; then return 0; fi
-    printf "${AMARILLO}↻ Sincronizando un mirror estable…${NC}\n"
+    printf "${AMARILLO}↻ Sincronizando mirror estable…${NC}\n"
     usar_mirror 'https://packages.termux.dev/apt/termux-main' || return 1
     if ejecutar_paso "Reintentando repositorios…" pkg update -y -o Dpkg::Options::="--force-confold"; then return 0; fi
-    printf "${AMARILLO}↻ Probando un segundo mirror estable…${NC}\n"
+    printf "${AMARILLO}↻ Probando mirror alternativo…${NC}\n"
     usar_mirror 'https://packages-cf.termux.dev/apt/termux-main' || return 1
     ejecutar_paso "Comprobando repositorios…" pkg update -y -o Dpkg::Options::="--force-confold"
 }
@@ -55,6 +55,8 @@ goldhen() { bash "$HOME/GoldHenManagerAJ/start-goldhen.sh"; }
 store-admin() { bash "$HOME/GoldHenManagerAJ/store/admin.sh"; }
 # <<< GOLDHEN MANAGER AJ <<<
 EOF
+    # Recargar .bashrc en la sesión actual
+    source "$bashrc"
 }
 
 clear
@@ -72,7 +74,7 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 termux-setup-storage >/dev/null 2>&1 || true
 if ! actualizar_repositorios; then
-    printf "${ROJO}No se pudieron preparar los repositorios.${NC} Revisa la conexión y vuelve a ejecutar el mismo comando.\n"
+    printf "${ROJO}No se pudieron preparar los repositorios.${NC} Revisa tu conexión y vuelve a ejecutar el comando.\n"
     exit 1
 fi
 if ! ejecutar_paso "Instalando componentes necesarios…" pkg install -y -o Dpkg::Options::="--force-confold" git php php-gd termux-api zip unzip; then
@@ -96,7 +98,14 @@ chmod +x "$REPO_DIR/start-goldhen.sh" "$REPO_DIR/store/admin.sh" 2>/dev/null || 
 instalar_comandos
 
 printf "\n${VERDE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
-printf "${VERDE}  ✓ Instalación completada${NC}\n"
-printf "${CYAN}  Escribe ${BLANCO}goldhen${CYAN} para abrir la aplicación.${NC}\n"
-printf "${CYAN}  Escribe ${BLANCO}store-admin${CYAN} para administrar la Store.${NC}\n"
+printf "${VERDE}  ✅ ¡Instalación completada!${NC}\n"
+printf "${CYAN}  ▶️  Ahora escribe ${BLANCO}goldhen${CYAN} para abrir la aplicación.${NC}\n"
+printf "${CYAN}  🛠️  Si eres mantenedor, usa ${BLANCO}store-admin${CYAN} para la tienda.${NC}\n"
 printf "${VERDE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+
+# Preguntar si quiere iniciar ahora
+printf "\n${CYAN}¿Quieres abrir GoldHen Manager ahora? (s/N) ${NC}"
+read -r respuesta
+if [[ "$respuesta" =~ ^[sS]$ ]]; then
+    goldhen
+fi
