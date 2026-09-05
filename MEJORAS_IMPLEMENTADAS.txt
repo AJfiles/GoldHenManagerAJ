@@ -213,3 +213,10 @@ Versión 3.3
   el administrador las resuelva como una ruta incorrecta y las muestre grises.
 - El launcher reordena sus módulos, sitúa Búsqueda global sobre la información
   de red y actualiza su identidad visual a GoldHen Manager AJ 3.3.
+- Store público: reutiliza la IP guardada por el Manager, permite seleccionar
+  RPI Nova (12801) u Original (12800), incorpora radar FTP y comprueba que el
+  puerto RPI responda antes de instalar.
+- Store: aviso de uso de RPI, panel de conexión visible y detalle flotante con
+  descripción, peso, proveedor, update y DLC publicados.
+- Visual: se aplicó la identidad 3.3 a las intros y se añadieron Aurora AJ y
+  Onda clásica como opciones de inicio ligeras basadas en CSS.

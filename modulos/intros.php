@@ -86,28 +86,37 @@
     #intro-breach { flex-direction: column; font-family: 'Share Tech Mono', monospace; }
     .breach-box { border: 4px solid #ff0000; padding: 40px 60px; text-align: center; color: #ff0000; box-shadow: 0 0 30px rgba(255,0,0,0.4), inset 0 0 30px rgba(255,0,0,0.4); animation: breachProcess 5.5s forwards; }
     @keyframes breachProcess { 0% { border-color: #ff0000; color: #ff0000; box-shadow: 0 0 30px rgba(255,0,0,0.4), inset 0 0 30px rgba(255,0,0,0.4); } 15% { transform: translate(5px, 5px); } 18% { transform: translate(-5px, -5px); } 20% { transform: translate(5px, -5px); } 25% { transform: translate(0, 0); border-color: #0f0; color: #0f0; box-shadow: 0 0 30px rgba(0,255,0,0.4), inset 0 0 30px rgba(0,255,0,0.4); } 90% { opacity: 1; transform: scale(1); filter: blur(0); } 100% { opacity: 0; transform: scale(1.5); filter: blur(10px); } }
+
+    /* AURORA Y ONDA CLÁSICA: intros CSS ligeras, sin dependencias externas. */
+    #intro-aurora { background: radial-gradient(circle at 25% 25%, #075985, transparent 45%), radial-gradient(circle at 75% 70%, #581c87, transparent 48%), #020617; }
+    .aurora-band { position:absolute; width:140vw; height:32vh; border-radius:50%; filter:blur(22px); opacity:.5; background:linear-gradient(90deg,#22d3ee,#8b5cf6,#ec4899); animation: auroraFlow 4.5s ease-in-out infinite alternate; }
+    .aurora-band:nth-child(2) { animation-delay:-2s; opacity:.35; transform:rotate(28deg); } .aurora-copy { position:relative; z-index:2; text-align:center; animation: auroraReveal 5.5s forwards; }
+    @keyframes auroraFlow { to { transform:translate(9vw,12vh) rotate(12deg) scale(1.12); } } @keyframes auroraReveal { 0%,8%{opacity:0;transform:scale(.75)} 20%,88%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.3)} }
+    #intro-wave { background:linear-gradient(160deg,#020617,#0c4a6e); } .wave-line { position:absolute; width:160vw; height:36vh; border-top:2px solid rgba(125,211,252,.75); border-radius:50%; animation: introWave 3.8s ease-in-out infinite alternate; } .wave-line:nth-child(2){transform:translateY(70px);opacity:.45;animation-delay:-1.5s}.wave-copy{position:relative;z-index:2;text-align:center;animation:auroraReveal 5.5s forwards}@keyframes introWave{to{transform:translateX(-13vw) rotate(8deg) scaleY(1.3)}}
 </style>
 
 <div id="intro-ps5" class="intro-container"><div class="ps5-glow"></div><div class="ps5-glow ps5-glow-2"></div><div class="ps5-content"><i class="fa-brands fa-playstation text-white text-7xl drop-shadow-lg"></i><div class="text-2xl font-black tracking-[8px] mt-5 bg-gradient-to-r from-white via-purple-400 to-cyan-400 text-transparent bg-clip-text">GOLDHEN MANAGER <span class="text-xl">v3.3</span></div></div><div id="ps5-particles-container"></div></div>
 <div id="intro-ps4" class="intro-container"><div class="ps4-wave"></div><i class="fa-solid fa-xmark ps4-symbol" style="top: 20%; left: 20%; animation-delay: 0s;"></i><i class="fa-regular fa-circle ps4-symbol" style="top: 70%; left: 30%; animation-delay: 1s;"></i><i class="fa-regular fa-square ps4-symbol" style="top: 30%; left: 80%; animation-delay: 2s;"></i><i class="fa-solid fa-play ps4-symbol" style="top: 80%; left: 70%; animation-delay: 3s; transform: rotate(-90deg);"></i><div class="ps4-content"><i class="fa-brands fa-playstation text-white text-7xl mb-3 block"></i><div class="text-xl font-light tracking-[12px] uppercase text-white">GoldHen Manager <span class="font-bold">v3.3</span></div></div></div>
-<div id="intro-glitch" class="intro-container"><div class="scanlines"></div><div class="glitch-wrapper"><i class="fa-brands fa-playstation glitch-logo"></i><div class="text-3xl font-black tracking-[5px] text-white uppercase mt-4" style="text-shadow: 2px 2px 0px #0ff, -2px -2px 0px #f0f;">GOLDHEN MANAGER v3.2</div></div></div>
-<div id="intro-ps2" class="intro-container"><div id="ps2-cubes-container-intro" style="position: absolute; inset: 0;"></div><div class="ps2-logo-container"><i class="fa-brands fa-playstation text-7xl text-white block drop-shadow-[0_0_20px_#00aaff]"></i><div class="text-3xl font-light tracking-[15px] mt-4 uppercase text-[#ccffff]">GoldHen Manager</div><div class="text-[#00aaff] text-sm tracking-[8px] mt-2 font-bold">VERSIÓN 3.2</div></div></div>
-<div id="intro-hud" class="intro-container"><div class="hud-wrapper"><div class="hud-ring hud-ring-1"></div><div class="hud-ring hud-ring-2"></div><div class="hud-ring hud-ring-3"></div><div class="hud-content"><i class="fa-brands fa-playstation text-6xl text-[#00d2ff] drop-shadow-[0_0_10px_#00d2ff]"></i><div class="text-xs font-black tracking-[4px] text-[#bae6fd] mt-3 uppercase">GoldHen<br>Manager v3.2</div></div></div></div>
-<div id="intro-neon" class="intro-container"><div class="neon-grid"></div><div class="neon-wrapper"><i class="fa-brands fa-playstation text-7xl text-[#00ffff] drop-shadow-[0_0_15px_#00ffff] mb-3 block"></i><div class="text-3xl font-black text-white uppercase tracking-[4px] drop-shadow-[0_0_15px_#ff00ff]">GOLDHEN MANAGER</div><div class="text-sm text-[#00ffff] tracking-[6px] mt-2 font-bold">V 3 . 2</div></div></div>
+<div id="intro-glitch" class="intro-container"><div class="scanlines"></div><div class="glitch-wrapper"><i class="fa-brands fa-playstation glitch-logo"></i><div class="text-3xl font-black tracking-[5px] text-white uppercase mt-4" style="text-shadow: 2px 2px 0px #0ff, -2px -2px 0px #f0f;">GOLDHEN MANAGER v3.3</div></div></div>
+<div id="intro-ps2" class="intro-container"><div id="ps2-cubes-container-intro" style="position: absolute; inset: 0;"></div><div class="ps2-logo-container"><i class="fa-brands fa-playstation text-7xl text-white block drop-shadow-[0_0_20px_#00aaff]"></i><div class="text-3xl font-light tracking-[15px] mt-4 uppercase text-[#ccffff]">GoldHen Manager</div><div class="text-[#00aaff] text-sm tracking-[8px] mt-2 font-bold">VERSIÓN 3.3</div></div></div>
+<div id="intro-hud" class="intro-container"><div class="hud-wrapper"><div class="hud-ring hud-ring-1"></div><div class="hud-ring hud-ring-2"></div><div class="hud-ring hud-ring-3"></div><div class="hud-content"><i class="fa-brands fa-playstation text-6xl text-[#00d2ff] drop-shadow-[0_0_10px_#00d2ff]"></i><div class="text-xs font-black tracking-[4px] text-[#bae6fd] mt-3 uppercase">GoldHen<br>Manager v3.3</div></div></div></div>
+<div id="intro-neon" class="intro-container"><div class="neon-grid"></div><div class="neon-wrapper"><i class="fa-brands fa-playstation text-7xl text-[#00ffff] drop-shadow-[0_0_15px_#00ffff] mb-3 block"></i><div class="text-3xl font-black text-white uppercase tracking-[4px] drop-shadow-[0_0_15px_#ff00ff]">GOLDHEN MANAGER</div><div class="text-sm text-[#00ffff] tracking-[6px] mt-2 font-bold">V 3 . 3</div></div></div>
 <div id="intro-decrypt" class="intro-container"><div class="flex flex-col items-center justify-center w-full px-4 text-center"><i class="fa-brands fa-playstation text-7xl text-[#0f0] mb-4 drop-shadow-[0_0_15px_#0f0] decrypt-logo-anim"></i><div id="decrypt-target" class="font-mono text-[#0f0] uppercase" style="font-size: 1.5rem; text-shadow: 0 0 10px #0f0; letter-spacing: 2px;"></div></div></div>
-<div id="intro-arcade" class="intro-container"><div class="arcade-content"><i class="fa-brands fa-playstation text-7xl text-[#ff0000] drop-shadow-[6px_6px_0_#ffcc00] mb-5 inline-block" style="animation: pixelBounce 0.5s infinite alternate steps(2);"></i><div style="font-family: 'Press Start 2P', cursive; font-size: 1.2rem; color: #ffcc00; text-shadow: 4px 4px 0px #ff0000; line-height: 2;">GOLDHEN MANAGER<br><span style="font-size: 0.8rem; color: #fff; text-shadow: none;">v3.2</span></div><div style="font-family: 'Press Start 2P', cursive; font-size: 0.8rem; color: #fff; margin-top: 40px; animation: blinkCoin 1s infinite steps(2);">INSERT COIN</div></div></div>
+<div id="intro-arcade" class="intro-container"><div class="arcade-content"><i class="fa-brands fa-playstation text-7xl text-[#ff0000] drop-shadow-[6px_6px_0_#ffcc00] mb-5 inline-block" style="animation: pixelBounce 0.5s infinite alternate steps(2);"></i><div style="font-family: 'Press Start 2P', cursive; font-size: 1.2rem; color: #ffcc00; text-shadow: 4px 4px 0px #ff0000; line-height: 2;">GOLDHEN MANAGER<br><span style="font-size: 0.8rem; color: #fff; text-shadow: none;">v3.3</span></div><div style="font-family: 'Press Start 2P', cursive; font-size: 0.8rem; color: #fff; margin-top: 40px; animation: blinkCoin 1s infinite steps(2);">INSERT COIN</div></div></div>
 <div id="intro-matrix-rain" class="intro-container">
     <canvas id="matrix-canvas-intro"></canvas>
     <div class="matrix-overlay">
         <i class="fa-brands fa-playstation text-6xl md:text-7xl text-[#0f0] drop-shadow-[0_0_15px_#0f0] mb-3 block"></i>
         <div style="font-size: 1.4rem; color: #0f0; text-shadow: 0 0 15px #0f0; letter-spacing: 2px; font-weight: bold; text-align: center; line-height: 1.2;">
-            GOLDHEN MANAGER<br><span style="font-size: 1rem;">v3.2</span>
+            GOLDHEN MANAGER<br><span style="font-size: 1rem;">v3.3</span>
         </div>
     </div>
 </div>
-<div id="intro-crt" class="intro-container"><div class="scanlines"></div><div id="crt-terminal-text" style="z-index: 10; position: relative;"></div><div class="crt-logo-box"><i class="fa-brands fa-playstation text-8xl mb-5 text-[#ffb000]"></i><div style="font-size: 2.5rem; font-weight: bold; letter-spacing: 8px; text-align: center; color: #ffb000;">GOLDHEN MANAGER v3.2</div></div></div>
-<div id="intro-gb" class="intro-container"><div class="gb-logo-container"><i class="fa-brands fa-playstation text-7xl mb-5 block text-[#0f380f]"></i><div style="font-size: 1.2rem; letter-spacing: 2px;">GoldHen Manager<br><span style="font-size: 0.8rem; margin-top: 10px; display: block;">v3.2</span></div></div></div>
+<div id="intro-crt" class="intro-container"><div class="scanlines"></div><div id="crt-terminal-text" style="z-index: 10; position: relative;"></div><div class="crt-logo-box"><i class="fa-brands fa-playstation text-8xl mb-5 text-[#ffb000]"></i><div style="font-size: 2.5rem; font-weight: bold; letter-spacing: 8px; text-align: center; color: #ffb000;">GOLDHEN MANAGER v3.3</div></div></div>
+<div id="intro-gb" class="intro-container"><div class="gb-logo-container"><i class="fa-brands fa-playstation text-7xl mb-5 block text-[#0f380f]"></i><div style="font-size: 1.2rem; letter-spacing: 2px;">GoldHen Manager<br><span style="font-size: 0.8rem; margin-top: 10px; display: block;">v3.3</span></div></div></div>
 <div id="intro-breach" class="intro-container"><div class="scanlines"></div><div class="breach-box" id="breach-box-anim"><i id="breach-icon" class="fa-solid fa-lock text-7xl mb-5 block text-red-600"></i><div id="breach-text" style="font-size: 2rem; font-weight: bold; letter-spacing: 4px;">SYSTEM LOCKED</div></div></div>
+<div id="intro-aurora" class="intro-container"><div class="aurora-band"></div><div class="aurora-band"></div><div class="aurora-copy"><i class="fa-brands fa-playstation text-7xl text-cyan-100 drop-shadow-[0_0_25px_#22d3ee]"></i><div class="mt-5 text-2xl font-black tracking-[.4em] text-white">GOLDHEN AJ</div><div class="mt-2 text-xs tracking-[.55em] text-cyan-200">AURORA v3.3</div></div></div>
+<div id="intro-wave" class="intro-container"><div class="wave-line"></div><div class="wave-line"></div><div class="wave-copy"><i class="fa-brands fa-playstation text-7xl text-white"></i><div class="mt-5 text-xl font-light tracking-[.7em] text-white">GOLDHEN</div><div class="mt-2 text-[10px] tracking-[.45em] text-sky-200">MANAGER AJ · 3.3</div></div></div>
 
 <script>
     let currentIntroInterval = null;
@@ -130,7 +139,7 @@
     }
     function runDecryptEffect() {
         const target = document.getElementById('decrypt-target'); let iterations = 0; target.innerText = "";
-        const finalWord = "GOLDHEN MANAGER v3.2"; const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
+        const finalWord = "GOLDHEN MANAGER v3.3"; const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
         setTimeout(() => {
             currentIntroInterval = setInterval(() => {
                 target.innerText = finalWord.split("").map((letter, index) => { if(index < iterations) return finalWord[index]; return chars[Math.floor(Math.random() * chars.length)]; }).join("");
@@ -157,7 +166,7 @@
     }
     function runCRTScript() {
         const term = document.getElementById('crt-terminal-text'); term.innerHTML = ''; term.style.display = 'block';
-        const lines = ["BIOS Date 04/07/26 19:46:12 Ver 3.2", "CPU: Cell Broadband Engine", "Memory Test: 8388608K OK", "Loading kernel modules................ OK", "Mounting /dev/sda1 as root............ OK", "Executing GoldHen payload inject...... DONE", "Starting graphical interface..."];
+        const lines = ["BIOS Date 04/07/26 19:46:12 Ver 3.3", "CPU: Cell Broadband Engine", "Memory Test: 8388608K OK", "Loading kernel modules................ OK", "Mounting /dev/sda1 as root............ OK", "Executing GoldHen payload inject...... DONE", "Starting graphical interface..."];
         let delay = 0;
         lines.forEach((line, index) => { setTimeout(() => { const div = document.createElement('div'); div.className = 'crt-line text-[#ffb000]'; div.innerText = line; term.appendChild(div); setTimeout(() => div.style.opacity = '1', 50); }, delay); delay += (index === 2 || index === 5) ? 300 : 150; });
         setTimeout(() => { term.style.display = 'none'; }, 2400); 
@@ -166,7 +175,7 @@
         const icon = document.getElementById('breach-icon'); const text = document.getElementById('breach-text');
         icon.className = "fa-solid fa-lock text-7xl mb-5 block text-red-600"; text.innerText = "SYSTEM LOCKED"; text.style.color = "red";
         setTimeout(() => { icon.className = "fa-solid fa-unlock text-7xl mb-5 block text-green-500"; text.innerText = "ACCESS GRANTED"; text.style.color = "#0f0"; }, 1200); 
-        setTimeout(() => { icon.className = "fa-brands fa-playstation text-7xl mb-5 block text-white"; text.innerText = "GOLDHEN MANAGER v3.2"; text.style.color = "white"; }, 2000); 
+        setTimeout(() => { icon.className = "fa-brands fa-playstation text-7xl mb-5 block text-white"; text.innerText = "GOLDHEN MANAGER v3.3"; text.style.color = "white"; }, 2000); 
     }
 
     function bootSelectedIntro() {

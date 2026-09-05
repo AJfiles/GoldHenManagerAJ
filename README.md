@@ -19,7 +19,7 @@ alcance de esas diferencias están documentados en
 - Ajustes: notificaciones, audio, fondos, intros, tema y tamaño de texto.
 - Plugins: sube `.prx`, consulta los instalados y asigna plugins a `[default]` o a CUSA mediante `plugins.ini`.
 - Payload Loader: lista payloads locales/remotos y los envía al BinLoader de GoldHEN en el puerto `9090`.
-- Store: catálogo privado de paquetes autorizados; puede enviar un PKG directo al instalador compatible de la PS4 sin guardar el paquete en el teléfono.
+- Store: catálogo privado de paquetes autorizados; reutiliza la IP del Manager, detecta la PS4 por radar, prueba RPI Nova (`12801`) u Original (`12800`) y envía un PKG directo al instalador compatible sin guardarlo en el teléfono.
 
 ## Requisitos
 

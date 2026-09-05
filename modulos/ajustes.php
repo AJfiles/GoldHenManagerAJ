@@ -91,6 +91,21 @@
 
         <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
             <div class="flex items-center gap-2 border-b border-white/5 pb-2">
+                <i class="fas fa-wand-magic-sparkles text-pink-400 text-sm"></i>
+                <span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Nuevos estilos v3.3</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="seleccionarFondoCustom('bg-ps5','Órbitas PS5')" class="selector-ajuste text-cyan-300">Órbitas PS5</button>
+                <button onclick="seleccionarFondoCustom('bg-ps3','Ondas PS3')" class="selector-ajuste text-gray-200">Ondas PS3</button>
+                <button onclick="seleccionarFondoCustom('bg-synth','Synthwave')" class="selector-ajuste text-pink-300">Synthwave</button>
+                <button onclick="seleccionarFondoCustom('bg-starfield','Campo estelar')" class="selector-ajuste text-indigo-300">Campo estelar</button>
+                <button onclick="seleccionarIntroCustom('intro-aurora','Aurora AJ')" class="selector-ajuste text-cyan-300">Boot Aurora</button>
+                <button onclick="seleccionarIntroCustom('intro-wave','Onda clásica')" class="selector-ajuste text-sky-300">Boot Onda</button>
+            </div>
+        </div>
+
+        <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
+            <div class="flex items-center gap-2 border-b border-white/5 pb-2">
                 <i class="fas fa-text-height text-violet-400 text-sm"></i>
                 <span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Tamaño de texto</span>
             </div>

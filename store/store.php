@@ -67,9 +67,9 @@ if (file_exists($archivoCatalogo)) {
             <button onclick="cargarCatalogo()" class="w-10 h-10 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center hover:bg-cyan-500/20 active:scale-90 transition-all shadow-lg" title="Actualizar catálogo">
                 <i class="fa-solid fa-rotate-right text-cyan-300"></i>
             </button>
-            <button onclick="toggleConfig()" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 active:scale-90 transition-all relative shadow-lg">
-                <i class="fa-solid fa-gear text-gray-300"></i>
-                <div id="luz-radar-mini" class="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-red-500 border-[2.5px] border-[#050711]"></div>
+            <button onclick="document.getElementById('conexion-rpi').scrollIntoView({behavior:'smooth',block:'center'})" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 active:scale-90 transition-all relative shadow-lg" title="Conexión RPI">
+                <i class="fa-solid fa-gamepad text-gray-300"></i>
+                <div class="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-cyan-400 border-[2.5px] border-[#050711]"></div>
             </button>
         </div>
     </div>
@@ -84,6 +84,13 @@ if (file_exists($archivoCatalogo)) {
                 <span class="font-bold">⚠️ Recuerda:</span> Debes tener abierta la aplicación <span class="font-bold text-amber-400">Remote Package Installer (RPI)</span> en tu PS4 para instalar juegos. El puerto por defecto es <span class="font-bold">12801</span> (Nova) o <span class="font-bold">12800</span> (Original).
             </div>
         </div>
+
+        <!-- CONEXIÓN RPI: visible, reutiliza la IP global del Manager -->
+        <section id="conexion-rpi" class="mb-4 glass-panel rounded-2xl border border-cyan-500/20 p-3">
+            <div class="mb-2 flex items-center justify-between"><div><b class="text-xs uppercase tracking-widest text-cyan-200">PS4 / Remote Package Installer</b><p id="estado-texto-modal" class="mt-1 text-[9px] font-bold uppercase tracking-widest text-gray-500">Esperando configuración</p></div><div id="luz-radar-mini" class="h-3 w-3 rounded-full border-2 border-[#050711] bg-gray-600"></div></div>
+            <div class="grid grid-cols-5 gap-2"><div class="col-span-3 flex items-center rounded-xl border border-white/10 bg-black/60 px-3"><i class="fa-solid fa-gamepad text-gray-500 text-sm"></i><input type="text" id="ip-input" placeholder="IP de tu PS4" class="w-full bg-transparent py-3 pl-2 text-xs font-mono text-white outline-none"></div><div class="col-span-2 relative overflow-hidden rounded-xl border border-white/10 bg-black/60"><select id="puerto-input" class="w-full appearance-none bg-transparent py-3 pl-2 pr-6 text-[10px] font-bold text-white outline-none"><option value="12801">RPI Nova · 12801</option><option value="12800">RPI Original · 12800</option></select><i class="fa-solid fa-chevron-down pointer-events-none absolute right-3 top-3 text-[10px] text-gray-400"></i></div></div>
+            <div class="mt-2 grid grid-cols-2 gap-2"><button onclick="radarRPI()" class="rounded-xl border border-white/10 bg-white/10 py-2.5 text-[9px] font-black uppercase tracking-widest text-gray-200"><i class="fa-solid fa-radar text-cyan-400"></i> Radar</button><button onclick="guardarConfig()" class="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 py-2.5 text-[9px] font-black uppercase tracking-widest text-white"><i class="fa-solid fa-link"></i> Conectar</button></div>
+        </section>
 
         <!-- BARRA DE BÚSQUEDA Y FILTROS -->
         <div class="flex gap-2 mb-6 sticky top-16 z-30 pt-1 pb-2 bg-[#050711]/90 backdrop-blur-md">
@@ -139,7 +146,7 @@ if (file_exists($archivoCatalogo)) {
                         <?php endif; ?>
                         <div class="mt-auto pt-3 border-t border-white/10">
                             <button class="btn-install-game w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-black text-[11px] py-2.5 rounded-xl tracking-widest uppercase transition-all flex items-center justify-center gap-2 shadow-[0_5px_15px_rgba(6,182,212,0.3)] active:scale-95"
-                                    data-url="<?= htmlspecialchars($juego['enlaces']['pkg'] ?? '') ?>"
+                                    data-id="<?= htmlspecialchars($juego['id'] ?? '') ?>"
                                     onclick="event.stopPropagation(); instalarJuego(this)">
                                 <i class="fa-solid fa-download"></i> Instalar
                             </button>
@@ -167,8 +174,8 @@ if (file_exists($archivoCatalogo)) {
         </div>
     </div>
 
-    <!-- MODAL DE CONFIGURACIÓN (IP, PUERTO, RADAR) -->
-    <div id="modal-config" class="fixed inset-0 z-50 modal-overlay flex flex-col justify-end md:justify-center transition-opacity duration-300 opacity-0 pointer-events-none p-4">
+    <!-- Panel heredado de configuración; se conserva para compatibilidad y queda oculto. -->
+    <div id="modal-config" class="fixed inset-0 z-50 modal-overlay hidden flex-col justify-end md:justify-center transition-opacity duration-300 opacity-0 pointer-events-none p-4">
         <div class="glass-panel w-full max-w-sm mx-auto rounded-[2rem] border border-white/10 p-6 transform translate-y-8 md:translate-y-0 transition-transform duration-300 shadow-[0_10px_40px_rgba(0,0,0,0.8)]" id="modal-config-content">
             <div class="flex justify-between items-center mb-5">
                 <h2 class="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-white">
@@ -182,15 +189,15 @@ if (file_exists($archivoCatalogo)) {
             <!-- RADAR -->
             <div class="flex justify-between items-center mb-2 px-1">
                 <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">IP de tu Consola</span>
-                <span id="estado-texto-modal" class="text-gray-500 text-[9px] uppercase tracking-widest font-black">Buscando...</span>
+                <span id="estado-texto-modal-legacy" class="text-gray-500 text-[9px] uppercase tracking-widest font-black">Buscando...</span>
             </div>
             <div class="grid grid-cols-5 gap-2 mb-4">
                 <div class="col-span-3 bg-black/60 border border-white/10 rounded-xl overflow-hidden flex items-center px-3 focus-within:border-cyan-400 transition-colors shadow-inner">
                     <i class="fa-solid fa-gamepad text-gray-500 text-sm"></i>
-                    <input type="text" id="ip-input" placeholder="192.168..." class="w-full bg-transparent text-white text-xs py-3.5 pl-2 outline-none font-mono" value="<?= $_COOKIE['store_ip'] ?? '' ?>">
+                    <input type="text" id="ip-input-legacy" placeholder="192.168..." class="w-full bg-transparent text-white text-xs py-3.5 pl-2 outline-none font-mono" value="<?= $_COOKIE['store_ip'] ?? '' ?>">
                 </div>
                 <div class="col-span-2 bg-black/60 border border-white/10 rounded-xl overflow-hidden relative flex items-center focus-within:border-cyan-400 transition-colors shadow-inner">
-                    <select id="puerto-input" class="w-full bg-transparent text-white text-[10px] font-bold py-3.5 pl-2 pr-6 outline-none appearance-none cursor-pointer">
+                    <select id="puerto-input-legacy" class="w-full bg-transparent text-white text-[10px] font-bold py-3.5 pl-2 pr-6 outline-none appearance-none cursor-pointer">
                         <option value="12800" <?= ($_COOKIE['store_port'] ?? '12801') == '12800' ? 'selected' : '' ?>>RPI Orig</option>
                         <option value="12801" <?= ($_COOKIE['store_port'] ?? '12801') == '12801' ? 'selected' : '' ?>>RPI Nova</option>
                     </select>
@@ -210,6 +217,7 @@ if (file_exists($archivoCatalogo)) {
     </div>
 
     <script>
+        const catalogoPublico = <?= json_encode($catalogo, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
         // ============================================================
         // CONFIGURACIÓN DE RED (IP + PUERTO)
         // ============================================================
@@ -237,7 +245,7 @@ if (file_exists($archivoCatalogo)) {
                 // Guardar en cookies por si acaso
                 document.cookie = `store_ip=${ip}; path=/; max-age=31536000`;
                 document.cookie = `store_port=${puerto}; path=/; max-age=31536000`;
-                toggleConfig();
+                verificarConexion();
                 mostrarToast(true, 'Configuración guardada', 'IP y puerto RPI guardados correctamente.');
             } else {
                 mostrarToast(false, 'Error', 'Introduce una IP válida.');
@@ -258,10 +266,10 @@ if (file_exists($archivoCatalogo)) {
             estadoModal.innerText = "BUSCANDO...";
             estadoModal.className = "text-yellow-500 text-[10px] uppercase tracking-widest font-black";
 
-            fetch(`?check_ip=${encodeURIComponent(ip)}&port=${encodeURIComponent(puerto)}`)
+            fetch(`../api/store_api.php?action=probe&ip=${encodeURIComponent(ip)}&port=${encodeURIComponent(puerto)}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.status === 'online') {
+                    if (data.status === 'success' && data.online) {
                         luzMini.className = 'absolute top-2 right-2 w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)] border-[2.5px] border-[#050711]';
                         estadoModal.innerText = "¡CONECTADO!";
                         estadoModal.className = "text-emerald-400 text-[10px] uppercase tracking-widest font-black";
@@ -277,6 +285,28 @@ if (file_exists($archivoCatalogo)) {
                 });
         }
 
+        async function radarRPI() {
+            estadoModal.innerText = 'BUSCANDO PS4...';
+            estadoModal.className = 'text-yellow-500 text-[10px] uppercase tracking-widest font-black';
+            luzMini.className = 'h-3 w-3 rounded-full border-2 border-[#050711] bg-yellow-400 animate-pulse';
+            try {
+                const response = await fetch('../api/radar_api.php?timeout=350&port=2121');
+                const data = await response.json();
+                if (data.status !== 'success' || !Array.isArray(data.ps4_ips) || !data.ps4_ips.length) throw new Error(data.message || 'No se detectó una PS4 con FTP activo.');
+                ipInput.value = data.ps4_ips[0];
+                localStorage.setItem('sebas_ip_final_libre', ipInput.value);
+                for (const candidate of ['12801', '12800']) {
+                    const probe = await fetch(`../api/store_api.php?action=probe&ip=${encodeURIComponent(ipInput.value)}&port=${candidate}`).then(response => response.json());
+                    if (probe.status === 'success' && probe.online) { puertoInput.value = candidate; break; }
+                }
+                verificarConexion();
+            } catch (error) {
+                luzMini.className = 'h-3 w-3 rounded-full border-2 border-[#050711] bg-red-500';
+                estadoModal.innerText = 'PS4 NO DETECTADA';
+                estadoModal.className = 'text-red-400 text-[10px] uppercase tracking-widest font-black';
+                mostrarToast(false, 'Radar', error.message || 'No se pudo buscar la PS4.');
+            }
+        }
         ipInput.addEventListener('input', () => verificarConexion());
         puertoInput.addEventListener('change', verificarConexion);
 
@@ -328,7 +358,7 @@ if (file_exists($archivoCatalogo)) {
         // INSTALAR JUEGO (RPI)
         // ============================================================
         function instalarJuego(btn) {
-            const url = btn.getAttribute('data-url');
+            const id = btn.getAttribute('data-id');
             const ip = localStorage.getItem('sebas_ip_final_libre');
             const puerto = localStorage.getItem('sebas_port_rpi') || '12801';
 
@@ -337,7 +367,7 @@ if (file_exists($archivoCatalogo)) {
                 toggleConfig();
                 return;
             }
-            if (!url) {
+            if (!id) {
                 mostrarToast(false, 'Error', 'Este juego no tiene enlace disponible.');
                 return;
             }
@@ -350,13 +380,14 @@ if (file_exists($archivoCatalogo)) {
             const formData = new FormData();
             formData.append('action', 'install');
             formData.append('ip', ip);
-            formData.append('puerto', puerto);
-            formData.append('url_web', url);
+            formData.append('port', puerto);
+            formData.append('id', id);
+            formData.append('kind', 'pkg');
 
-            fetch('store.php', { method: 'POST', body: formData })
+            fetch('../api/store_api.php', { method: 'POST', body: formData })
                 .then(res => res.json())
                 .then(data => {
-                    mostrarToast(data.success, data.title || (data.success ? 'Éxito' : 'Error'), data.message || '');
+                    mostrarToast(data.status === 'success', data.status === 'success' ? 'Solicitud enviada' : 'Error', data.message || '');
                 })
                 .catch(() => {
                     mostrarToast(false, 'Error', 'Fallo de conexión con el servidor.');
@@ -373,22 +404,8 @@ if (file_exists($archivoCatalogo)) {
         // ============================================================
         function cargarCatalogo() {
             const status = document.getElementById('status');
-            const container = document.getElementById('lista-catalogo');
             status.textContent = '🔄 Actualizando catálogo...';
-
-            fetch('store.php?action=get_catalog')
-                .then(res => res.json())
-                .then(data => {
-                    if (Array.isArray(data) && data.length > 0) {
-                        // Recargar la página para mostrar los cambios
-                        location.reload();
-                    } else {
-                        status.textContent = 'No hay juegos en el catálogo.';
-                    }
-                })
-                .catch(() => {
-                    status.textContent = '❌ Error al actualizar el catálogo.';
-                });
+            window.location.reload();
         }
 
         // Filtros
@@ -420,28 +437,27 @@ if (file_exists($archivoCatalogo)) {
             const modal = document.getElementById('modal-detalle');
             const content = document.getElementById('detalle-contenido');
             const title = document.getElementById('detalle-titulo');
-
-            const card = document.querySelector(`.game-card[data-id="${id}"]`);
-            if (!card) return;
-
-            const titulo = card.querySelector('h3').textContent;
-            const subtitulo = card.querySelector('p')?.textContent || '';
-            const categoria = card.querySelector('.text-cyan-400')?.textContent || 'PS4';
-            const peso = card.querySelector('.text-emerald-400')?.textContent || '? GB';
-            const servidor = card.querySelector('.text-gray-400')?.textContent || '';
-
-            title.textContent = titulo;
+            const juego = catalogoPublico.find(item => item.id === id);
+            if (!juego) return;
+            const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+            title.textContent = juego.titulo || 'Sin título';
+            const cover = juego.cover || '';
+            const descripcion = escapeHtml(juego.descripcion || 'Sin descripción publicada.').replace(/\r?\n/g, '<br>');
+            const update = juego.enlaces?.update ? '<span class="rounded-lg bg-emerald-500/10 px-2 py-1 text-[9px] text-emerald-300">Update disponible</span>' : '';
+            const dlc = Array.isArray(juego.enlaces?.dlc) && juego.enlaces.dlc.length ? `<span class="rounded-lg bg-violet-500/10 px-2 py-1 text-[9px] text-violet-300">${juego.enlaces.dlc.length} DLC</span>` : '';
 
             content.innerHTML = `
                 <div class="flex flex-col items-center gap-3">
-                    <div class="w-32 h-32 rounded-xl bg-cover bg-center border border-white/10" style="background-image: url('${card.querySelector('div[style*="background-image"]')?.style?.backgroundImage || ''}');"></div>
-                    <p class="text-xs text-gray-400">${subtitulo}</p>
+                    <div class="w-32 h-32 rounded-xl bg-cover bg-center border border-white/10" style="background-image: url('${escapeHtml(cover)}');"></div>
+                    <p class="text-xs text-cyan-300">${escapeHtml(juego.id)} · ${escapeHtml(juego.subtitulo || juego.categoria || 'PS4')} · v${escapeHtml(juego.version || '1.00')}</p>
+                    <p class="w-full text-xs leading-relaxed text-gray-300">${descripcion}</p>
                     <div class="grid grid-cols-2 gap-2 w-full text-xs">
-                        <div><span class="text-gray-500">Categoría:</span> ${categoria}</div>
-                        <div><span class="text-gray-500">Peso:</span> ${peso}</div>
-                        <div class="col-span-2"><span class="text-gray-500">Servidor:</span> ${servidor}</div>
+                        <div><span class="text-gray-500">Categoría:</span> ${escapeHtml(juego.categoria || 'PS4')}</div>
+                        <div><span class="text-gray-500">Peso:</span> ${escapeHtml(juego.peso_gb ?? '?')} GB</div>
+                        <div class="col-span-2"><span class="text-gray-500">Servidor:</span> ${escapeHtml(juego.servidor || 'Privado')}</div>
                     </div>
-                    <button onclick="event.stopPropagation(); document.querySelector('.btn-install-game[data-url]')?.click();" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-black text-xs py-3 rounded-xl tracking-widest uppercase transition-all shadow-lg flex items-center justify-center gap-2">
+                    <div class="flex gap-2">${update}${dlc}</div>
+                    <button data-id="${escapeHtml(juego.id)}" onclick="event.stopPropagation(); instalarJuego(this);" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-black text-xs py-3 rounded-xl tracking-widest uppercase transition-all shadow-lg flex items-center justify-center gap-2">
                         <i class="fa-solid fa-download"></i> Instalar
                     </button>
                 </div>

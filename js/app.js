@@ -47,7 +47,9 @@ const introNamesMap = {
     'intro-matrix-rain': 'Matrix Rain',
     'intro-crt': 'Terminal CRT (Boot)',
     'intro-gb': 'Game Boy Clásica',
-    'intro-breach': 'System Breach'
+    'intro-breach': 'System Breach',
+    'intro-aurora': 'Aurora AJ',
+    'intro-wave': 'Onda clásica'
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -142,7 +144,7 @@ function inicializarValoresInterfazAjustes() {
 
         const selectWall = document.getElementById('custom-select-label');
         if (selectWall) {
-            const bgNamesMap = { 'none': 'Apagar Fondos', 'bg-ps4': 'Olas Líquidas (PS4)', 'bg-ps2': 'Cubos 3D (PS2)', 'bg-matrix': 'Lluvia de Código (Matrix)', 'bg-warp': 'Velocidad Warp (Espacio)', 'bg-plasma': 'Fluido Plasma', 'bg-network': 'Red Neuronal (Network)' };
+            const bgNamesMap = { 'none': 'Apagar Fondos', 'bg-ps5': 'Órbitas PS5', 'bg-ps5-gold': 'Órbitas doradas', 'bg-ps4': 'Olas Líquidas (PS4)', 'bg-ps3': 'Ondas PS3', 'bg-ps2': 'Cubos 3D (PS2)', 'bg-ps1': 'Grid retro (PS1)', 'bg-matrix': 'Lluvia de Código (Matrix)', 'bg-starfield': 'Campo estelar', 'bg-warp': 'Velocidad Warp (Espacio)', 'bg-synth': 'Synthwave', 'bg-radar': 'Radar táctico', 'bg-sonar': 'Sonar', 'bg-plasma': 'Fluido Plasma', 'bg-network': 'Red Neuronal (Network)' };
             const bgGuardado = localStorage.getItem('ps4_dynamic_bg') || 'bg-ps4';
             selectWall.innerText = bgNamesMap[bgGuardado] || 'Olas Líquidas (PS4)';
         }

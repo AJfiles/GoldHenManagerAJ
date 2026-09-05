@@ -1,4 +1,24 @@
-GOLDHEN MANAGER AJ 3.2 - FUNCIONES Y GUIAS
+GOLDHEN MANAGER AJ 3.3 - FUNCIONES Y GUIAS
+
+STORE PÚBLICA (v3.3)
+---------------------
+- Abre Store desde el launcher. La IP guardada en GoldHen Manager se reutiliza
+  automáticamente; no hay que escribirla otra vez.
+- Inicia Remote Package Installer en la PS4. Usa Radar para detectar la PS4;
+  también prueba 12801 (Nova) y 12800 (Original) para seleccionar el puerto
+  que responde. Si ninguno responde, abre RPI y revisa el puerto mostrado por
+  su notificación.
+- Pulsa Conectar para guardar IP/puerto y abre una tarjeta para ver su ficha
+  completa antes de enviar la URL autorizada directamente a RPI.
+
+PUBLICAR CAMBIOS DE LA STORE
+----------------------------
+- El ZIP del administrador incluye `store/data/catalogo.json`, únicamente las
+  carátulas nuevas/modificadas en `store/covers/` y `store-changes.json`.
+- Extrae el ZIP en la raíz del repositorio y combina la carpeta `store` con la
+  existente, sobrescribiendo el catálogo cuando se solicite. El manifiesto
+  `store-changes.json` es una guía para saber qué rutas se actualizaron o qué
+  carátulas retiradas debes borrar; la aplicación no lo necesita en producción.
 ===========================================
 
 Este documento sirve como referencia rápida para quien mantiene el repositorio

@@ -9,6 +9,13 @@ function store_url($url) { if (!is_string($url) || !preg_match('#^https?://#i', 
 function store_find($id) { foreach (store_catalog() as $item) if (($item['id'] ?? '') === $id && !empty($item['licencia_confirmada'])) return $item; return null; }
 $action = $_POST['action'] ?? $_GET['action'] ?? 'catalog';
 if ($action === 'catalog') { $visible=[]; foreach (store_catalog() as $item) if (!empty($item['licencia_confirmada'])) $visible[]=$item; store_out(['status'=>'success','data'=>$visible]); }
+if ($action === 'probe') {
+    $ip = $_POST['ip'] ?? $_GET['ip'] ?? ''; $port = (int)($_POST['port'] ?? $_GET['port'] ?? 12801);
+    if (!store_ip($ip) || $port < 1 || $port > 65535) store_out(['status'=>'error','message'=>'Destino RPI inválido.']);
+    $errno = 0; $error = ''; $socket = @fsockopen($ip, $port, $errno, $error, 1.5);
+    if (is_resource($socket)) { fclose($socket); store_out(['status'=>'success','online'=>true,'message'=>"RPI responde en {$ip}:{$port}."]); }
+    store_out(['status'=>'error','online'=>false,'message'=>"No responde RPI en el puerto {$port}."]);
+}
 if ($action === 'install') {
     $ip=$_POST['ip']??''; $port=(int)($_POST['port']??12800); $id=$_POST['id']??''; $kind=$_POST['kind']??'pkg'; $index=(int)($_POST['index']??0);
     if (!store_ip($ip) || $port<1 || $port>65535) store_out(['status'=>'error','message'=>'Destino RPI inválido.']);

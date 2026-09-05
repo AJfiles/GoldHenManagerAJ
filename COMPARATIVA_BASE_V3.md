@@ -1,4 +1,4 @@
-# Comparativa técnica: GoldHen Manager AJ 3.2 frente a GoldHenManager-v3
+# Comparativa técnica: GoldHen Manager AJ 3.3 frente a GoldHenManager-v3
 
 Fecha de análisis: 3 de septiembre de 2026. La carpeta `GoldHenManager-v3-main`
 fue analizada en modo lectura y no fue modificada.
@@ -37,13 +37,13 @@ historial de commits.
 
 | Área | Cambios de AJ frente a la base |
 | --- | --- |
-| Núcleo y PWA | `index.php`, `manifest.json` y `sw.js` actualizan identidad AJ 3.2, módulos nuevos y Service Worker de red directa. |
+| Núcleo y PWA | `index.php`, `manifest.json` y `sw.js` actualizan identidad AJ 3.3, módulos nuevos y Service Worker de red directa. |
 | Biblioteca | Caché con rutas absolutas, progreso detallado de sincronización, ficha cerrable, carátulas/galería y retiro del cálculo de tamaño. |
 | Explorador y transferencias | Mejoras de interfaz, operaciones FTP, cachés y métricas de transferencia. |
 | Modding y mods | Corrección de llamada inexistente, mejoras de portadas, subida por chunks e índice de mods. |
 | APIs PHP | Normalización de rutas `__DIR__`, manejo de caché, validaciones de rutas y ajustes FTP. |
 | Ajustes e interfaz | Tamaño de texto, PWA discreta, actualización segura, modales de fondos/intros y créditos AJ. |
-| Intros | Versionado visual 3.2 y textos dinámicos coherentes. |
+| Intros | Versionado visual 3.3, textos dinámicos coherentes y estilos adicionales Aurora AJ/Onda clásica. |
 
 ## Funciones AJ que no existían en la base
 

@@ -1,1 +1,20 @@
-[]
+[
+    {
+        "id": "SLUS21004",
+        "titulo": "Def Jam Fight for NY",
+        "subtitulo": "Action",
+        "categoria": "PS4",
+        "version": "1.00",
+        "peso_gb": 2.19,
+        "descripcion": "Note: Game was tested on PS4 PRO. Another experimental PS2toPS4 convert.\r\n\r\nPerformance and optimisations fix’s – applied! Widescreen patch – added!\r\n\r\n4 player feature – enabled! Multi-Tap FiX by Kozarovv!\r\n\r\nCheats include:\r\n\r\nInfinite Health Player 1 (R3)\r\nMax Cash (L3)\r\nAccess All Moves (Select + R1)\r\nAccess All Gear (Select + L1)\r\nLanguage: English",
+        "creditos": "DLLPS",
+        "servidor": "(@VikaCaptive)",
+        "licencia_confirmada": true,
+        "enlaces": {
+            "pkg": "https://download2391.mediafire.com/5p3mhuqtggegL1m5eJ1qo-DffJmENRENJitVjxOtI0mIV0Knw1tocw9e9k_4JBOX0DfGF7tTG057vNAf6IDKd4fCLC1_2mff1ISHxqqvQBOBrns7xHvLMKj7-HFGVohIL0wi14kLr6aXAzRNcsc-ylnvO5ek9V-zrcT5onhB/vhqz1ub1oeq3hb7/UP9000-SLUS21004_00-SLUS210040000001-A0100-V0100.pkg",
+            "update": null,
+            "dlc": []
+        },
+        "cover": "/store/covers/SLUS21004.webp"
+    }
+]
