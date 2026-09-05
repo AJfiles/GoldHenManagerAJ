@@ -1,7 +1,5 @@
 # Análisis de perfil PS4 `18a95ddf`
 
-Auditoría realizada en modo lectura: no se modificó ningún archivo de esta carpeta.
-
 ## Hallazgos verificables
 
 - 695 archivos en total. Las extensiones predominantes son `.bin` (153), `.png`
