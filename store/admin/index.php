@@ -10,7 +10,7 @@ if (!store_admin_authorized()) { http_response_code(403); ?>
 // ============================================================
 /**
  * Extrae enlace directo de MediaFire (.pkg) desde una URL de página web
- * Con múltiples métodos de extracción para mayor fiabilidad
+ * Soporta múltiples patrones de MediaFire
  */
 function extraerEnlaceMediaFire($url) {
     // Si ya es un enlace directo .pkg, devolverlo
@@ -43,36 +43,50 @@ function extraerEnlaceMediaFire($url) {
         return $url;
     }
     
-    // Método 1: Buscar enlace directo de descarga (patrón de MediaFire)
+    // === PATRONES DE BÚSQUEDA ===
+    // 1. Enlace directo de MediaFire (downloadXXXX.mediafire.com)
     if (preg_match('/https?:\/\/download[0-9]+\.mediafire\.com\/[^"\'\s]+\.pkg/i', $html, $matches)) {
         return $matches[0];
     }
     
-    // Método 2: Buscar enlace que contenga ".pkg" en la página
+    // 2. Cualquier enlace .pkg en la página
     if (preg_match('/https?:\/\/[^"\'\s]+\.pkg/i', $html, $matches)) {
         if ($matches[0] !== $url) {
             return $matches[0];
         }
     }
     
-    // Método 3: Buscar en href de botones de descarga
-    if (preg_match('/href=["\']([^"\']+\.pkg[^"\']*)["\']/i', $html, $matches)) {
-        return $matches[1];
+    // 3. Enlace en href de botones de descarga (varios patrones)
+    $patrones_href = [
+        '/href=["\']([^"\']+\.pkg[^"\']*)["\']/i',
+        '/href=["\']([^"\']+)\?[^"\']*["\']/i',
+        '/<a[^>]+href=["\']([^"\']+\.pkg[^"\']*)["\']/i'
+    ];
+    foreach ($patrones_href as $patron) {
+        if (preg_match($patron, $html, $matches)) {
+            $link = $matches[1];
+            // Si el enlace es relativo, construirlo absoluto
+            if (strpos($link, 'http') !== 0) {
+                $base = parse_url($url, PHP_URL_SCHEME) . '://' . parse_url($url, PHP_URL_HOST);
+                $link = $base . (strpos($link, '/') === 0 ? '' : '/') . $link;
+            }
+            return $link;
+        }
     }
     
-    // Método 4: Buscar en JavaScript (window.location.href)
+    // 4. Buscar en JavaScript (window.location.href)
     if (preg_match('/window\.location\.href\s*=\s*["\']([^"\']+)["\']/i', $html, $matches)) {
         return $matches[1];
     }
     
-    // Método 5: Buscar en el atributo data-link
+    // 5. Buscar en atributo data-link (usado por MediaFire)
     if (preg_match('/data-link=["\']([^"\']+\.pkg[^"\']*)["\']/i', $html, $matches)) {
         return $matches[1];
     }
     
-    // Método 6: Buscar enlaces que contengan "download" o "get"
-    if (preg_match('/https?:\/\/[^"\'\s]+(?:download|get)[^"\'\s]+\.pkg/i', $html, $matches)) {
-        return $matches[0];
+    // 6. Buscar en meta refresh
+    if (preg_match('/<meta[^>]+url=["\']([^"\']+)["\']/i', $html, $matches)) {
+        return $matches[1];
     }
     
     // Si no se encontró nada, devolver la URL original
@@ -120,7 +134,6 @@ try {
             // EXTRACCIÓN AUTOMÁTICA AL GUARDAR
             // ============================================================
             $pkg_url = store_admin_url((string)($_POST['pkg'] ?? ''));
-            // Si es MediaFire, extraer automáticamente
             if (strpos($pkg_url, 'mediafire.com') !== false) {
                 $extraido = extraerEnlaceMediaFire($pkg_url);
                 if ($extraido !== $pkg_url) {
@@ -194,34 +207,33 @@ function extraerEnlace() {
     formData.append('action', 'extract');
     formData.append('url', url);
     
-    // IMPORTANTE: Usamos la URL completa para asegurar que la petición llegue
+    // CAMBIO CLAVE: usar 'index.php' en lugar de ''
     fetch('index.php', {
         method: 'POST',
         body: formData
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Error HTTP: ' + response.status);
-        }
-        return response.text();
-    })
-    .then(text => {
-        try {
-            const data = JSON.parse(text);
-            if (data.success) {
-                input.value = data.direct_link;
-                resultado.innerHTML = '<span class="text-green-400">✅ Enlace extraído correctamente</span>';
-            } else {
-                resultado.innerHTML = '<span class="text-red-400">❌ ' + data.message + '</span>';
+    .then(res => {
+        // Verificar si la respuesta es JSON válido
+        return res.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch(e) {
+                console.error('Respuesta no válida:', text);
+                throw new Error('El servidor devolvió una respuesta inválida');
             }
-        } catch (e) {
-            console.error('Respuesta no válida:', text);
-            resultado.innerHTML = '<span class="text-red-400">❌ El servidor devolvió una respuesta inválida</span>';
+        });
+    })
+    .then(data => {
+        if (data.success) {
+            input.value = data.direct_link;
+            resultado.innerHTML = '<span class="text-green-400">✅ Enlace extraído correctamente</span>';
+        } else {
+            resultado.innerHTML = '<span class="text-red-400">❌ ' + data.message + '</span>';
         }
     })
-    .catch(error => {
+    .catch((error) => {
         console.error('Error:', error);
-        resultado.innerHTML = '<span class="text-red-400">❌ Error al conectar con el servidor: ' + error.message + '</span>';
+        resultado.innerHTML = '<span class="text-red-400">❌ ' + error.message + '</span>';
     });
 }
 </script>
