@@ -7,6 +7,16 @@ function store_catalog() { $raw = @file_get_contents(STORE_CATALOG); $data = jso
 function store_ip($ip) { return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4); }
 function store_url($url) { if (!is_string($url) || !preg_match('#^https?://#i', $url)) return false; $p=parse_url($url); if (!$p || empty($p['host']) || preg_match('/(^|\.)(localhost|local)$/i',$p['host'])) return false; if (filter_var($p['host'], FILTER_VALIDATE_IP) && !filter_var($p['host'], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) return false; return preg_match('/\.pkg(?:$|[?#])/i', $url) ? $url : false; }
 function store_find($id) { foreach (store_catalog() as $item) if (($item['id'] ?? '') === $id && !empty($item['licencia_confirmada'])) return $item; return null; }
+/* Comprueba que el enlace publicado siga respondiendo sin descargar el PKG. */
+function store_preflight($url) {
+    if (!function_exists('curl_init')) return ['ok'=>true, 'url'=>$url, 'note'=>''];
+    $ch=curl_init($url);
+    curl_setopt_array($ch,[CURLOPT_NOBODY=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_MAXREDIRS=>5,CURLOPT_TIMEOUT=>12,CURLOPT_CONNECTTIMEOUT=>6,CURLOPT_RETURNTRANSFER=>true,CURLOPT_USERAGENT=>'GoldHenManagerAJ/3.3']);
+    curl_exec($ch); $code=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE); $effective=(string)curl_getinfo($ch,CURLINFO_EFFECTIVE_URL); $error=(string)curl_error($ch); curl_close($ch);
+    if ($code >= 200 && $code < 400) return ['ok'=>true, 'url'=>$effective ?: $url, 'note'=>''];
+    return ['ok'=>false, 'url'=>$url, 'note'=>$error ?: "El servidor del archivo respondió HTTP {$code} al verificar el enlace."];
+}
+function store_message_fragment($body) { $body=trim(strip_tags((string)$body)); $body=preg_replace('/\s+/', ' ', $body); return function_exists('mb_substr') ? mb_substr($body, 0, 180, 'UTF-8') : substr($body, 0, 180); }
 $action = $_POST['action'] ?? $_GET['action'] ?? 'catalog';
 if ($action === 'catalog') { $visible=[]; foreach (store_catalog() as $item) if (!empty($item['licencia_confirmada'])) $visible[]=$item; store_out(['status'=>'success','data'=>$visible]); }
 if ($action === 'probe') {
@@ -22,11 +32,16 @@ if ($action === 'install') {
     $item=store_find($id); if (!$item) store_out(['status'=>'error','message'=>'Elemento de catálogo no disponible.']);
     $links=$item['enlaces']??[]; $url=$kind==='dlc' ? (($links['dlc'][$index]??null)) : ($links[$kind]??null); $url=store_url($url);
     if (!$url) store_out(['status'=>'error','message'=>'El enlace no es un PKG directo permitido.']);
+    $preflight=store_preflight($url);
+    if (!$preflight['ok']) store_out(['status'=>'error','message'=>'No se envió a RPI: '.$preflight['note'].' Revisa el enlace directo publicado.']);
+    $url=store_url($preflight['url']) ?: $url;
     $payload=json_encode(['type'=>'direct','packages'=>[$url]], JSON_UNESCAPED_SLASHES);
-    $ch=curl_init("http://{$ip}:{$port}/api/install"); curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$payload,CURLOPT_HTTPHEADER=>['Content-Type: application/json'],CURLOPT_TIMEOUT=>10]);
+    $ch=curl_init("http://{$ip}:{$port}/api/install"); curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$payload,CURLOPT_HTTPHEADER=>['Content-Type: application/json','Accept: application/json','Content-Length: '.strlen($payload)],CURLOPT_CONNECTTIMEOUT=>4,CURLOPT_TIMEOUT=>15]);
     $body=curl_exec($ch); $code=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE); $error=curl_error($ch); curl_close($ch);
-    if ($code>=200 && $code<300) store_out(['status'=>'success','message'=>'Solicitud enviada al instalador de PS4.']);
-    store_out(['status'=>'error','message'=>$error ?: "El instalador respondió HTTP $code."]);
+    if ($code>=200 && $code<300) store_out(['status'=>'success','message'=>'Solicitud enviada al instalador de PS4. Mantén RPI abierto hasta que inicie la descarga.']);
+    $detail=store_message_fragment($body);
+    $hint=str_starts_with(strtolower($url), 'https://') ? ' RPI clásico puede requerir una URL directa HTTP accesible desde la PS4; prueba también la URL final en el navegador de la consola.' : '';
+    store_out(['status'=>'error','message'=>$error ?: "El instalador respondió HTTP $code.".($detail ? " Detalle: $detail." : '').$hint]);
 }
 if ($action === 'check') {
     $item=store_find($_POST['id']??''); if (!$item) store_out(['status'=>'error','message'=>'Elemento no disponible.']); $url=store_url(($item['enlaces']['pkg']??'')); if (!$url) store_out(['status'=>'error','message'=>'Enlace PKG inválido.']);

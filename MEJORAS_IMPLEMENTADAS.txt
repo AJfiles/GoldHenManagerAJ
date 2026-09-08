@@ -231,3 +231,23 @@ Versión 3.3
   instalación abre GoldHen Manager automáticamente y no expone Store Admin al
   usuario final. Cuando las dependencias ya existen, omite `pkg update` para
   hacer las reinstalaciones y actualizaciones más ágiles.
+
+Corrección de Store e intros 3.3
+--------------------------------
+- `start-goldhen.sh` deja el servidor PHP en segundo plano y guarda su salida
+  en `~/.goldhen-server.log`. GoldHen se abre automáticamente, pero Termux
+  vuelve a estar disponible; el mantenedor puede ejecutar `store-admin` en
+  cualquier momento para abrir el panel privado en el puerto 8081.
+- Las nuevas intros Aurora AJ y Onda clásica se registran en el selector real
+  de Ajustes, no solo en accesos rápidos. El selector ahora las previsualiza
+  inmediatamente y conserva la selección para el siguiente arranque.
+- Se añadieron las intros CSS `Boot clásico` e `Inicio IA`, y los fondos
+  `Aurora polar` y `Océano nocturno`.
+- La Store realiza una comprobación HTTP del enlace antes de enviarlo a RPI y
+  muestra el fragmento de respuesta del instalador cuando este devuelve error.
+  Esto diferencia un puerto RPI accesible de un archivo cuyo host no puede ser
+  descargado por la PS4. El formato de envío se mantiene compatible con la API
+  oficial de RPI (`POST /api/install`, `type: direct`, `packages`).
+- `ANALISIS_INSTANTANEA_PS4.md` documenta la auditoría de solo lectura de la
+  copia temporal `ps4/`, las rutas que pueden aprovecharse y los límites de
+  seguridad para perfiles, saves, trofeos, cuenta y sistema.

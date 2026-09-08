@@ -258,12 +258,12 @@ if (file_exists($archivoCatalogo)) {
             const ip = ipInput.value.trim();
             const puerto = puertoInput.value;
             if (!ip) {
-                luzMini.className = 'absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-gray-600 border-[2.5px] border-[#050711]';
+                luzMini.className = 'h-3 w-3 rounded-full border-2 border-[#050711] bg-gray-600';
                 estadoModal.innerText = "ESPERANDO IP...";
                 estadoModal.className = "text-gray-500 text-[10px] uppercase tracking-widest font-black";
                 return;
             }
-            luzMini.className = 'absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-yellow-400 border-[2.5px] border-[#050711] animate-pulse';
+            luzMini.className = 'h-3 w-3 rounded-full border-2 border-[#050711] bg-yellow-400 animate-pulse';
             estadoModal.innerText = "BUSCANDO...";
             estadoModal.className = "text-yellow-500 text-[10px] uppercase tracking-widest font-black";
 
@@ -271,16 +271,16 @@ if (file_exists($archivoCatalogo)) {
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success' && data.online) {
-                        luzMini.className = 'absolute top-2 right-2 w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)] border-[2.5px] border-[#050711]';
+                        luzMini.className = 'h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)] border-2 border-[#050711]';
                         estadoModal.innerText = "¡CONECTADO!";
                         estadoModal.className = "text-emerald-400 text-[10px] uppercase tracking-widest font-black";
                     } else {
-                        luzMini.className = 'absolute top-2 right-2 w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)] border-[2.5px] border-[#050711]';
+                        luzMini.className = 'h-3 w-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)] border-2 border-[#050711]';
                         estadoModal.innerText = "OFFLINE";
                         estadoModal.className = "text-red-400 text-[10px] uppercase tracking-widest font-black";
                     }
                 }).catch(() => {
-                    luzMini.className = 'absolute top-2 right-2 w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)] border-[2.5px] border-[#050711]';
+                    luzMini.className = 'h-3 w-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)] border-2 border-[#050711]';
                     estadoModal.innerText = "ERROR DE RED";
                     estadoModal.className = "text-red-400 text-[10px] uppercase tracking-widest font-black";
                 });

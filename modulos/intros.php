@@ -93,6 +93,9 @@
     .aurora-band:nth-child(2) { animation-delay:-2s; opacity:.35; transform:rotate(28deg); } .aurora-copy { position:relative; z-index:2; text-align:center; animation: auroraReveal 5.5s forwards; }
     @keyframes auroraFlow { to { transform:translate(9vw,12vh) rotate(12deg) scale(1.12); } } @keyframes auroraReveal { 0%,8%{opacity:0;transform:scale(.75)} 20%,88%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.3)} }
     #intro-wave { background:linear-gradient(160deg,#020617,#0c4a6e); } .wave-line { position:absolute; width:160vw; height:36vh; border-top:2px solid rgba(125,211,252,.75); border-radius:50%; animation: introWave 3.8s ease-in-out infinite alternate; } .wave-line:nth-child(2){transform:translateY(70px);opacity:.45;animation-delay:-1.5s}.wave-copy{position:relative;z-index:2;text-align:center;animation:auroraReveal 5.5s forwards}@keyframes introWave{to{transform:translateX(-13vw) rotate(8deg) scaleY(1.3)}}
+    /* Nuevas variantes: clásico de consola y arranque inspirado en IA. */
+    #intro-classic { background:radial-gradient(circle at 50% 65%,#172554 0%,#020617 48%,#000 100%); } .classic-orbit{position:absolute;width:72vmin;height:72vmin;border:1px solid rgba(147,197,253,.45);border-radius:50%;box-shadow:0 0 30px rgba(59,130,246,.2),inset 0 0 22px rgba(59,130,246,.15);animation:classicOrbit 5.5s ease-in-out forwards}.classic-orbit:after{content:'';position:absolute;width:12px;height:12px;border-radius:50%;background:#a5f3fc;box-shadow:0 0 18px #22d3ee;top:10%;left:50%;animation:classicDot 2s linear infinite}.classic-copy{position:relative;z-index:2;text-align:center;animation:auroraReveal 5.5s forwards}@keyframes classicOrbit{0%{opacity:0;transform:rotateX(70deg) scale(.35)}22%,78%{opacity:1;transform:rotateX(60deg) scale(1)}100%{opacity:0;transform:rotateX(20deg) scale(1.5)}}@keyframes classicDot{to{transform:rotate(360deg) translateX(32vmin)}}
+    #intro-ai { background:radial-gradient(circle at 50% 45%,#312e81 0%,#0f172a 42%,#020617 100%); } .ai-grid{position:absolute;inset:-30%;background-image:linear-gradient(rgba(34,211,238,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,.16) 1px,transparent 1px);background-size:34px 34px;transform:perspective(520px) rotateX(63deg);animation:aiGrid 5.5s ease-out forwards}.ai-core{position:absolute;width:22vmin;height:22vmin;border-radius:50%;background:radial-gradient(circle,#fff 0 4%,#67e8f9 10%,#8b5cf6 35%,transparent 70%);filter:drop-shadow(0 0 35px #22d3ee);animation:aiCore 5.5s ease-in-out forwards}.ai-copy{position:relative;z-index:2;margin-top:34vmin;text-align:center;animation:auroraReveal 5.5s forwards}@keyframes aiGrid{0%{opacity:0;transform:perspective(520px) rotateX(76deg) translateY(30vh)}20%,82%{opacity:1}100%{opacity:0;transform:perspective(520px) rotateX(63deg) translateY(-8vh)}}@keyframes aiCore{0%,12%{opacity:0;transform:scale(.2)}28%,82%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(2)}}
 </style>
 
 <div id="intro-ps5" class="intro-container"><div class="ps5-glow"></div><div class="ps5-glow ps5-glow-2"></div><div class="ps5-content"><i class="fa-brands fa-playstation text-white text-7xl drop-shadow-lg"></i><div class="text-2xl font-black tracking-[8px] mt-5 bg-gradient-to-r from-white via-purple-400 to-cyan-400 text-transparent bg-clip-text">GOLDHEN MANAGER <span class="text-xl">v3.3</span></div></div><div id="ps5-particles-container"></div></div>
@@ -117,6 +120,8 @@
 <div id="intro-breach" class="intro-container"><div class="scanlines"></div><div class="breach-box" id="breach-box-anim"><i id="breach-icon" class="fa-solid fa-lock text-7xl mb-5 block text-red-600"></i><div id="breach-text" style="font-size: 2rem; font-weight: bold; letter-spacing: 4px;">SYSTEM LOCKED</div></div></div>
 <div id="intro-aurora" class="intro-container"><div class="aurora-band"></div><div class="aurora-band"></div><div class="aurora-copy"><i class="fa-brands fa-playstation text-7xl text-cyan-100 drop-shadow-[0_0_25px_#22d3ee]"></i><div class="mt-5 text-2xl font-black tracking-[.4em] text-white">GOLDHEN AJ</div><div class="mt-2 text-xs tracking-[.55em] text-cyan-200">AURORA v3.3</div></div></div>
 <div id="intro-wave" class="intro-container"><div class="wave-line"></div><div class="wave-line"></div><div class="wave-copy"><i class="fa-brands fa-playstation text-7xl text-white"></i><div class="mt-5 text-xl font-light tracking-[.7em] text-white">GOLDHEN</div><div class="mt-2 text-[10px] tracking-[.45em] text-sky-200">MANAGER AJ · 3.3</div></div></div>
+<div id="intro-classic" class="intro-container"><div class="classic-orbit"></div><div class="classic-copy"><i class="fa-brands fa-playstation text-7xl text-sky-100"></i><div class="mt-5 text-xl tracking-[.62em] text-white">GOLDHEN</div><div class="mt-2 text-[10px] tracking-[.4em] text-blue-200">CLASSIC BOOT · 3.3</div></div></div>
+<div id="intro-ai" class="intro-container"><div class="ai-grid"></div><div class="ai-core"></div><div class="ai-copy"><div class="text-[10px] font-bold tracking-[.55em] text-cyan-200">SYSTEM SYNTHESIS</div><div class="mt-3 text-2xl font-black tracking-[.32em] text-white">GOLDHEN AJ</div><div class="mt-2 text-[9px] tracking-[.35em] text-violet-200">INTELLIGENT BOOT</div></div></div>
 
 <script>
     let currentIntroInterval = null;
@@ -178,19 +183,16 @@
         setTimeout(() => { icon.className = "fa-brands fa-playstation text-7xl mb-5 block text-white"; text.innerText = "GOLDHEN MANAGER v3.3"; text.style.color = "white"; }, 2000); 
     }
 
-    function bootSelectedIntro() {
-        const savedIntro = localStorage.getItem('ps4_selected_intro') || 'none';
+    function reproducirIntro(savedIntro) {
         const wrap = document.getElementById('intro-wrapper');
-        
         if (savedIntro === 'none' || !savedIntro) { 
             if (wrap) wrap.style.display = 'none'; 
-            try { AudioEngine.playPS5Boot(); } catch(e) {}
             return; 
         }
-        
         const intro = document.getElementById(savedIntro);
         if(!intro) { if (wrap) wrap.style.display = 'none'; return; }
-        
+        document.querySelectorAll('.intro-container').forEach(item => { item.classList.remove('active'); item.style.opacity = ''; });
+        if (wrap) wrap.style.display = 'flex';
         intro.classList.add('active');
 
         if (savedIntro === 'intro-ps5') generatePS5Particles();
@@ -205,5 +207,10 @@
             if (currentIntroInterval) clearInterval(currentIntroInterval);
             setTimeout(() => { if (wrap) wrap.style.display = 'none'; }, 500);
         }, 5500);
+    }
+    function bootSelectedIntro() {
+        const savedIntro = localStorage.getItem('ps4_selected_intro') || 'none';
+        reproducirIntro(savedIntro);
+        if (savedIntro === 'none' || !savedIntro) { try { AudioEngine.playPS5Boot(); } catch(e) {} }
     }
 </script>

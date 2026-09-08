@@ -49,7 +49,9 @@ const introNamesMap = {
     'intro-gb': 'Game Boy Clásica',
     'intro-breach': 'System Breach',
     'intro-aurora': 'Aurora AJ',
-    'intro-wave': 'Onda clásica'
+    'intro-wave': 'Onda clásica',
+    'intro-classic': 'Boot clásico',
+    'intro-ai': 'Inicio IA'
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -144,7 +146,7 @@ function inicializarValoresInterfazAjustes() {
 
         const selectWall = document.getElementById('custom-select-label');
         if (selectWall) {
-            const bgNamesMap = { 'none': 'Apagar Fondos', 'bg-ps5': 'Órbitas PS5', 'bg-ps5-gold': 'Órbitas doradas', 'bg-ps4': 'Olas Líquidas (PS4)', 'bg-ps3': 'Ondas PS3', 'bg-ps2': 'Cubos 3D (PS2)', 'bg-ps1': 'Grid retro (PS1)', 'bg-matrix': 'Lluvia de Código (Matrix)', 'bg-starfield': 'Campo estelar', 'bg-warp': 'Velocidad Warp (Espacio)', 'bg-synth': 'Synthwave', 'bg-radar': 'Radar táctico', 'bg-sonar': 'Sonar', 'bg-plasma': 'Fluido Plasma', 'bg-network': 'Red Neuronal (Network)' };
+            const bgNamesMap = { 'none': 'Apagar Fondos', 'bg-ps5': 'Órbitas PS5', 'bg-ps5-gold': 'Órbitas doradas', 'bg-ps4': 'Olas Líquidas (PS4)', 'bg-ps3': 'Ondas PS3', 'bg-ps2': 'Cubos 3D (PS2)', 'bg-ps1': 'Grid retro (PS1)', 'bg-matrix': 'Lluvia de Código (Matrix)', 'bg-starfield': 'Campo estelar', 'bg-warp': 'Velocidad Warp (Espacio)', 'bg-synth': 'Synthwave', 'bg-radar': 'Radar táctico', 'bg-sonar': 'Sonar', 'bg-plasma': 'Fluido Plasma', 'bg-network': 'Red Neuronal (Network)', 'bg-aurora': 'Aurora polar', 'bg-ocean': 'Océano nocturno' };
             const bgGuardado = localStorage.getItem('ps4_dynamic_bg') || 'bg-ps4';
             selectWall.innerText = bgNamesMap[bgGuardado] || 'Olas Líquidas (PS4)';
         }
@@ -247,7 +249,8 @@ function seleccionarIntroCustom(idIntro, nombreVisible) {
     cerrarSelectorIntro();
     localStorage.setItem('ps4_selected_intro', idIntro);
     emitirEfectoSonidoNativo('ps-ui');
-    sysNotification("AJUSTES", `Intro seleccionada. Se verá al reiniciar la app.`, "fa-play");
+    sysNotification("AJUSTES", `Intro seleccionada. Vista previa iniciada.`, "fa-play");
+    if (typeof reproducirIntro === 'function' && idIntro !== 'none') setTimeout(() => reproducirIntro(idIntro), 80);
 }
 
 function configurarEventosDashboard() {

@@ -86,6 +86,14 @@
         50% { transform: translate(15vw, 10vh) scale(1.1) rotate(180deg); border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%; }
         100% { transform: translate(-10vw, 15vh) scale(0.9) rotate(360deg); border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; }
     }
+
+    /* Aurora y océano: variantes ligeras para móviles, sin canvas adicional. */
+    #bg-aurora { background: radial-gradient(circle at 20% 15%, #164e63, transparent 42%), radial-gradient(circle at 80% 75%, #4c1d95, transparent 48%), #020617; overflow:hidden; }
+    .bg-aurora-band { position:absolute; width:145vw; height:35vh; border-radius:50%; background:linear-gradient(90deg,rgba(34,211,238,.1),rgba(139,92,246,.58),rgba(236,72,153,.1)); filter:blur(28px); animation:bgAuroraFlow 10s ease-in-out infinite alternate; }
+    .bg-aurora-band:nth-child(2) { top:43%; opacity:.7; transform:rotate(28deg); animation-delay:-5s; } @keyframes bgAuroraFlow { to { transform:translate(11vw,16vh) rotate(13deg) scale(1.12); } }
+    #bg-ocean { background:linear-gradient(180deg,#020617 0%,#082f49 58%,#0c4a6e 100%); overflow:hidden; }
+    .ocean-layer { position:absolute; width:180vw; height:55vh; left:-40vw; border-radius:48%; background:linear-gradient(180deg,rgba(125,211,252,.18),rgba(14,116,144,.12)); border-top:1px solid rgba(186,230,253,.45); animation:oceanSwell 9s ease-in-out infinite alternate; }
+    .ocean-layer:nth-child(1){top:48%;animation-duration:8s}.ocean-layer:nth-child(2){top:61%;opacity:.75;animation-delay:-3s}.ocean-layer:nth-child(3){top:73%;opacity:.55;animation-duration:12s;animation-delay:-6s}@keyframes oceanSwell{to{transform:translateX(16vw) translateY(-5vh) rotate(3deg)}}
 </style>
 
 <div id="bg-container">
@@ -107,6 +115,8 @@
     <div id="bg-sonar" class="bg-layer"><div class="sonar-ring"></div><div class="sonar-ring"></div><div class="sonar-ring"></div></div>
     
     <div id="bg-plasma" class="bg-layer"><div class="plasma-container"><div class="plasma-blob plasma-b-1"></div><div class="plasma-blob plasma-b-2"></div><div class="plasma-blob plasma-b-3"></div></div></div>
+    <div id="bg-aurora" class="bg-layer"><div class="bg-aurora-band"></div><div class="bg-aurora-band"></div></div>
+    <div id="bg-ocean" class="bg-layer"><div class="ocean-layer"></div><div class="ocean-layer"></div><div class="ocean-layer"></div></div>
 </div>
 
 <script>
