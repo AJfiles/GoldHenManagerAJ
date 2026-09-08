@@ -1,4 +1,5 @@
 <?php
+<?php
 declare(strict_types=1);
 require_once __DIR__ . '/funciones.php';
 store_admin_bootstrap();
@@ -13,6 +14,7 @@ if (!store_admin_authorized()) { http_response_code(403); ?>
  * Soporta múltiples patrones de MediaFire
  */
 function extraerEnlaceMediaFire($url) {
+    $url = normalizarEnlaceMediaFire($url);
     // Si ya es un enlace directo .pkg, devolverlo
     if (preg_match('/\.pkg($|\?)/i', $url)) {
         return $url;
@@ -20,6 +22,12 @@ function extraerEnlaceMediaFire($url) {
     
     // Si no es MediaFire, devolver la URL original
     if (strpos($url, 'mediafire.com') === false) {
+        return $url;
+    }
+
+    // El panel sigue siendo útil aunque PHP/cURL no esté disponible: conserva
+    // el enlace original y explica el caso al usuario, sin provocar un fatal.
+    if (!function_exists('curl_init')) {
         return $url;
     }
     
@@ -46,13 +54,13 @@ function extraerEnlaceMediaFire($url) {
     // === PATRONES DE BÚSQUEDA ===
     // 1. Enlace directo de MediaFire (downloadXXXX.mediafire.com)
     if (preg_match('/https?:\/\/download[0-9]+\.mediafire\.com\/[^"\'\s]+\.pkg/i', $html, $matches)) {
-        return $matches[0];
+        return normalizarEnlaceMediaFire($matches[0]);
     }
     
     // 2. Cualquier enlace .pkg en la página
     if (preg_match('/https?:\/\/[^"\'\s]+\.pkg/i', $html, $matches)) {
         if ($matches[0] !== $url) {
-            return $matches[0];
+            return normalizarEnlaceMediaFire($matches[0]);
         }
     }
     
@@ -70,18 +78,18 @@ function extraerEnlaceMediaFire($url) {
                 $base = parse_url($url, PHP_URL_SCHEME) . '://' . parse_url($url, PHP_URL_HOST);
                 $link = $base . (strpos($link, '/') === 0 ? '' : '/') . $link;
             }
-            return $link;
+            return normalizarEnlaceMediaFire($link);
         }
     }
     
     // 4. Buscar en JavaScript (window.location.href)
     if (preg_match('/window\.location\.href\s*=\s*["\']([^"\']+)["\']/i', $html, $matches)) {
-        return $matches[1];
+        return normalizarEnlaceMediaFire($matches[1]);
     }
     
     // 5. Buscar en atributo data-link (usado por MediaFire)
     if (preg_match('/data-link=["\']([^"\']+\.pkg[^"\']*)["\']/i', $html, $matches)) {
-        return $matches[1];
+        return normalizarEnlaceMediaFire($matches[1]);
     }
     
     // 6. Buscar en meta refresh
@@ -91,6 +99,14 @@ function extraerEnlaceMediaFire($url) {
     
     // Si no se encontró nada, devolver la URL original
     return $url;
+}
+
+/* Solo quita fragmentos del navegador y caracteres HTML. No se eliminan
+   parámetros de consulta: MediaFire puede firmar el acceso con ellos. */
+function normalizarEnlaceMediaFire($url) {
+    $url = trim(html_entity_decode((string)$url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    $url = preg_replace('/[\r\n\t]+/', '', $url);
+    return preg_replace('/#.*/', '', $url);
 }
 
 $message = ''; $changedUpdated = $_SESSION['store_updated'] ?? []; $changedDeleted = $_SESSION['store_deleted'] ?? [];
@@ -103,16 +119,19 @@ try {
         // ============================================================
         if ($action === 'extract') {
             header('Content-Type: application/json');
-            $url = store_admin_url((string)($_POST['url'] ?? ''));
-            if (empty($url)) {
-                echo json_encode(['success' => false, 'message' => 'URL vacía']);
-                exit;
-            }
-            $directo = extraerEnlaceMediaFire($url);
-            if ($directo !== $url) {
-                echo json_encode(['success' => true, 'direct_link' => $directo]);
-            } else {
-                echo json_encode(['success' => false, 'message' => 'No se pudo extraer el enlace directo. Intenta manualmente.']);
+            try {
+                $url = store_admin_web_url((string)($_POST['url'] ?? ''));
+                if (empty($url)) {
+                    throw new RuntimeException('URL vacía.');
+                }
+                $directo = extraerEnlaceMediaFire($url);
+                if ($directo !== $url) {
+                    echo json_encode(['success' => true, 'direct_link' => $directo]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No se pudo extraer una URL directa. Pega una URL directa autorizada como alternativa.']);
+                }
+            } catch (Throwable $extractError) {
+                echo json_encode(['success' => false, 'message' => $extractError->getMessage()]);
             }
             exit;
         }
@@ -133,14 +152,15 @@ try {
             // ============================================================
             // EXTRACCIÓN AUTOMÁTICA AL GUARDAR
             // ============================================================
-            $pkg_url = store_admin_url((string)($_POST['pkg'] ?? ''));
-            if (strpos($pkg_url, 'mediafire.com') !== false) {
-                $extraido = extraerEnlaceMediaFire($pkg_url);
-                if ($extraido !== $pkg_url) {
-                    $_POST['pkg'] = $extraido;
-                    $message = '✅ Enlace extraído automáticamente. ';
+            $extraidos = [];
+            foreach (['pkg', 'alternativo'] as $campo) {
+                $origen = store_admin_web_url((string)($_POST[$campo] ?? ''), $campo === 'alternativo');
+                if ($origen !== null && stripos($origen, 'mediafire.com') !== false) {
+                    $extraido = extraerEnlaceMediaFire($origen);
+                    if ($extraido !== $origen) { $_POST[$campo] = $extraido; $extraidos[] = $campo; }
                 }
             }
+            if ($extraidos) $message = '✅ Enlace ' . implode(' y ', $extraidos) . ' extraído automáticamente. ';
             
             $entry = store_admin_entry($before);
             foreach ($catalog as $row) if (($row['id'] ?? '') === $entry['id'] && $row !== $before) throw new RuntimeException('Ya existe otro elemento con ese ID.');
@@ -183,6 +203,8 @@ function h($value): string { return htmlspecialchars((string)$value, ENT_QUOTES,
     </button>
 </div>
 <div id="extract-result" class="text-xs mt-1"></div>
+
+<label class="block text-xs text-gray-400">Enlace alternativo del PKG (opcional)<input type="url" name="alternativo" value="<?= h($editing['enlaces']['alternativo'] ?? '') ?>" class="field mt-1" placeholder="URL directa alternativa; se prueba si la principal falla"><small class="mt-1 block text-gray-500">No se borran parámetros firmados de MediaFire: pueden ser necesarios para descargar.</small></label>
 
 <label class="block text-xs text-gray-400">URL update (opcional)<input type="text" name="update" value="<?= h($editing['enlaces']['update'] ?? '') ?>" class="field mt-1" placeholder="Déjalo vacío o escribe No aplica"></label><label class="block text-xs text-gray-400">URLs DLC (opcional)<textarea name="dlc" class="field mt-1" rows="2" placeholder="Déjalo vacío o escribe No aplica"><?= h(implode("\n", $editing['enlaces']['dlc'] ?? [])) ?></textarea></label><label class="block text-xs text-gray-400">Carátula JPG/PNG/WebP (máx. 5 MB)<input name="cover" type="file" accept="image/jpeg,image/png,image/webp" class="field mt-1"></label><label class="flex gap-2 text-xs text-amber-200"><input required name="licencia_confirmada" value="1" type="checkbox" <?= $editing ? 'checked' : '' ?>> Confirmo que tengo autorización para publicar este contenido y sus enlaces.</label><div class="grid grid-cols-2 gap-2"><button class="rounded-xl bg-cyan-500 px-3 py-3 text-xs font-bold text-black">Guardar</button><button formmethod="post" formaction="index.php" name="action" value="check" class="rounded-xl bg-white/10 px-3 py-3 text-xs">Verificar enlace</button></div></form>
 <section class="rounded-3xl border border-white/10 bg-white/5 p-4"><div class="mb-3 flex items-center justify-between"><h2 class="font-bold">Catálogo publicado</h2><span class="text-xs text-gray-400"><?= count($catalog) ?> elementos</span></div><div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"><?php foreach ($catalog as $row): ?><article class="rounded-2xl bg-black/25 p-3"><div class="mb-2 aspect-[3/2] overflow-hidden rounded-xl bg-black/30"><?php if (!empty($row['cover'])): ?><img class="h-full w-full object-cover" src="../<?= h($row['cover']) ?>" onerror="this.remove()"><?php endif; ?></div><b class="block truncate text-sm"><?= h($row['titulo'] ?? '') ?></b><span class="text-xs text-cyan-300"><?= h($row['id'] ?? '') ?> · v<?= h($row['version'] ?? '1.00') ?></span><p class="mt-1 text-xs text-gray-400"><?= h($row['peso_gb'] ?? '?') ?> GB · <?= h($row['servidor'] ?? '') ?></p><div class="mt-3 flex gap-2"><a class="rounded-lg bg-white/10 px-3 py-2 text-xs" href="?edit=<?= urlencode((string)$row['id']) ?>">Editar</a><form method="post" onsubmit="return confirm('¿Retirar este elemento?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= h($row['id']) ?>"><button class="rounded-lg bg-red-500/15 px-3 py-2 text-xs text-red-200">Eliminar</button></form></div></article><?php endforeach; ?><?php if (!$catalog): ?><p class="text-sm text-gray-500">El catálogo está vacío.</p><?php endif; ?></div></section></section></main>

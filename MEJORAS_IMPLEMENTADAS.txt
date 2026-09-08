@@ -251,3 +251,18 @@ Corrección de Store e intros 3.3
 - `ANALISIS_INSTANTANEA_PS4.md` documenta la auditoría de solo lectura de la
   copia temporal `ps4/`, las rutas que pueden aprovecharse y los límites de
   seguridad para perfiles, saves, trofeos, cuenta y sistema.
+
+Store: compatibilidad de enlaces y diagnóstico final 3.3
+-----------------------------------------------------
+- El administrador permite guardar `enlaces.alternativo` por elemento. La Store
+  intenta la URL principal y, si no puede verificarse o RPI la rechaza, prueba
+  la alternativa sin alterar el catálogo.
+- La normalización de MediaFire elimina únicamente fragmentos del navegador y
+  codificación HTML. No borra parámetros `?` ni fuerza HTTP de entrada porque
+  pueden formar parte de una firma temporal; la variante HTTP se intenta solo
+  como compatibilidad posterior a un fallo de RPI.
+- La verificación previa usa HEAD y, cuando el hosting lo bloquea, GET con un
+  rango de un byte. El envío a RPI usa timeout de 30 segundos.
+- Cada intento se registra en `user/logs/rpi.log` con URL, payload, código y
+  respuesta. Los errores de la Store muestran también la URL enviada para que
+  el mantenedor pueda comprobarla desde la PS4.

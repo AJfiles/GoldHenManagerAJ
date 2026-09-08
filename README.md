@@ -19,7 +19,7 @@ alcance de esas diferencias están documentados en
 - Ajustes: notificaciones, audio, fondos, intros, tema y tamaño de texto.
 - Plugins: sube `.prx`, consulta los instalados y asigna plugins a `[default]` o a CUSA mediante `plugins.ini`.
 - Payload Loader: lista payloads locales/remotos y los envía al BinLoader de GoldHEN en el puerto `9090`.
-- Store: catálogo privado de paquetes autorizados; reutiliza la IP del Manager, detecta la PS4 por radar, prueba RPI Nova (`12801`) u Original (`12800`) y envía un PKG directo al instalador compatible sin guardarlo en el teléfono.
+- Store: catálogo privado de paquetes autorizados; reutiliza la IP del Manager, detecta la PS4 por radar, prueba RPI Nova (`12801`) u Original (`12800`) y envía un PKG directo al instalador compatible sin guardarlo en el teléfono. Antes del envío valida el enlace, permite una URL alternativa y registra el diagnóstico local de RPI.
 
 ## Requisitos
 
@@ -38,7 +38,7 @@ curl -sL https://raw.githubusercontent.com/AJfiles/GoldHenManagerAJ/main/goldhen
 
 El instalador solicita acceso al almacenamiento, instala Git, PHP, PHP GD, ZIP/UNZIP y Termux API, descarga el proyecto en `$HOME/GoldHenManagerAJ`, crea `/sdcard/GoldHenManager/user` y configura los comandos locales. La salida usa un spinner silencioso. Si un mirror de Termux está desincronizado, limpia los índices y prueba automáticamente el mirror oficial y un segundo mirror estable antes de detenerse.
 
-Al finalizar, el instalador abre GoldHen Manager automáticamente. Para próximas sesiones basta con escribir `goldhen`; la terminal mostrará la URL exacta cuando el servidor esté listo. Mantén esa sesión abierta mientras usas la aplicación. El administrador privado se abre localmente con `store-admin` y no se muestra en la interfaz pública.
+Al finalizar, el instalador abre GoldHen Manager automáticamente. Para próximas sesiones basta con escribir `goldhen`; la terminal mostrará la URL exacta cuando el servidor esté listo. El servidor queda en segundo plano y los registros se guardan en `~/.goldhen-server.log`, por lo que la consola sigue disponible. El administrador privado se abre localmente con `store-admin` y no se muestra en la interfaz pública.
 
 Para evitar incompatibilidades de paquetes, se recomienda Termux desde [F-Droid](https://f-droid.org/packages/com.termux/) o GitHub oficial, no la versión obsoleta de Play Store. En instalaciones posteriores el script detecta componentes ya instalados y omite la actualización de paquetes innecesaria.
 
@@ -106,6 +106,20 @@ usar la tienda y pulsar **Actualizar**.
 Solo se aceptan enlaces `http(s)` que resuelvan a archivos `.pkg` y se exige que
 el mantenedor confirme tener autorización para publicar el contenido. La
 disponibilidad de servicios externos puede cambiar sin previo aviso.
+
+### Diagnóstico de RPI y enlaces remotos
+
+Antes de enviar un paquete, la Store comprueba el enlace con `HEAD` y, si el
+servidor no permite ese método, con una descarga de un byte. RPI recibe la URL
+directa mediante `POST /api/install`; el intento usa un límite de 30 segundos
+y queda registrado en `user/logs/rpi.log` con la URL, el payload y la respuesta.
+
+Un HTTP 500 de RPI significa que la consola recibió la orden pero no pudo
+preparar la descarga desde el proveedor. Comprueba la URL mostrada en el
+mensaje desde el navegador de la PS4 y mantén RPI abierto y en primer plano.
+Para cada elemento puedes guardar **Enlace alternativo**: se prueba si la URL
+principal falla. Los parámetros de consulta firmados (`?…`) se conservan, pues
+quitarlos puede invalidar enlaces temporales de algunos proveedores.
 
 ## Limitaciones conocidas
 

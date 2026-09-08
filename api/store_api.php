@@ -1,51 +1,24 @@
 <?php
-/* Catálogo privado: únicamente paquetes cuya distribución esté autorizada. */
+/* Catálogo público solo para paquetes cuya distribución esté autorizada. */
 error_reporting(0); header('Content-Type: application/json; charset=utf-8');
 const STORE_CATALOG = __DIR__ . '/../store/data/catalogo.json';
-function store_out($data) { echo json_encode($data, JSON_UNESCAPED_UNICODE); exit; }
-function store_catalog() { $raw = @file_get_contents(STORE_CATALOG); $data = json_decode((string)$raw, true); return is_array($data) ? $data : []; }
-function store_ip($ip) { return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4); }
-function store_url($url) { if (!is_string($url) || !preg_match('#^https?://#i', $url)) return false; $p=parse_url($url); if (!$p || empty($p['host']) || preg_match('/(^|\.)(localhost|local)$/i',$p['host'])) return false; if (filter_var($p['host'], FILTER_VALIDATE_IP) && !filter_var($p['host'], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) return false; return preg_match('/\.pkg(?:$|[?#])/i', $url) ? $url : false; }
-function store_find($id) { foreach (store_catalog() as $item) if (($item['id'] ?? '') === $id && !empty($item['licencia_confirmada'])) return $item; return null; }
-/* Comprueba que el enlace publicado siga respondiendo sin descargar el PKG. */
-function store_preflight($url) {
-    if (!function_exists('curl_init')) return ['ok'=>true, 'url'=>$url, 'note'=>''];
-    $ch=curl_init($url);
-    curl_setopt_array($ch,[CURLOPT_NOBODY=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_MAXREDIRS=>5,CURLOPT_TIMEOUT=>12,CURLOPT_CONNECTTIMEOUT=>6,CURLOPT_RETURNTRANSFER=>true,CURLOPT_USERAGENT=>'GoldHenManagerAJ/3.3']);
-    curl_exec($ch); $code=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE); $effective=(string)curl_getinfo($ch,CURLINFO_EFFECTIVE_URL); $error=(string)curl_error($ch); curl_close($ch);
-    if ($code >= 200 && $code < 400) return ['ok'=>true, 'url'=>$effective ?: $url, 'note'=>''];
-    return ['ok'=>false, 'url'=>$url, 'note'=>$error ?: "El servidor del archivo respondió HTTP {$code} al verificar el enlace."];
-}
-function store_message_fragment($body) { $body=trim(strip_tags((string)$body)); $body=preg_replace('/\s+/', ' ', $body); return function_exists('mb_substr') ? mb_substr($body, 0, 180, 'UTF-8') : substr($body, 0, 180); }
-$action = $_POST['action'] ?? $_GET['action'] ?? 'catalog';
-if ($action === 'catalog') { $visible=[]; foreach (store_catalog() as $item) if (!empty($item['licencia_confirmada'])) $visible[]=$item; store_out(['status'=>'success','data'=>$visible]); }
-if ($action === 'probe') {
-    $ip = $_POST['ip'] ?? $_GET['ip'] ?? ''; $port = (int)($_POST['port'] ?? $_GET['port'] ?? 12801);
-    if (!store_ip($ip) || $port < 1 || $port > 65535) store_out(['status'=>'error','message'=>'Destino RPI inválido.']);
-    $errno = 0; $error = ''; $socket = @fsockopen($ip, $port, $errno, $error, 1.5);
-    if (is_resource($socket)) { fclose($socket); store_out(['status'=>'success','online'=>true,'message'=>"RPI responde en {$ip}:{$port}."]); }
-    store_out(['status'=>'error','online'=>false,'message'=>"No responde RPI en el puerto {$port}."]);
-}
-if ($action === 'install') {
-    $ip=$_POST['ip']??''; $port=(int)($_POST['port']??12800); $id=$_POST['id']??''; $kind=$_POST['kind']??'pkg'; $index=(int)($_POST['index']??0);
-    if (!store_ip($ip) || $port<1 || $port>65535) store_out(['status'=>'error','message'=>'Destino RPI inválido.']);
-    $item=store_find($id); if (!$item) store_out(['status'=>'error','message'=>'Elemento de catálogo no disponible.']);
-    $links=$item['enlaces']??[]; $url=$kind==='dlc' ? (($links['dlc'][$index]??null)) : ($links[$kind]??null); $url=store_url($url);
-    if (!$url) store_out(['status'=>'error','message'=>'El enlace no es un PKG directo permitido.']);
-    $preflight=store_preflight($url);
-    if (!$preflight['ok']) store_out(['status'=>'error','message'=>'No se envió a RPI: '.$preflight['note'].' Revisa el enlace directo publicado.']);
-    $url=store_url($preflight['url']) ?: $url;
-    $payload=json_encode(['type'=>'direct','packages'=>[$url]], JSON_UNESCAPED_SLASHES);
-    $ch=curl_init("http://{$ip}:{$port}/api/install"); curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$payload,CURLOPT_HTTPHEADER=>['Content-Type: application/json','Accept: application/json','Content-Length: '.strlen($payload)],CURLOPT_CONNECTTIMEOUT=>4,CURLOPT_TIMEOUT=>15]);
-    $body=curl_exec($ch); $code=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE); $error=curl_error($ch); curl_close($ch);
-    if ($code>=200 && $code<300) store_out(['status'=>'success','message'=>'Solicitud enviada al instalador de PS4. Mantén RPI abierto hasta que inicie la descarga.']);
-    $detail=store_message_fragment($body);
-    $hint=str_starts_with(strtolower($url), 'https://') ? ' RPI clásico puede requerir una URL directa HTTP accesible desde la PS4; prueba también la URL final en el navegador de la consola.' : '';
-    store_out(['status'=>'error','message'=>$error ?: "El instalador respondió HTTP $code.".($detail ? " Detalle: $detail." : '').$hint]);
-}
-if ($action === 'check') {
-    $item=store_find($_POST['id']??''); if (!$item) store_out(['status'=>'error','message'=>'Elemento no disponible.']); $url=store_url(($item['enlaces']['pkg']??'')); if (!$url) store_out(['status'=>'error','message'=>'Enlace PKG inválido.']);
-    $ch=curl_init($url); curl_setopt_array($ch,[CURLOPT_NOBODY=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_MAXREDIRS=>3,CURLOPT_TIMEOUT=>15,CURLOPT_RETURNTRANSFER=>true]); curl_exec($ch); $code=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE); $size=(int)curl_getinfo($ch,CURLINFO_CONTENT_LENGTH_DOWNLOAD); $error=curl_error($ch); curl_close($ch);
-    store_out(['status'=>$code>=200&&$code<400?'success':'error','message'=>$code>=200&&$code<400?'Enlace disponible.':($error?:"HTTP $code"),'size'=>$size]);
-}
+const STORE_RPI_LOG = __DIR__ . '/../user/logs/rpi.log';
+function store_out(array $data): void { echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit; }
+function store_catalog(): array { $raw=@file_get_contents(STORE_CATALOG); $data=json_decode((string)$raw,true); return is_array($data)?$data:[]; }
+function store_ip(string $ip): bool { return (bool)filter_var($ip,FILTER_VALIDATE_IP,FILTER_FLAG_IPV4); }
+/* Conserva la query: puede contener una firma temporal de MediaFire. */
+function store_normalize_url($url): string { $url=trim(html_entity_decode((string)$url,ENT_QUOTES|ENT_HTML5,'UTF-8')); $url=preg_replace('/[\r\n\t]+/','',$url); return (string)preg_replace('/#.*/','',$url); }
+function store_url($url): ?string { $url=store_normalize_url($url); if(!preg_match('#^https?://#i',$url))return null; $p=parse_url($url); if(!$p||empty($p['host'])||preg_match('/(^|\.)(localhost|local)$/i',(string)$p['host']))return null; if(filter_var($p['host'],FILTER_VALIDATE_IP)&&!filter_var($p['host'],FILTER_VALIDATE_IP,FILTER_FLAG_NO_PRIV_RANGE|FILTER_FLAG_NO_RES_RANGE))return null; return preg_match('/\.pkg(?:$|[?#])/i',$url)?$url:null; }
+function store_find(string $id): ?array { foreach(store_catalog() as $item)if(($item['id']??'')===$id&&!empty($item['licencia_confirmada']))return $item; return null; }
+function store_log(array $record): void { $dir=dirname(STORE_RPI_LOG); if(!is_dir($dir))@mkdir($dir,0775,true); $record['at']=gmdate('c'); @file_put_contents(STORE_RPI_LOG,json_encode($record,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES).PHP_EOL,FILE_APPEND|LOCK_EX); }
+function store_fragment($value,int $length=260): string { $value=preg_replace('/\s+/',' ',trim(strip_tags((string)$value))); return function_exists('mb_substr')?(string)mb_substr($value,0,$length,'UTF-8'):substr($value,0,$length); }
+/* HEAD es barato; si el host lo bloquea, se prueba un GET de un byte. */
+function store_preflight(string $url): array { if(!function_exists('curl_init'))return ['ok'=>true,'url'=>$url,'code'=>0,'note'=>'cURL no disponible; se omitió la verificación.']; $attempt=static function(bool $head)use($url):array{$ch=curl_init($url);curl_setopt_array($ch,[CURLOPT_FOLLOWLOCATION=>true,CURLOPT_MAXREDIRS=>5,CURLOPT_TIMEOUT=>18,CURLOPT_CONNECTTIMEOUT=>6,CURLOPT_RETURNTRANSFER=>true,CURLOPT_USERAGENT=>'GoldHenManagerAJ/3.3',CURLOPT_NOBODY=>$head,CURLOPT_HTTPHEADER=>$head?[]:['Range: bytes=0-0']]);curl_exec($ch);$r=['code'=>(int)curl_getinfo($ch,CURLINFO_HTTP_CODE),'url'=>(string)curl_getinfo($ch,CURLINFO_EFFECTIVE_URL),'error'=>(string)curl_error($ch)];curl_close($ch);return $r;};$r=$attempt(true);if(in_array($r['code'],[0,403,405],true))$r=$attempt(false);$ok=$r['code']>=200&&$r['code']<400;return ['ok'=>$ok,'url'=>store_normalize_url($r['url']?:$url),'code'=>$r['code'],'note'=>$ok?'':($r['error']?:'El servidor del archivo respondió HTTP '.$r['code'].'.')]; }
+function store_protocol_fallback(string $url): ?string { return stripos($url,'https://')===0?'http://'.substr($url,8):null; }
+function store_send_rpi(string $ip,int $port,string $url): array { $payload=json_encode(['type'=>'direct','packages'=>[$url]],JSON_UNESCAPED_SLASHES);$endpoint="http://{$ip}:{$port}/api/install";$ch=curl_init($endpoint);curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$payload,CURLOPT_HTTPHEADER=>['Content-Type: application/json','Accept: application/json','Content-Length: '.strlen($payload)],CURLOPT_CONNECTTIMEOUT=>5,CURLOPT_TIMEOUT=>30]);$body=curl_exec($ch);$code=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE);$error=(string)curl_error($ch);curl_close($ch);$r=['ok'=>$code>=200&&$code<300,'code'=>$code,'body'=>(string)$body,'error'=>$error,'endpoint'=>$endpoint,'payload'=>$payload,'url'=>$url];store_log(['ip'=>$ip,'port'=>$port,'endpoint'=>$endpoint,'url'=>$url,'payload'=>$payload,'http_code'=>$code,'response'=>$body,'curl_error'=>$error]);return $r; }
+$action=$_POST['action']??$_GET['action']??'catalog';
+if($action==='catalog'){ $visible=[];foreach(store_catalog()as$item)if(!empty($item['licencia_confirmada']))$visible[]=$item;store_out(['status'=>'success','data'=>$visible]); }
+if($action==='probe'){ $ip=(string)($_POST['ip']??$_GET['ip']??'');$port=(int)($_POST['port']??$_GET['port']??12801);if(!store_ip($ip)||$port<1||$port>65535)store_out(['status'=>'error','message'=>'Destino RPI inválido.']);$errno=0;$error='';$socket=@fsockopen($ip,$port,$errno,$error,1.5);if(is_resource($socket)){fclose($socket);store_out(['status'=>'success','online'=>true,'message'=>"RPI responde en {$ip}:{$port}."]);}store_out(['status'=>'error','online'=>false,'message'=>"No responde RPI en el puerto {$port}."]); }
+if($action==='install'){ $ip=(string)($_POST['ip']??'');$port=(int)($_POST['port']??12800);$id=(string)($_POST['id']??'');$kind=(string)($_POST['kind']??'pkg');$index=(int)($_POST['index']??0);if(!store_ip($ip)||$port<1||$port>65535)store_out(['status'=>'error','message'=>'Destino RPI inválido.']);if(!function_exists('curl_init'))store_out(['status'=>'error','message'=>'cURL no está disponible en PHP; vuelve a ejecutar el instalador de GoldHen Manager.']);$item=store_find($id);if(!$item)store_out(['status'=>'error','message'=>'Elemento de catálogo no disponible.']);$links=$item['enlaces']??[];$primary=$kind==='dlc'?($links['dlc'][$index]??null):($links[$kind]??null);$alternate=$kind==='pkg'?($links['alternativo']??null):null;$candidates=array_values(array_unique(array_filter([store_url($primary),store_url($alternate)])));if(!$candidates)store_out(['status'=>'error','message'=>'El catálogo no contiene una URL directa de PKG válida.']);$attempts=[];foreach($candidates as$candidate){$preflight=store_preflight($candidate);if(!$preflight['ok']){$attempts[]='URL no disponible: '.$candidate.' ('.$preflight['note'].')';continue;}$sendUrl=store_url($preflight['url'])?:$candidate;$variants=[$sendUrl];$http=store_protocol_fallback($sendUrl);if($http&&$http!==$sendUrl)$variants[]=$http;foreach($variants as$variant){$response=store_send_rpi($ip,$port,$variant);if($response['ok'])store_out(['status'=>'success','message'=>'Solicitud enviada al instalador de PS4. URL enviada: '.$variant]);$attempts[]='RPI HTTP '.$response['code'].' con '.$variant.($response['body']!==''?' · '.store_fragment($response['body']):'').($response['error']!==''?' · '.$response['error']:'');}}$message='RPI no pudo preparar la descarga. '.implode(' | ',$attempts).' Mantén RPI en primer plano y verifica que la URL abra directamente desde el navegador de la PS4.';store_out(['status'=>'error','message'=>$message]); }
+if($action==='check'){ $item=store_find((string)($_POST['id']??''));if(!$item)store_out(['status'=>'error','message'=>'Elemento no disponible.']);$url=store_url($item['enlaces']['pkg']??'');if(!$url)store_out(['status'=>'error','message'=>'Enlace PKG inválido.']);$r=store_preflight($url);store_out(['status'=>$r['ok']?'success':'error','message'=>$r['ok']?'Enlace disponible: '.$r['url']:$r['note'],'url'=>$r['url'],'http_code'=>$r['code']]); }
 store_out(['status'=>'error','message'=>'Acción no válida.']);

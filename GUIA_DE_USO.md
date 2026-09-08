@@ -52,7 +52,7 @@
 
 ## Administración privada de Store
 
-1. Como mantenedor, abre una nueva sesión de Termux y escribe `store-admin`.
+1. Como mantenedor, escribe `store-admin` en Termux. GoldHen puede continuar abierto: su servidor ya se ejecuta en segundo plano.
 2. Se abre automáticamente el panel local `http://127.0.0.1:8081`; no uses
    esa dirección como enlace público ni la compartas.
 3. Añade o edita los metadatos. El ID puede ser CUSA, SLUS/SLES, una aplicación
@@ -97,8 +97,15 @@ Comprueba en este orden:
    que el ZIP contiene `store/data/catalogo.json` y `store-changes.json`.
 
 Para arrancar de forma fiable, ejecuta `goldhen` y espera el mensaje con
-`http://127.0.0.1:8080/index.php` antes de abrir el navegador. No cierres la
-sesión de Termux que mantiene el servidor. `store-admin` abre su propio servidor
-local y no debe ejecutarse en la misma terminal que GoldHen.
+`http://127.0.0.1:8080/index.php` antes de abrir el navegador. GoldHen deja el
+servidor en segundo plano y guarda los registros en `~/.goldhen-server.log`, de
+modo que `store-admin` puede ejecutarse después desde la misma consola.
+
+Si RPI devuelve HTTP 500, la orden sí llegó a la consola pero el instalador no
+pudo preparar el archivo remoto. Mantén RPI en primer plano, verifica la URL en
+el navegador de la PS4 y, si el proveedor no es compatible, registra una URL
+directa alternativa en el panel. No elimines parámetros de consulta firmados:
+algunos hostings los requieren. El detalle, URL y respuesta de RPI quedan en
+`user/logs/rpi.log` para diagnóstico local.
 
 Si falla una operación, conserva el mensaje mostrado y verifica IP, puerto, red Wi-Fi, GoldHEN y permisos de almacenamiento de Termux.
