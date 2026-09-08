@@ -461,8 +461,20 @@ if (file_exists($archivoCatalogo)) {
                     <button data-id="${escapeHtml(juego.id)}" onclick="event.stopPropagation(); instalarJuego(this);" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-black text-xs py-3 rounded-xl tracking-widest uppercase transition-all shadow-lg flex items-center justify-center gap-2">
                         <i class="fa-solid fa-download"></i> Instalar
                     </button>
+                    <button type="button" data-copy-url class="w-full rounded-xl border border-white/10 bg-white/5 py-2 text-[10px] font-bold text-gray-300 hover:bg-white/10">
+                        <i class="fa-solid fa-link mr-1"></i> Ver URL para probar en PS4
+                    </button>
                 </div>
             `;
+
+            const urlButton = content.querySelector('[data-copy-url]');
+            urlButton.addEventListener('click', () => {
+                const url = String(juego.enlaces?.pkg || '');
+                if (!url) return mostrarToast(false, 'Sin enlace', 'Este elemento no tiene una URL principal.');
+                /* prompt muestra el valor completo y permite copiarlo incluso en
+                   navegadores de PS4 que no implementan Clipboard API. */
+                window.prompt('Copia esta URL y pruébala en el navegador de la PS4:', url);
+            });
 
             modal.classList.remove('opacity-0', 'pointer-events-none');
             setTimeout(() => {

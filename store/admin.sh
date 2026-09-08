@@ -10,6 +10,16 @@ if ! command -v php >/dev/null 2>&1; then
     echo "PHP no está instalado. Ejecuta primero goldhen.sh."
     exit 1
 fi
+
+# Un fallo de sintaxis no debe terminar convertido en una página en blanco o
+# un error críptico del navegador. Se detiene antes de abrir el panel.
+for php_file in "$ADMIN_DIR/index.php" "$ADMIN_DIR/funciones.php" "$ADMIN_DIR/config.php" "$ADMIN_DIR/logout.php"; do
+    if ! php -l "$php_file" >/dev/null 2>&1; then
+        echo "El panel contiene un error PHP en: $php_file"
+        php -l "$php_file"
+        exit 1
+    fi
+done
 if ! command -v zip >/dev/null 2>&1; then
     echo "Instalando la utilidad ZIP para exportar cambios…"
     pkg install -y zip || echo "No se pudo instalar ZIP; el panel avisará si no puede crear paquetes."

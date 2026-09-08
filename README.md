@@ -113,6 +113,8 @@ Antes de enviar un paquete, la Store comprueba el enlace con `HEAD` y, si el
 servidor no permite ese método, con una descarga de un byte. RPI recibe la URL
 directa mediante `POST /api/install`; el intento usa un límite de 30 segundos
 y queda registrado en `user/logs/rpi.log` con la URL, el payload y la respuesta.
+Si HTTPS no supera la comprobación, se prueba HTTP; si HTTPS supera la prueba
+pero RPI lo rechaza, HTTP se valida y se intenta como último recurso.
 
 Un HTTP 500 de RPI significa que la consola recibió la orden pero no pudo
 preparar la descarga desde el proveedor. Comprueba la URL mostrada en el
@@ -120,6 +122,8 @@ mensaje desde el navegador de la PS4 y mantén RPI abierto y en primer plano.
 Para cada elemento puedes guardar **Enlace alternativo**: se prueba si la URL
 principal falla. Los parámetros de consulta firmados (`?…`) se conservan, pues
 quitarlos puede invalidar enlaces temporales de algunos proveedores.
+En la ficha pública, **Ver URL para probar en PS4** muestra la URL principal
+completa para copiarla al navegador de la consola.
 
 ## Limitaciones conocidas
 

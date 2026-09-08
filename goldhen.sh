@@ -68,6 +68,15 @@ componentes_faltantes() {
     done
 }
 
+# Evita iniciar una versión incompleta si una edición o una descarga dejó un
+# archivo PHP inválido. El detalle queda en $INSTALL_LOG, no en la pantalla.
+validar_php() {
+    local file
+    while IFS= read -r -d '' file; do
+        php -l "$file" || return 1
+    done < <(find "$REPO_DIR" -type f -name '*.php' -print0)
+}
+
 clear
 printf "${CYAN}╭────────────────────────────────────╮${NC}\n"
 printf "${CYAN}│${NC}      ${BLANCO}GOLDHEN MANAGER AJ${NC} ${CYAN}v3.3      │${NC}\n"
@@ -103,6 +112,11 @@ if [ -d "$REPO_DIR/.git" ]; then
 else
     [ ! -e "$REPO_DIR" ] || { printf "${ROJO}La ruta $REPO_DIR existe pero no es una instalación válida.${NC}\n"; exit 1; }
     ejecutar_paso "Descargando GoldHen Manager AJ…" git clone --depth 1 https://github.com/AJfiles/GoldHenManagerAJ.git "$REPO_DIR" || exit 1
+fi
+
+if ! ejecutar_paso "Verificando archivos PHP…" validar_php; then
+    printf "${ROJO}La descarga contiene un archivo PHP inválido.${NC} Revisa las últimas líneas de %s y vuelve a intentar.\n" "$INSTALL_LOG"
+    exit 1
 fi
 
 mkdir -p /sdcard/GoldHenManager/user

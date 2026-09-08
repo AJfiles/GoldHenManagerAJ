@@ -266,3 +266,18 @@ Store: compatibilidad de enlaces y diagnóstico final 3.3
 - Cada intento se registra en `user/logs/rpi.log` con URL, payload, código y
   respuesta. Los errores de la Store muestran también la URL enviada para que
   el mantenedor pueda comprobarla desde la PS4.
+
+Corrección de compatibilidad RPI y validación PHP 3.3
+-----------------------------------------------------
+- Se corrigió la apertura duplicada de PHP que impedía iniciar el panel
+  `store-admin` con un error de parseo. El panel valida sus cuatro archivos
+  críticos con `php -l` antes de abrir el puerto 8081.
+- `goldhen.sh` valida todos los archivos `.php` descargados antes de abrir la
+  aplicación; si encuentra un error deja el detalle en `~/.goldhen-install.log`
+  y no inicia un servidor incompleto.
+- El preflight registra cada prueba en `user/logs/rpi.log`. Prueba HTTPS y,
+  solamente si este falla, HTTP antes de enviar a RPI; si RPI rechaza HTTPS,
+  valida HTTP antes del reintento. Se preservan queries de MediaFire y se
+  eliminan para enlaces no-MediaFire al formar su URL directa.
+- La ficha de cada juego añade **Ver URL para probar en PS4**, que muestra la
+  URL íntegra para comprobarla manualmente con el navegador de la consola.

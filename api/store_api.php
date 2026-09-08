@@ -7,7 +7,18 @@ function store_out(array $data): void { echo json_encode($data, JSON_UNESCAPED_U
 function store_catalog(): array { $raw=@file_get_contents(STORE_CATALOG); $data=json_decode((string)$raw,true); return is_array($data)?$data:[]; }
 function store_ip(string $ip): bool { return (bool)filter_var($ip,FILTER_VALIDATE_IP,FILTER_FLAG_IPV4); }
 /* Conserva la query: puede contener una firma temporal de MediaFire. */
-function store_normalize_url($url): string { $url=trim(html_entity_decode((string)$url,ENT_QUOTES|ENT_HTML5,'UTF-8')); $url=preg_replace('/[\r\n\t]+/','',$url); return (string)preg_replace('/#.*/','',$url); }
+function store_normalize_url($url): string {
+    $url = trim(html_entity_decode((string)$url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    $url = (string)preg_replace('/[\r\n\t]+/', '', $url);
+    $url = (string)preg_replace('/#.*/', '', $url);
+    /* MediaFire puede firmar la query. Para los demás hosts se eliminan
+       parámetros de navegador antes de formar el payload directo de RPI. */
+    $host = strtolower((string)(parse_url($url, PHP_URL_HOST) ?? ''));
+    if ($host === '' || !preg_match('/(^|\.)mediafire\.com$/', $host)) {
+        $url = (string)preg_replace('/\?.*/', '', $url);
+    }
+    return $url;
+}
 function store_url($url): ?string { $url=store_normalize_url($url); if(!preg_match('#^https?://#i',$url))return null; $p=parse_url($url); if(!$p||empty($p['host'])||preg_match('/(^|\.)(localhost|local)$/i',(string)$p['host']))return null; if(filter_var($p['host'],FILTER_VALIDATE_IP)&&!filter_var($p['host'],FILTER_VALIDATE_IP,FILTER_FLAG_NO_PRIV_RANGE|FILTER_FLAG_NO_RES_RANGE))return null; return preg_match('/\.pkg(?:$|[?#])/i',$url)?$url:null; }
 function store_find(string $id): ?array { foreach(store_catalog() as $item)if(($item['id']??'')===$id&&!empty($item['licencia_confirmada']))return $item; return null; }
 function store_log(array $record): void { $dir=dirname(STORE_RPI_LOG); if(!is_dir($dir))@mkdir($dir,0775,true); $record['at']=gmdate('c'); @file_put_contents(STORE_RPI_LOG,json_encode($record,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES).PHP_EOL,FILE_APPEND|LOCK_EX); }
@@ -19,6 +30,70 @@ function store_send_rpi(string $ip,int $port,string $url): array { $payload=json
 $action=$_POST['action']??$_GET['action']??'catalog';
 if($action==='catalog'){ $visible=[];foreach(store_catalog()as$item)if(!empty($item['licencia_confirmada']))$visible[]=$item;store_out(['status'=>'success','data'=>$visible]); }
 if($action==='probe'){ $ip=(string)($_POST['ip']??$_GET['ip']??'');$port=(int)($_POST['port']??$_GET['port']??12801);if(!store_ip($ip)||$port<1||$port>65535)store_out(['status'=>'error','message'=>'Destino RPI inválido.']);$errno=0;$error='';$socket=@fsockopen($ip,$port,$errno,$error,1.5);if(is_resource($socket)){fclose($socket);store_out(['status'=>'success','online'=>true,'message'=>"RPI responde en {$ip}:{$port}."]);}store_out(['status'=>'error','online'=>false,'message'=>"No responde RPI en el puerto {$port}."]); }
-if($action==='install'){ $ip=(string)($_POST['ip']??'');$port=(int)($_POST['port']??12800);$id=(string)($_POST['id']??'');$kind=(string)($_POST['kind']??'pkg');$index=(int)($_POST['index']??0);if(!store_ip($ip)||$port<1||$port>65535)store_out(['status'=>'error','message'=>'Destino RPI inválido.']);if(!function_exists('curl_init'))store_out(['status'=>'error','message'=>'cURL no está disponible en PHP; vuelve a ejecutar el instalador de GoldHen Manager.']);$item=store_find($id);if(!$item)store_out(['status'=>'error','message'=>'Elemento de catálogo no disponible.']);$links=$item['enlaces']??[];$primary=$kind==='dlc'?($links['dlc'][$index]??null):($links[$kind]??null);$alternate=$kind==='pkg'?($links['alternativo']??null):null;$candidates=array_values(array_unique(array_filter([store_url($primary),store_url($alternate)])));if(!$candidates)store_out(['status'=>'error','message'=>'El catálogo no contiene una URL directa de PKG válida.']);$attempts=[];foreach($candidates as$candidate){$preflight=store_preflight($candidate);if(!$preflight['ok']){$attempts[]='URL no disponible: '.$candidate.' ('.$preflight['note'].')';continue;}$sendUrl=store_url($preflight['url'])?:$candidate;$variants=[$sendUrl];$http=store_protocol_fallback($sendUrl);if($http&&$http!==$sendUrl)$variants[]=$http;foreach($variants as$variant){$response=store_send_rpi($ip,$port,$variant);if($response['ok'])store_out(['status'=>'success','message'=>'Solicitud enviada al instalador de PS4. URL enviada: '.$variant]);$attempts[]='RPI HTTP '.$response['code'].' con '.$variant.($response['body']!==''?' · '.store_fragment($response['body']):'').($response['error']!==''?' · '.$response['error']:'');}}$message='RPI no pudo preparar la descarga. '.implode(' | ',$attempts).' Mantén RPI en primer plano y verifica que la URL abra directamente desde el navegador de la PS4.';store_out(['status'=>'error','message'=>$message]); }
+if ($action === 'install') {
+    $ip = (string)($_POST['ip'] ?? '');
+    $port = (int)($_POST['port'] ?? 12800);
+    $id = (string)($_POST['id'] ?? '');
+    $kind = (string)($_POST['kind'] ?? 'pkg');
+    $index = (int)($_POST['index'] ?? 0);
+    if (!store_ip($ip) || $port < 1 || $port > 65535) store_out(['status' => 'error', 'message' => 'Destino RPI inválido.']);
+    if (!function_exists('curl_init')) store_out(['status' => 'error', 'message' => 'cURL no está disponible en PHP; vuelve a ejecutar el instalador de GoldHen Manager.']);
+
+    $item = store_find($id);
+    if (!$item) store_out(['status' => 'error', 'message' => 'Elemento de catálogo no disponible.']);
+    $links = $item['enlaces'] ?? [];
+    $primary = $kind === 'dlc' ? ($links['dlc'][$index] ?? null) : ($links[$kind] ?? null);
+    $alternate = $kind === 'pkg' ? ($links['alternativo'] ?? null) : null;
+    $candidates = array_values(array_unique(array_filter([store_url($primary), store_url($alternate)])));
+    if (!$candidates) store_out(['status' => 'error', 'message' => 'El catálogo no contiene una URL directa de PKG válida.']);
+
+    $attempts = [];
+    foreach ($candidates as $candidate) {
+        $preflight = store_preflight($candidate);
+        store_log(['phase' => 'preflight', 'url' => $candidate, 'http_code' => $preflight['code'], 'result' => $preflight]);
+
+        /* Si HTTPS no puede validarse desde el teléfono, prueba HTTP antes de
+           enviar algo a RPI. No se fuerza HTTP cuando HTTPS sí funciona. */
+        if (!$preflight['ok']) {
+            $httpCandidate = store_protocol_fallback($candidate);
+            if (!$httpCandidate) {
+                $attempts[] = 'URL no disponible: ' . $candidate . ' (' . $preflight['note'] . ')';
+                continue;
+            }
+            $preflight = store_preflight($httpCandidate);
+            store_log(['phase' => 'preflight-http-fallback', 'url' => $httpCandidate, 'http_code' => $preflight['code'], 'result' => $preflight]);
+            if (!$preflight['ok']) {
+                $attempts[] = 'URL no disponible: ' . $candidate . ' (' . $preflight['note'] . ')';
+                continue;
+            }
+        }
+
+        $sendUrl = store_url($preflight['url']) ?: $candidate;
+        $variants = [$sendUrl];
+        $httpFallback = store_protocol_fallback($sendUrl);
+        if ($httpFallback && $httpFallback !== $sendUrl) $variants[] = $httpFallback;
+
+        foreach (array_values(array_unique($variants)) as $variant) {
+            /* El fallback HTTP también se valida; así el log diferencia un
+               host inaccesible de un rechazo propio de RPI. */
+            if ($variant !== $sendUrl) {
+                $compatibility = store_preflight($variant);
+                store_log(['phase' => 'preflight-rpi-http-fallback', 'url' => $variant, 'http_code' => $compatibility['code'], 'result' => $compatibility]);
+                if (!$compatibility['ok']) {
+                    $attempts[] = 'HTTP alternativo no disponible: ' . $variant . ' (' . $compatibility['note'] . ')';
+                    continue;
+                }
+            }
+            $response = store_send_rpi($ip, $port, $variant);
+            if ($response['ok']) store_out(['status' => 'success', 'message' => 'Solicitud enviada al instalador de PS4. URL enviada: ' . $variant]);
+            $attempts[] = 'RPI HTTP ' . $response['code'] . ' con ' . $variant
+                . ($response['body'] !== '' ? ' · ' . store_fragment($response['body']) : '')
+                . ($response['error'] !== '' ? ' · ' . $response['error'] : '');
+        }
+    }
+    $message = 'RPI no pudo preparar la descarga. ' . implode(' | ', $attempts)
+        . ' Mantén RPI en primer plano y verifica que la URL abra directamente desde el navegador de la PS4.';
+    store_out(['status' => 'error', 'message' => $message]);
+}
 if($action==='check'){ $item=store_find((string)($_POST['id']??''));if(!$item)store_out(['status'=>'error','message'=>'Elemento no disponible.']);$url=store_url($item['enlaces']['pkg']??'');if(!$url)store_out(['status'=>'error','message'=>'Enlace PKG inválido.']);$r=store_preflight($url);store_out(['status'=>$r['ok']?'success':'error','message'=>$r['ok']?'Enlace disponible: '.$r['url']:$r['note'],'url'=>$r['url'],'http_code'=>$r['code']]); }
 store_out(['status'=>'error','message'=>'Acción no válida.']);
