@@ -321,3 +321,38 @@ Validación de esta actualización
   En particular debe verificarse desde Termux que la consola descarga un PKG
   pequeño por el puerto 8080 y que la versión de GoldHEN acepte RPI Nova si se
   elige 12801.
+
+Actualización 4.0 — módulos, estabilidad y organización
+------------------------------------------------------
+- Se incorporan módulos Coolers (FW 5.05 y 9.00) y Actualizaciones FW
+  (5.05, 6.72, 7.02, 7.55, 9.00 y 11.00), con selección explícita de firmware,
+  confirmación y envío por BinLoader 9090. La API mantiene una lista permitida
+  de nombres/firmware y restringe los archivos a `payloads fw`.
+- Payloads muestra primero los que ya están en PS4 y luego los que conserva
+  GoldHEN Manager; GENERAL muestra subtítulos General, Linux y Especiales.
+  Se añade instalación FTP opcional en `/data/payloads/` para reutilizar archivos
+  locales, además de su carga temporal por BinLoader.
+- La normalización de `plugins.ini` separa rutas concatenadas, conserva una
+  sola copia por plugin, organiza los bloques con líneas en blanco y descarta
+  aplicaciones cuyo bloque queda sin plugins. La importación relee la PS4 y
+  Plugins incluye un botón visible para actualizar.
+- Volver desde el Explorador fuerza el launcher; la flecha superior conserva
+  su navegación de carpetas. El conteo de capturas en la vista 3D usa debounce
+  y caché temporal para reducir llamadas al servidor durante el desplazamiento.
+- El borrado de capturas ahora solicita la eliminación con `POSTQUOTE` después
+  de que libcurl cambie al directorio de la foto. El error 550 depende de la
+  implementación FTP y permisos de la PS4; debe confirmarse en la consola.
+- La interfaz, README, manifest y lanzador señalan la versión 4.0.
+
+Validación disponible
+--------------------
+- Se verificó sintaxis de los 12 archivos JavaScript con Node.js: correcto.
+- No se pudo validar sintaxis PHP ni ejecutar Termux/FTP/RPI/BinLoader porque
+  PHP y Bash no están disponibles en el entorno y no hay PS4 conectada. La
+  carpeta entregada tampoco contiene metadatos `.git`, así que no se pudo
+  consultar estado/diff del repositorio.
+- Coolers y Actualizaciones FW necesitan confirmación en una PS4 compatible.
+  Antes de distribuir, probar primero el firmware seleccionado y un envío
+  controlado por BinLoader; el análisis estático no confirma payloads.
+- El Radar de red incorpora una animación ligera de órbita/planeta que destaca
+  al detectar la consola, manteniendo intactos los mensajes de búsqueda.

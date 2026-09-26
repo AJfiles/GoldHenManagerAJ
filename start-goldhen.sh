@@ -41,7 +41,7 @@ for _ in $(seq 1 30); do
 done
 
 if [ "$READY" -eq 1 ]; then
-  echo "GoldHen Manager AJ v3.3 abierto en http://127.0.0.1:${PORT}/index.php"
+  echo "GoldHen Manager AJ v4.0 abierto en http://127.0.0.1:${PORT}/index.php"
   command -v termux-open-url >/dev/null 2>&1 && termux-open-url "http://127.0.0.1:${PORT}/index.php"
   exit 0
 fi

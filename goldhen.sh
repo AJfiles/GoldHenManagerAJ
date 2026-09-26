@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# GoldHen Manager AJ v3.3 — instalador fiable para Termux
+# GoldHen Manager AJ v4.0 — instalador fiable para Termux
 set -u
 
 VERDE='\033[1;32m'; CYAN='\033[1;36m'; AMARILLO='\033[1;33m'; ROJO='\033[1;31m'; BLANCO='\033[1;37m'; NC='\033[0m'
@@ -59,22 +59,29 @@ EOF
 }
 
 configurar_inicio_termux() {
-    local bashrc="$HOME/.bashrc" marker="# GOLDHEN_MANAGER_AJ_AUTO_START"
+    local bashrc="$HOME/.bashrc" marker="# GOLDHEN_MANAGER_AJ_AUTO_START_V4"
     touch "$bashrc"
+    if grep -Fq '# GOLDHEN_MANAGER_AJ_AUTO_START' "$bashrc"; then
+        awk '
+            /^# GOLDHEN_MANAGER_AJ_AUTO_START/ { skip=1; depth=0; next }
+            skip {
+                text=$0
+                opens=gsub(/(^|[[:space:];])if[[:space:]]/, "&", text)
+                closes=gsub(/(^|[[:space:];])fi([[:space:];]|$)/, "&", text)
+                depth += opens - closes
+                if (depth <= 0 && opens > 0) skip=0
+                next
+            }
+            { print }
+        ' "$bashrc" > "$bashrc.goldhen.tmp" && mv "$bashrc.goldhen.tmp" "$bashrc"
+    fi
     if ! grep -Fq "$marker" "$bashrc"; then
         cat >> "$bashrc" <<'EOF'
 
-# GOLDHEN_MANAGER_AJ_AUTO_START
-if [[ $- == *i* ]] && [ -t 0 ] && [ -x "$HOME/GoldHenManagerAJ/start-goldhen.sh" ] && [ -z "${GOLDHEN_AUTO_PROMPTED:-}" ]; then
+# GOLDHEN_MANAGER_AJ_AUTO_START_V4
+if [[ $- == *i* ]] && [ -t 0 ] && [ -f "$HOME/GoldHenManagerAJ/termux-welcome.sh" ] && [ -z "${GOLDHEN_AUTO_PROMPTED:-}" ]; then
     export GOLDHEN_AUTO_PROMPTED=1
-    printf '\nGoldHen Manager se abrirá en 15 segundos. Enter lo abre ahora; otra tecla cancela. '
-    tecla=''
-    if IFS= read -r -s -n 1 -t 15 tecla; then
-        if [ -z "$tecla" ]; then bash "$HOME/GoldHenManagerAJ/start-goldhen.sh"; else printf '\nInicio automático cancelado.\n'; fi
-    else
-        printf '\nAbriendo GoldHen Manager…\n'
-        bash "$HOME/GoldHenManagerAJ/start-goldhen.sh"
-    fi
+    bash "$HOME/GoldHenManagerAJ/termux-welcome.sh"
 fi
 EOF
     fi
@@ -101,7 +108,7 @@ validar_php() {
 
 clear
 printf "${CYAN}╭────────────────────────────────────╮${NC}\n"
-printf "${CYAN}│${NC}      ${BLANCO}GOLDHEN MANAGER AJ${NC} ${CYAN}v3.3      │${NC}\n"
+printf "${CYAN}│${NC}      ${BLANCO}GOLDHEN MANAGER AJ${NC} ${CYAN}v4.0      │${NC}\n"
 printf "${CYAN}│${NC}       ${AMARILLO}PS4 • Termux • Local FTP${NC}       ${CYAN}│${NC}\n"
 printf "${CYAN}╰────────────────────────────────────╯${NC}\n\n"
 

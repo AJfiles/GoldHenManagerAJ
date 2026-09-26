@@ -79,6 +79,14 @@ header('X-Author: ' . $firma);
 
         .scanner-line { width: 100%; height: 2px; background: #10b981; position: absolute; left: 0; top: 0; box-shadow: 0 0 15px #10b981, 0 0 5px #10b981; opacity: 0.8; animation: scan 1.5s linear infinite; z-index: 20; }
         @keyframes scan { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        .radar-galaxy { position:relative;height:100px;overflow:hidden;border-radius:16px;background:radial-gradient(ellipse at 50% 65%,rgba(16,185,129,.2),rgba(5,10,20,.94) 70%); }
+        .radar-orbit { position:absolute;left:50%;top:50%;width:82px;height:82px;border:1px solid rgba(52,211,153,.38);border-radius:50%;transform:translate(-50%,-50%) rotateX(66deg);animation:radar-spin 5s linear infinite; }
+        .radar-orbit:nth-child(2){width:126px;height:126px;animation-duration:8s;border-color:rgba(34,211,238,.23)}
+        .radar-sun { position:absolute;left:50%;top:50%;width:16px;height:16px;border-radius:50%;transform:translate(-50%,-50%);background:#a7f3d0;box-shadow:0 0 22px #34d399; }
+        .radar-planet { position:absolute;left:calc(50% + 40px);top:50%;width:11px;height:11px;border-radius:50%;background:#22d3ee;box-shadow:0 0 15px #22d3ee;animation:radar-planet 5s linear infinite; }
+        .radar-galaxy.found .radar-planet { background:#fbbf24;box-shadow:0 0 22px #fbbf24; }
+        @keyframes radar-spin { to { transform:translate(-50%,-50%) rotateX(66deg) rotateZ(360deg); } }
+        @keyframes radar-planet { to { transform:rotate(360deg) translateX(40px) rotate(-360deg); } }
 
         .hide-scrollbar::-webkit-scrollbar { display: none !important; }
         .hide-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
@@ -116,7 +124,7 @@ header('X-Author: ' . $firma);
             </h1>
             <div class="flex items-center justify-center gap-3 mt-2.5 opacity-80">
                 <span class="h-[1px] w-6 bg-gradient-to-r from-transparent to-cyan-500/80"></span>
-                <span class="text-[9px] font-mono tracking-[0.4em] font-bold text-cyan-400">VERSION 3.3 • AJ</span>
+                <span class="text-[9px] font-mono tracking-[0.4em] font-bold text-cyan-400">VERSION 4.0 • AJ</span>
                 <span class="h-[1px] w-6 bg-gradient-to-l from-transparent to-cyan-500/80"></span>
             </div>
         </div>
@@ -162,6 +170,8 @@ header('X-Author: ' . $firma);
             <div onclick="abrirModuloNativo('mods')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-indigo-900/30 text-indigo-400 flex items-center justify-center mb-3 border border-indigo-500/10"><i class="fa-solid fa-cubes text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Game Mods</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Trucos y Parches</span></div>
             <div onclick="abrirModulo('plugins')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-violet-900/30 text-violet-400 flex items-center justify-center mb-3 border border-violet-500/10"><i class="fa-solid fa-plug text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Plugins</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">GoldHEN Loader</span></div>
             <div onclick="abrirModulo('payloads')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-amber-900/30 text-amber-400 flex items-center justify-center mb-3 border border-amber-500/10"><i class="fa-solid fa-rocket text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Payloads</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">BinLoader 9090</span></div>
+            <div onclick="abrirModulo('coolers')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-cyan-900/30 text-cyan-300 flex items-center justify-center mb-3 border border-cyan-500/10"><i class="fa-solid fa-fan text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Coolers</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Control de temperatura</span></div>
+            <div onclick="abrirModulo('actualizaciones-fw')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-rose-900/30 text-rose-300 flex items-center justify-center mb-3 border border-rose-500/10"><i class="fa-solid fa-shield-halved text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Actualizaciones FW</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Permitir o bloquear</span></div>
             <div onclick="abrirModulo('backup')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-emerald-900/30 text-emerald-300 flex items-center justify-center mb-3 border border-emerald-500/10"><i class="fa-solid fa-box-archive text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Respaldo</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Migrar Configuración</span></div>
             <div onclick="window.location.href='store/store.php'" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-cyan-900/30 text-cyan-300 flex items-center justify-center mb-3 border border-cyan-500/10"><i class="fa-solid fa-store text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Store</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Catálogo autorizado</span></div>
             <div onclick="abrirModulo('ajustes')" class="launcher-card p-5 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer aspect-square"><div class="w-12 h-12 rounded-[1rem] bg-gray-700/30 text-gray-300 flex items-center justify-center mb-3 border border-gray-500/10"><i class="fa-solid fa-sliders text-xl"></i></div><span class="text-xs font-black tracking-wider uppercase text-white">Ajustes</span><span class="text-[8px] font-bold tracking-widest text-gray-500 uppercase mt-1">Live BGs e Intros</span></div>
@@ -194,7 +204,8 @@ header('X-Author: ' . $firma);
                 </button>
             </div>
 
-            <div class="relative bg-black rounded-xl p-3 h-48 overflow-hidden font-mono text-[9px] border border-emerald-900/50 shadow-inner">
+            <div id="radar-galaxy" class="radar-galaxy mb-3"><div class="radar-orbit"></div><div class="radar-orbit"></div><div class="radar-sun"></div><div class="radar-planet"></div><span class="absolute bottom-2 left-0 right-0 text-center text-[7px] tracking-[.35em] text-emerald-200/70">BUSCANDO PS4 EN LA RED</span></div>
+            <div class="relative bg-black rounded-xl p-3 h-40 overflow-hidden font-mono text-[9px] border border-emerald-900/50 shadow-inner">
                 <div class="scanner-line"></div>
                 <div id="radar-log-terminal" class="absolute inset-0 p-3 overflow-y-auto custom-scrollbar flex flex-col gap-1 text-emerald-500 z-10"></div>
             </div>
@@ -214,6 +225,8 @@ header('X-Author: ' . $firma);
     <?php include 'modulos/ajustes.php'; ?>
     <?php include 'modulos/plugins.php'; ?>
     <?php include 'modulos/payloads.php'; ?>
+    <?php include 'modulos/coolers.php'; ?>
+    <?php include 'modulos/actualizaciones_fw.php'; ?>
     <?php include 'modulos/backup.php'; ?>
 
     <script src="js/app.js"></script>
@@ -226,6 +239,8 @@ header('X-Author: ' . $firma);
     <script src="js/plugins.js"></script>
     <script src="js/backup.js"></script>
     <script src="js/payloads.js"></script>
+    <script src="js/coolers.js"></script>
+    <script src="js/actualizaciones_fw.js"></script>
 
     <script>
         history.replaceState({ page: 'launcher' }, "Launcher", "");
@@ -276,6 +291,13 @@ header('X-Author: ' . $firma);
                 if (event.state.page === 'launcher') {
                     activarCapaVisual('launcher');
                 } else if (event.state.page === 'explorador' || event.state.page === 'ftp_folder') {
+                    // El botón de volver del Explorador siempre regresa al launcher.
+                    // La navegación entre directorios se controla con la flecha "arriba".
+                    if (event.state.page === 'ftp_folder') {
+                        history.replaceState({ page: 'launcher' }, 'Launcher', '');
+                        activarCapaVisual('launcher');
+                        return;
+                    }
                     activarCapaVisual('explorador');
                     let rutaDestino = event.state.ruta || '/';
                     if (typeof cargarRutaFtp === 'function') {
@@ -290,7 +312,8 @@ header('X-Author: ' . $firma);
         });
 
         window.volverAlLauncher = function() {
-            history.back(); 
+            history.replaceState({ page: 'launcher' }, 'Launcher', '');
+            activarCapaVisual('launcher');
         };
     </script>
 </body>
