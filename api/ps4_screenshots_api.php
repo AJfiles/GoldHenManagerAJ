@@ -80,13 +80,20 @@ if ($action === 'delete_capture') {
     if (strpos($remote_path, '/user/av_contents/photo/') !== 0 || in_array('..', $pathParts, true) || preg_match('/[\x00-\x1F\x7F]/', $remote_path) || !preg_match('/\.(jpg|jpeg|png)$/i', $remote_path)) {
         echo json_encode(['status' => 'error', 'message' => 'Ruta de captura inválida.']); exit;
     }
-    $relative_path = ltrim(substr($remote_path, strlen('/user/')), '/');
-    $ch = curl_init("ftp://$host_ip:$port/user/");
-    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_QUOTE => ['DELE ' . $relative_path], CURLOPT_TIMEOUT => 15]);
+    $remote_dir = dirname($remote_path);
+    $remote_name = basename($remote_path);
+    // Deja que libcurl entre primero al directorio indicado por la URL FTP y
+    // ejecuta DELE como POSTQUOTE. QUOTE se dispara antes del CWD de la URL,
+    // por lo que un CWD dentro de QUOTE puede fallar con 550 en GoldHEN.
+    $encoded_dir = implode('/', array_map('rawurlencode', explode('/', trim($remote_dir, '/'))));
+    $ftp_url = "ftp://$host_ip:$port/$encoded_dir/";
+    $quoted_name = '"' . str_replace(['\\', '"'], ['\\\\', '\\"'], $remote_name) . '"';
+    $ch = curl_init($ftp_url);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_CUSTOMREQUEST => 'LIST', CURLOPT_POSTQUOTE => ['DELE ' . $quoted_name], CURLOPT_TIMEOUT => 15]);
     $deleted = curl_exec($ch);
     $error = curl_error($ch);
     curl_close($ch);
-    if ($deleted === false) { echo json_encode(['status' => 'error', 'message' => 'No se pudo eliminar en PS4: ' . $error]); exit; }
+    if ($deleted === false) { echo json_encode(['status' => 'error', 'message' => 'GoldHEN rechazó el borrado FTP (550). Verifica que la ruta exista y que esa versión de FTP permita borrar capturas. Detalle: ' . $error]); exit; }
     $ext = strtolower(pathinfo($remote_path, PATHINFO_EXTENSION));
     @unlink($capturas_dir . '/' . md5($remote_path) . '.' . $ext);
     foreach (glob($cache_dir . '/galeria_*.json') ?: [] as $cache) @unlink($cache);

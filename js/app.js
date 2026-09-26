@@ -462,6 +462,8 @@ async function lanzarRadarVentanaEmergente() {
     const caja = document.getElementById('radar-caja');
     const logTerm = document.getElementById('radar-log-terminal');
     const subLabel = document.getElementById('radar-subnet-txt');
+    const galaxy = document.getElementById('radar-galaxy');
+    if (galaxy) galaxy.classList.remove('found');
 
     if (!modal || !logTerm) return;
 
@@ -480,6 +482,7 @@ async function lanzarRadarVentanaEmergente() {
         let dataCache = await resCache.json();
 
         if (dataCache && dataCache.status === 'success') {
+            if (galaxy) galaxy.classList.add('found');
             logTerm.innerHTML += `<p class="text-white font-bold bg-emerald-950/50 px-1 border border-emerald-500/20">🚀 PS4 HALLADA EN CACHÉ: ${globalAppConfig.ipConsola}</p>`;
             if (subLabel) subLabel.innerText = `LINK.ESTABLISHED`;
             await verificarRadarInicial();
@@ -510,6 +513,7 @@ async function lanzarRadarVentanaEmergente() {
             logTerm.scrollTop = logTerm.scrollHeight;
 
             if (dataRadar.ps4_ips && dataRadar.ps4_ips.length > 0) {
+                if (galaxy) galaxy.classList.add('found');
                 let nuevaIP = dataRadar.ps4_ips[0];
                 logTerm.innerHTML += `<p class="text-white font-bold bg-emerald-950/50 px-1 border border-emerald-500/20">🎯 NUEVA CONSOLA HALLADA EN: ${nuevaIP}</p>`;
                 

@@ -43,29 +43,45 @@ function parse_ini_plugins($text) {
     foreach (preg_split('/\R/', (string)$text) as $line) {
         $line = trim($line);
         if ($line === '' || substr($line, 0, 1) === '#' || substr($line, 0, 1) === ';') continue;
-        if (preg_match('/^\[([^\]]+)\]$/', $line, $m)) { $current = strcasecmp($m[1], 'default') === 0 ? 'default' : strtoupper($m[1]); if (!isset($sections[$current])) $sections[$current] = []; continue; }
-        if ($current !== null && preg_match('#^/data/GoldHEN/plugins/[A-Za-z0-9._-]+\.prx$#i', $line) && !in_array($line, $sections[$current], true)) $sections[$current][] = $line;
+        if (preg_match('/^\[([^\]]+)\]$/', $line, $m)) { $current = strcasecmp($m[1], 'default') === 0 ? 'default' : strtoupper($m[1]); continue; }
+        if ($current === null) continue;
+        preg_match_all('#/data/GoldHEN/plugins/[A-Za-z0-9._-]+\.prx#i', $line, $matches);
+        foreach ($matches[0] as $path) {
+            if (!isset($sections[$current])) $sections[$current] = [];
+            if (!in_array($path, $sections[$current], true)) $sections[$current][] = $path;
+        }
     }
     if (!isset($sections['default'])) $sections = ['default' => []] + $sections;
     return $sections;
 }
 function normalizar_ini_plugins($text) {
-    $out = []; $section = ''; $seen = [];
+    $sections = ['default' => []]; $names = ['default' => 'default']; $current = null;
     foreach (preg_split('/\R/', (string)$text) as $line) {
         $trimmed = trim($line);
-        if (preg_match('/^\[([^\]]+)\]$/', $trimmed, $m)) {
-            $section = strtolower($m[1]); if (!isset($seen[$section])) $seen[$section] = []; $out[] = $line; continue;
+        if (preg_match('/^\[([A-Za-z0-9_-]{1,32})\]$/', $trimmed, $m)) {
+            $current = strcasecmp($m[1], 'default') === 0 ? 'default' : strtoupper($m[1]);
+            $key = strtolower($current);
+            if (!isset($sections[$key])) { $sections[$key] = []; $names[$key] = $current; }
+            continue;
         }
-        if (preg_match('#^(/data/GoldHEN/plugins/[A-Za-z0-9._-]+\.prx)$#i', $trimmed, $m)) {
-            if ($section === '') { $out[] = $line; continue; }
-            $path = $m[1]; $key = strtolower($path);
-            if (isset($seen[$section][$key])) continue;
-            $seen[$section][$key] = true; $out[] = $path; continue;
+        if ($current === null) continue;
+        preg_match_all('#/data/GoldHEN/plugins/[A-Za-z0-9._-]+\.prx#i', $trimmed, $matches);
+        $key = strtolower($current);
+        foreach ($matches[0] as $path) {
+            $path = preg_replace('/\s+/', '', $path);
+            $pathKey = strtolower($path);
+            if (!isset($sections[$key][$pathKey])) $sections[$key][$pathKey] = $path;
         }
-        if ($section !== '' && $trimmed === '') continue;
-        $out[] = $line;
     }
-    return rtrim(implode("\n", $out)) . "\n";
+    // Mantener default primero, separar bloques y omitir secciones vacías.
+    $defaultPaths = $sections['default']; $out = ['[default]'];
+    foreach ($defaultPaths as $path) $out[] = $path;
+    foreach ($sections as $key => $paths) {
+        if ($key === 'default' || !$paths) continue;
+        $out[] = ''; $out[] = '[' . $names[$key] . ']';
+        foreach ($paths as $path) $out[] = $path;
+    }
+    return implode("\n", $out) . "\n";
 }
 /* Modifica únicamente la sección y la ruta exactas solicitadas. Así se
    preservan comentarios, secciones desconocidas y asignaciones ajenas. */
@@ -162,7 +178,7 @@ if ($action === 'update_ini') {
     $backup_dir = __DIR__ . '/../user/backups/plugins'; @mkdir($backup_dir, 0777, true);
     @file_put_contents($backup_dir . '/plugins_' . date('Ymd_His') . '.ini', $old);
     $path = "$remote_dir/$name";
-    $new = actualizar_ini_plugins(normalizar_ini_plugins($old), $section, $path, $enabled);
+    $new = normalizar_ini_plugins(actualizar_ini_plugins(normalizar_ini_plugins($old), $section, $path, $enabled));
     if (!ftp_put_plugins($host, $ini_path, $new)) responder_plugins(['status' => 'error', 'message' => 'No se pudo escribir plugins.ini.']);
     responder_plugins(['status' => 'success', 'sections' => parse_ini_plugins($new)]);
 }

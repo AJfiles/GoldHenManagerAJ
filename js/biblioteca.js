@@ -637,25 +637,39 @@ function conmutarModoVista() {
     recompilarTodo();
 }
 
-async function actualizarConteoCapturasDock(cusa, targetBadgeId = 'sheet-count-capturas-badge') {
+const capturasConteoCache = new Map();
+const capturasConteoPendiente = new Map();
+let capturasConteoTimer = null;
+function actualizarConteoCapturasDock(cusa, targetBadgeId = 'sheet-count-capturas-badge') {
     const ip = localStorage.getItem('sebas_ip_final_libre') || '192.168.1.28';
     const badge = document.getElementById(targetBadgeId);
     if (!badge) return;
-    badge.classList.add('hidden'); 
-
-    try {
-        let fd = new FormData();
-        fd.append('action', 'count_only');
-        fd.append('host_ip', ip);
-        fd.append('cusa_id', cusa);
-        let res = await fetch('api/ps4_screenshots_api.php', { method: 'POST', body: fd });
-        let data = await res.json();
-        
-        if(juegoSeleccionadoLocal && juegoSeleccionadoLocal.id === cusa && data && data.status === 'success' && data.count > 0) {
-            badge.innerText = data.count;
-            badge.classList.remove('hidden');
-        }
-    } catch(e) { console.error("Error Dock:", e); }
+    const key = `${ip}:${cusa}`;
+    const cached = capturasConteoCache.get(key);
+    if (cached && Date.now() - cached.time < 60000) {
+        badge.innerText = cached.count;
+        badge.classList.toggle('hidden', cached.count < 1);
+        return;
+    }
+    capturasConteoPendiente.clear();
+    capturasConteoPendiente.set(key, { cusa, targetBadgeId, ip });
+    clearTimeout(capturasConteoTimer);
+    capturasConteoTimer = setTimeout(async () => {
+        const request = capturasConteoPendiente.get(key);
+        capturasConteoPendiente.delete(key);
+        if (!request) return;
+        try {
+            const fd = new FormData(); fd.append('action', 'count_only'); fd.append('host_ip', request.ip); fd.append('cusa_id', request.cusa);
+            const res = await fetch('api/ps4_screenshots_api.php', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data?.status === 'success') {
+                const count = Number(data.count) || 0;
+                capturasConteoCache.set(key, { count, time: Date.now() });
+                const current = document.getElementById(request.targetBadgeId);
+                if (current && juegoSeleccionadoLocal?.id === request.cusa) { current.innerText = count; current.classList.toggle('hidden', count < 1); }
+            }
+        } catch (e) { console.error('Error Dock:', e); }
+    }, 180);
 }
 
 async function ejecutarAccionRapidaJuego(accion) {
@@ -934,6 +948,7 @@ async function eliminarCapturaGaleria(index) {
         const response = await fetch('api/ps4_screenshots_api.php', { method: 'POST', body: fd });
         const data = await response.json();
         if (data.status !== 'success') throw new Error(data.message || 'No se pudo eliminar la captura.');
+        if (image.game_id) for (const key of capturasConteoCache.keys()) if (key.endsWith(`:${image.game_id}`)) capturasConteoCache.delete(key);
         window.ps5Notification('CAPTURAS', 'Foto eliminada de la PS4.', 'fa-trash');
         if (isGlobalGallery) await cargarFotosGaleriaGlobal(true);
         else await cargarFotosGaleria(true);
