@@ -53,6 +53,9 @@ function cambiarModoTransferencia(modo) {
         vistaRpi.classList.remove('hidden'); vistaRpi.classList.add('flex');
         vistaFtp.classList.remove('flex'); vistaFtp.classList.add('hidden');
         detectarIPCelular();
+        const savedPs4 = localStorage.getItem('sebas_ip_final_libre') || '';
+        const ps4Input = document.getElementById('rpi-console-ip');
+        if (ps4Input && !ps4Input.value) ps4Input.value = savedPs4;
         escanearCarpetaRPI();
     }
 }
@@ -81,6 +84,32 @@ async function detectarIPCelular() {
         if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
             inputIp.value = window.location.hostname;
         }
+    }
+}
+
+async function detectarPS4ParaRPI() {
+    const status = document.getElementById('rpi-radar-status');
+    const ipInput = document.getElementById('rpi-console-ip');
+    const portInput = document.getElementById('rpi-install-port');
+    if (status) status.textContent = 'Buscando PS4 en la red…';
+    try {
+        const portFTP = parseInt(localStorage.getItem('sebas_port_libre') || '2121', 10);
+        const response = await fetch(`api/radar_api.php?timeout=1200&port=${portFTP}&max_ips=254`);
+        const data = await response.json();
+        if (!response.ok || data.status !== 'success') throw new Error(data.message || 'No se pudo explorar la red.');
+        if (!data.ps4_ips?.length) throw new Error(`No se encontró FTP en ${data.segmento}. Escribe la IP manualmente.`);
+        const ip = data.ps4_ips[0];
+        if (ipInput) ipInput.value = ip;
+        if (portInput && !['12800', '12801'].includes(portInput.value)) portInput.value = '12800';
+        localStorage.setItem('sebas_ip_final_libre', ip);
+        if (typeof globalAppConfig !== 'undefined') globalAppConfig.ipConsola = ip;
+        const mainIp = document.getElementById('ps-ip-full-input');
+        if (mainIp) mainIp.value = ip;
+        if (status) status.textContent = `Consola detectada: ${ip}`;
+        window.ps5Notification('RADAR PS4', `Consola encontrada en ${ip}.`, 'fa-satellite-dish');
+    } catch (error) {
+        if (status) status.textContent = error.message || 'Radar no disponible';
+        window.ps5Notification('RADAR PS4', error.message || 'No se encontró la consola.', 'fa-triangle-exclamation');
     }
 }
 
@@ -121,23 +150,31 @@ async function escanearCarpetaRPI() {
 }
 
 async function instalarRPIDirecto(nombrePkg) {
-    const ps4Ip = localStorage.getItem('sebas_ip_final_libre');
+    const ps4Ip = document.getElementById('rpi-console-ip')?.value.trim();
     if (!ps4Ip) { window.ps5Notification("ERROR", "No hay PS4 conectada.", "fa-wifi"); return; }
-    
+    if (typeof validarEstructuraIP === 'function' && !validarEstructuraIP(ps4Ip)) { window.ps5Notification('ERROR', 'La IP de PS4 no es válida.', 'fa-triangle-exclamation'); return; }
+
     const phoneIp = document.getElementById('rpi-phone-ip').value.trim();
     if (!phoneIp || phoneIp === '127.0.0.1') { 
         window.ps5Notification("ERROR", "El servidor debe usar la IP de WiFi.", "fa-exclamation-triangle"); return; 
     }
 
-    const urlDescarga = `http://${phoneIp}:8082/user/pkgs_rpi/${encodeURIComponent(nombrePkg)}`;
+    const serverPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+    if (window.location.protocol !== 'http:') { window.ps5Notification('ERROR RPI', 'El servidor local debe abrirse por HTTP para que la PS4 pueda descargar el PKG.', 'fa-triangle-exclamation'); return; }
+    const rpiPort = parseInt(document.getElementById('rpi-install-port')?.value || '12800', 10);
+    if (![12800, 12801].includes(rpiPort)) { window.ps5Notification('ERROR', 'Usa el puerto RPI 12800 o Nova 12801.', 'fa-triangle-exclamation'); return; }
+    localStorage.setItem('sebas_ip_final_libre', ps4Ip);
 
-    window.ps5Notification("RPI", "Inyectando enlace de instalación...", "fa-paper-plane");
+    window.ps5Notification("RPI", "Enviando orden al instalador de PS4...", "fa-paper-plane");
     
     try {
         let fd = new FormData();
         fd.append('action', 'rpi_install');
         fd.append('host_ip', ps4Ip);
-        fd.append('file_url', urlDescarga);
+        fd.append('phone_ip', phoneIp);
+        fd.append('server_port', serverPort);
+        fd.append('filename', nombrePkg);
+        fd.append('rpi_port', String(rpiPort));
         let res = await fetch('api/transferir_api.php', { method: 'POST', body: fd });
         let data = await res.json();
         
@@ -161,6 +198,7 @@ function prepararArchivoTransferencia(event) {
     totalArchivosEnCola = colaDeArchivos.length;
     
     if (totalArchivosEnCola === 0) return;
+    document.getElementById('btn-limpiar-transferencia')?.classList.add('hidden');
 
     if(totalArchivosEnCola === 1) {
         document.getElementById('transfer-filename').innerText = colaDeArchivos[0].name;
@@ -221,6 +259,7 @@ function procesarSiguienteEnLaCola() {
         document.getElementById('transfer-queue-status').innerText = "Cola Finalizada";
         document.getElementById('transfer-filename').innerText = "Transferencia Exitosa";
         resetTransferUI(true);
+        document.getElementById('btn-limpiar-transferencia')?.classList.remove('hidden');
         return;
     }
 
@@ -440,6 +479,29 @@ function resetTransferUI(success = false) {
         btn.disabled = false;
         btn.className = "flex-1 py-4 rounded-[1.5rem] bg-gradient-to-r from-amber-600 to-yellow-500 text-black text-[12px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.4)] flex items-center justify-center gap-3";
     }
+}
+
+function limpiarEstadoTransferencia() {
+    colaDeArchivos = [];
+    totalArchivosEnCola = 0;
+    archivoActualBlob = null;
+    archivoActualNombreFinal = '';
+    const fileInput = document.getElementById('input-archivo-pesado');
+    if (fileInput) fileInput.value = '';
+    document.getElementById('transfer-filename').innerText = 'Elegir Archivos...';
+    document.getElementById('transfer-queue-status').innerText = 'Cola de Envío Vacía';
+    document.getElementById('transfer-total').innerText = '0 B';
+    document.getElementById('transfer-sent').innerText = '0 B';
+    document.getElementById('transfer-percent').innerText = '0%';
+    document.getElementById('transfer-bar').style.width = '0%';
+    document.getElementById('transfer-speed').innerText = '0.00 MB/s';
+    document.getElementById('transfer-eta').innerText = '--:--';
+    document.getElementById('transfer-duration').innerText = '00:00';
+    document.getElementById('btn-limpiar-transferencia').classList.add('hidden');
+    const button = document.getElementById('btn-iniciar-transferencia');
+    button.disabled = true;
+    button.innerHTML = '<i class="fa-solid fa-rocket"></i> Enviar por FTP';
+    button.className = 'flex-1 py-4 rounded-[1.5rem] bg-gray-800 text-gray-500 text-[12px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 pointer-events-none';
 }
 
 // =======================================================

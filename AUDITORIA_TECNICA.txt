@@ -14,8 +14,9 @@ Raíz
 - index.php: punto de entrada; carga módulos y controladores en orden. Añade
   estilos de tema claro y conserva el modo oscuro original. Probar apertura,
   navegación de módulos y carga de recursos CDN.
-- goldhen.sh: instala dependencias, clona/inicia GoldHenManagerAJ y crea el
-  enlace user. Probar exclusivamente en Termux; requiere permiso de storage.
+- goldhen.sh: instala dependencias, clona/inicia GoldHenManagerAJ, crea el
+  enlace user y configura el inicio opcional con cuenta regresiva en Termux.
+  Probar exclusivamente en Termux; requiere permiso de storage.
 - sw.js: Service Worker de red directa, sin sintaxis duplicada. Probar
   recargando la PWA después de limpiar versiones antiguas del Service Worker.
 - manifest.json: metadatos e iconos PWA. Probar instalación desde Chrome.
@@ -91,7 +92,8 @@ Hallazgos y mejoras futuras
 
 Resultado esperado de la prueba
 --------------------------------
-goldhen.sh debe dejar un servidor PHP local en el puerto 8080. Al abrir la
-interfaz, las operaciones sin consola deben fallar con mensajes controlados;
+goldhen.sh debe dejar un servidor PHP en el puerto 8080, en segundo plano y
+accesible desde la red local para las descargas RPI. Al abrir la interfaz, las
+operaciones sin consola deben fallar con mensajes controlados;
 con una PS4 GoldHEN compatible deben poder listar, transferir y modificar
 solamente las rutas autorizadas por cada módulo.

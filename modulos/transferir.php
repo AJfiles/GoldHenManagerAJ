@@ -37,18 +37,34 @@
         <div class="w-full bg-blue-900/20 border border-blue-500/30 rounded-xl p-3 flex gap-3 shrink-0">
             <i class="fa-solid fa-info-circle text-blue-400 mt-0.5"></i>
             <p class="text-[9px] text-blue-200 font-mono leading-relaxed">
-                Mueve tus PKG a la carpeta <b class="text-white">"user/pkgs_rpi"</b> dentro de los archivos de SeBaS OS. Abre el <b class="text-white">Package Installer</b> en la PS4 y toca el botón de descargar aquí.
+                Guarda tus PKG en <b class="text-white">user/pkgs_rpi</b>. Conecta la consola con Radar o indica su IP y puerto RPI. Abre Package Installer en la PS4 y pulsa descargar.
             </p>
         </div>
 
         <div class="w-full bg-[#0a0f1a] rounded-[1.5rem] p-4 border border-white/5 shadow-md flex flex-col gap-2 shrink-0">
             <label class="text-[9px] font-black uppercase tracking-widest text-gray-400 flex items-center justify-between">
-                IP DE ESTE CELULAR (TERMUX)
-                <button onclick="detectarIPCelular()" class="text-cyan-400 hover:text-white active:scale-95"><i class="fa-solid fa-sync"></i> Autodetectar</button>
+                IP DE LA CONSOLA
+                <button onclick="detectarPS4ParaRPI()" class="text-cyan-400 hover:text-white active:scale-95"><i class="fa-solid fa-satellite-dish"></i> Radar PS4</button>
             </label>
+            <div class="flex gap-2">
+                <div class="flex flex-1 items-center bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 focus-within:border-cyan-500/50">
+                    <span class="text-cyan-500 mr-2 text-[12px]"><i class="fa-solid fa-gamepad"></i></span>
+                    <input type="text" id="rpi-console-ip" placeholder="IP de PS4 (ej. 192.168.1.20)" class="w-full bg-transparent text-[12px] font-mono text-white outline-none">
+                </div>
+                <div class="flex items-center bg-black/40 border border-white/10 rounded-xl px-2 focus-within:border-cyan-500/50 w-24">
+                    <span class="text-cyan-500 mr-1 text-[10px]">:</span>
+                    <input type="number" id="rpi-install-port" value="12800" min="1" max="65535" aria-label="Puerto RPI" class="w-full bg-transparent text-[12px] font-mono text-white outline-none text-center">
+                </div>
+            </div>
+            <div class="flex items-center justify-between text-[8px] text-gray-500 font-mono px-1"><span>Instalador RPI: 12800 · Nova: 12801</span><span id="rpi-radar-status">IP manual disponible</span></div>
+        </div>
+
+        <div class="w-full bg-[#0a0f1a] rounded-[1.5rem] p-3 border border-white/5 shadow-md flex flex-col gap-2 shrink-0">
+            <label class="text-[9px] font-black uppercase tracking-widest text-gray-400">IP del teléfono (servidor PKG)</label>
             <div class="flex items-center bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 focus-within:border-cyan-500/50">
                 <span class="text-cyan-500 mr-2 text-[12px]"><i class="fa-solid fa-wifi"></i></span>
-                <input type="text" id="rpi-phone-ip" placeholder="Detectando IP..." class="w-full bg-transparent text-[12px] font-mono text-white outline-none">
+                <input type="text" id="rpi-phone-ip" placeholder="Autodetectando IP Wi-Fi..." class="w-full bg-transparent text-[12px] font-mono text-white outline-none">
+                <button onclick="detectarIPCelular()" aria-label="Detectar IP del teléfono" class="text-cyan-400 px-2"><i class="fa-solid fa-rotate"></i></button>
             </div>
         </div>
 
@@ -85,7 +101,7 @@
             <div class="flex items-center gap-2">
                 <div class="flex-1 flex items-center bg-black/40 border border-white/10 rounded-xl px-3 py-2.5">
                     <span class="text-amber-500 mr-2"><i class="fa-solid fa-folder-open"></i></span>
-                    <input type="text" id="transfer-target-path" value="/data/" placeholder="/data/" class="w-full bg-transparent text-[11px] font-mono text-white outline-none">
+                    <input type="text" id="transfer-target-path" value="/data/pkg/" placeholder="/data/pkg/" class="w-full bg-transparent text-[11px] font-mono text-white outline-none">
                 </div>
                 <button onclick="abrirExploradorFTP()" class="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center justify-center active:scale-90 transition-all hover:bg-amber-500/20 shadow-inner">
                     <i class="fa-solid fa-sitemap"></i>
@@ -129,6 +145,7 @@
                 <i class="fa-solid fa-times"></i>
             </button>
         </div>
+        <button id="btn-limpiar-transferencia" onclick="limpiarEstadoTransferencia()" class="hidden w-full py-3 rounded-xl border border-white/10 bg-white/5 text-gray-300 text-[10px] font-black uppercase tracking-widest"><i class="fa-solid fa-rotate-right mr-2"></i>Nueva transferencia</button>
     </div>
 </div>
 

@@ -27,11 +27,12 @@ if ($action === 'get_phone_ip') {
     }
     
     // Fallback: usar la IP del servidor (si está disponible)
-    if (empty($ip) || $ip === '127.0.0.1') {
-        $ip = $_SERVER['SERVER_ADDR'] ?? '';
+    if (empty($ip) || $ip === '127.0.0.1' || $ip === '0.0.0.0') {
+        $fallback = $_SERVER['SERVER_ADDR'] ?? '';
+        if (filter_var($fallback, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) && $fallback !== '127.0.0.1' && $fallback !== '0.0.0.0') $ip = $fallback;
     }
 
-    if (!empty($ip) && $ip !== '127.0.0.1') {
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) && $ip !== '127.0.0.1' && $ip !== '0.0.0.0') {
         ob_end_clean(); echo json_encode(['status' => 'success', 'ip' => trim($ip)]);
     } else {
         ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'No se pudo obtener la IP.']);
@@ -115,7 +116,7 @@ if ($action === 'check_exists') {
 // MODO 1: ESCANEAR JUEGOS LOCALES Y AUTO-RENOMBRAR (RPI)
 // =======================================================
 if ($action === 'scan_local_pkgs') {
-    $dir = '../user/pkgs_rpi';
+    $dir = __DIR__ . '/../user/pkgs_rpi';
     if (!is_dir($dir)) { @mkdir($dir, 0777, true); }
     
     $archivos = glob("$dir/*.pkg");
@@ -144,13 +145,17 @@ if ($action === 'scan_local_pkgs') {
 // =======================================================
 if ($action === 'rpi_install') {
     $ps4_ip = $_POST['host_ip'] ?? '';
-    $file_url = $_POST['file_url'] ?? ''; 
+    $phone_ip = $_POST['phone_ip'] ?? '';
+    $filename = basename($_POST['filename'] ?? '');
+    $server_port = (int)($_POST['server_port'] ?? 8080);
+    $rpi_port = (int)($_POST['rpi_port'] ?? 12800);
 
-    if (!$ps4_ip || !$file_url) {
-        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'Faltan datos de IP o URL.']); exit;
+    if (!filter_var($ps4_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || !filter_var($phone_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || !preg_match('/^[A-Za-z0-9._-]+\.pkg$/i', $filename) || $server_port < 1 || $server_port > 65535 || !in_array($rpi_port, [12800, 12801], true)) {
+        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'IP, archivo o puerto no válido.']); exit;
     }
+    $file_url = "http://$phone_ip:$server_port/api/rpi_file.php?name=" . rawurlencode($filename);
 
-    $ch = curl_init("http://$ps4_ip:12800/api/install");
+    $ch = curl_init("http://$ps4_ip:$rpi_port/api/install");
     $payload = json_encode([ "type" => "direct", "packages" => [$file_url] ], JSON_UNESCAPED_SLASHES);
     
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);

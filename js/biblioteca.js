@@ -871,6 +871,8 @@ async function cargarFotosGaleriaGlobal(force = false) {
                 <div onclick="abrirLightbox(${idx})" class="relative w-full aspect-video rounded-xl overflow-hidden bg-[#111621] border border-white/5 shadow-md cursor-pointer active:scale-95 transition-transform hover:border-emerald-500/40 group">
                     <img src="${img.url}" loading="lazy" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                    <span class="absolute left-2 bottom-2 right-10 text-[8px] text-white font-mono truncate">${String((img.game_id ? '['+img.game_id+'] ' : '')+(img.name||'Captura')).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</span>
+                    <button onclick="event.stopPropagation(); eliminarCapturaGaleria(${idx})" aria-label="Eliminar captura" class="absolute right-2 top-2 w-8 h-8 rounded-lg bg-black/70 border border-red-400/30 text-red-300 flex items-center justify-center"><i class="fa-solid fa-trash text-[10px]"></i></button>
                 </div>`;
             });
             grid.innerHTML = htmlGrid;
@@ -917,6 +919,29 @@ function cerrarGaleriaJuego() {
     }
 }
 
+async function eliminarCapturaGaleria(index) {
+    const image = galeriaCacheData[index];
+    if (!image?.remote_path) {
+        window.ps5Notification('CAPTURAS', 'Actualiza la galería para cargar la ruta de esta foto.', 'fa-rotate');
+        return;
+    }
+    if (!confirm(`¿Eliminar esta captura de la PS4?\n${image.game_id ? image.game_id + ' · ' : ''}${image.name}`)) return;
+    try {
+        const fd = new FormData();
+        fd.append('action', 'delete_capture');
+        fd.append('host_ip', localStorage.getItem('sebas_ip_final_libre') || '');
+        fd.append('remote_path', image.remote_path);
+        const response = await fetch('api/ps4_screenshots_api.php', { method: 'POST', body: fd });
+        const data = await response.json();
+        if (data.status !== 'success') throw new Error(data.message || 'No se pudo eliminar la captura.');
+        window.ps5Notification('CAPTURAS', 'Foto eliminada de la PS4.', 'fa-trash');
+        if (isGlobalGallery) await cargarFotosGaleriaGlobal(true);
+        else await cargarFotosGaleria(true);
+    } catch (error) {
+        window.ps5Notification('ERROR', error.message, 'fa-triangle-exclamation');
+    }
+}
+
 async function cargarFotosGaleria(force = false) {
     const ip = localStorage.getItem('sebas_ip_final_libre') || '192.168.1.28';
     try {
@@ -942,6 +967,8 @@ async function cargarFotosGaleria(force = false) {
                 <div onclick="abrirLightbox(${idx})" class="relative w-full aspect-video rounded-xl overflow-hidden bg-[#111621] border border-white/5 shadow-md cursor-pointer active:scale-95 transition-transform hover:border-emerald-500/40 group">
                     <img src="${img.url}" loading="lazy" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                    <span class="absolute left-2 bottom-2 right-10 text-[8px] text-white font-mono truncate">${String((img.game_id ? '['+img.game_id+'] ' : '')+(img.name||'Captura')).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</span>
+                    <button onclick="event.stopPropagation(); eliminarCapturaGaleria(${idx})" aria-label="Eliminar captura" class="absolute right-2 top-2 w-8 h-8 rounded-lg bg-black/70 border border-red-400/30 text-red-300 flex items-center justify-center"><i class="fa-solid fa-trash text-[10px]"></i></button>
                 </div>`;
             });
             grid.innerHTML = htmlGrid;

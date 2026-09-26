@@ -58,6 +58,28 @@ EOF
     chmod 755 "$PREFIX/bin/goldhen" "$PREFIX/bin/store-admin"
 }
 
+configurar_inicio_termux() {
+    local bashrc="$HOME/.bashrc" marker="# GOLDHEN_MANAGER_AJ_AUTO_START"
+    touch "$bashrc"
+    if ! grep -Fq "$marker" "$bashrc"; then
+        cat >> "$bashrc" <<'EOF'
+
+# GOLDHEN_MANAGER_AJ_AUTO_START
+if [[ $- == *i* ]] && [ -t 0 ] && [ -x "$HOME/GoldHenManagerAJ/start-goldhen.sh" ] && [ -z "${GOLDHEN_AUTO_PROMPTED:-}" ]; then
+    export GOLDHEN_AUTO_PROMPTED=1
+    printf '\nGoldHen Manager se abrirá en 15 segundos. Enter lo abre ahora; otra tecla cancela. '
+    tecla=''
+    if IFS= read -r -s -n 1 -t 15 tecla; then
+        if [ -z "$tecla" ]; then bash "$HOME/GoldHenManagerAJ/start-goldhen.sh"; else printf '\nInicio automático cancelado.\n'; fi
+    else
+        printf '\nAbriendo GoldHen Manager…\n'
+        bash "$HOME/GoldHenManagerAJ/start-goldhen.sh"
+    fi
+fi
+EOF
+    fi
+}
+
 componentes_faltantes() {
     PAQUETES_FALTANTES=()
     local package
@@ -124,6 +146,7 @@ if [ -L "$REPO_DIR/user" ]; then rm "$REPO_DIR/user"; fi
 if [ ! -e "$REPO_DIR/user" ]; then ln -s /sdcard/GoldHenManager/user "$REPO_DIR/user"; fi
 chmod +x "$REPO_DIR/start-goldhen.sh" "$REPO_DIR/store/admin.sh" 2>/dev/null || true
 instalar_comandos
+configurar_inicio_termux
 
 printf "\n${VERDE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
 printf "${VERDE}  ✓ Instalación completada${NC}\n"

@@ -18,7 +18,7 @@ $cusa = strtoupper(trim($_POST['cusa_id'] ?? ''));
 $port = isset($_POST['port']) ? (int)$_POST['port'] : 2121;
 $force = $_POST['force'] ?? '0'; 
 
-if (!$host_ip) { 
+if (!filter_var($host_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) { 
     echo json_encode(['status' => 'error', 'message' => 'Faltan datos de consola.']); 
     exit; 
 }
@@ -45,8 +45,9 @@ if ($force === '0' && file_exists($cache_file)) {
             echo json_encode(['status' => 'success', 'count' => $count]);
             exit;
         } else if ($action === 'get_caps' || $action === 'get_all_caps') {
-            echo json_encode($cached);
-            exit;
+            $hasRemotePaths = true;
+            foreach (($cached['images'] ?? []) as $image) if (empty($image['remote_path'])) { $hasRemotePaths = false; break; }
+            if ($hasRemotePaths || empty($cached['images'])) { echo json_encode($cached); exit; }
         }
     }
 }
@@ -71,6 +72,25 @@ if ($test_ftp === false) {
     }
     echo json_encode(['status' => 'error', 'message' => "Consola apagada o FTP inactivo."]);
     exit;
+}
+
+if ($action === 'delete_capture') {
+    $remote_path = (string)($_POST['remote_path'] ?? '');
+    $pathParts = explode('/', $remote_path);
+    if (strpos($remote_path, '/user/av_contents/photo/') !== 0 || in_array('..', $pathParts, true) || preg_match('/[\x00-\x1F\x7F]/', $remote_path) || !preg_match('/\.(jpg|jpeg|png)$/i', $remote_path)) {
+        echo json_encode(['status' => 'error', 'message' => 'Ruta de captura inválida.']); exit;
+    }
+    $relative_path = ltrim(substr($remote_path, strlen('/user/')), '/');
+    $ch = curl_init("ftp://$host_ip:$port/user/");
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_QUOTE => ['DELE ' . $relative_path], CURLOPT_TIMEOUT => 15]);
+    $deleted = curl_exec($ch);
+    $error = curl_error($ch);
+    curl_close($ch);
+    if ($deleted === false) { echo json_encode(['status' => 'error', 'message' => 'No se pudo eliminar en PS4: ' . $error]); exit; }
+    $ext = strtolower(pathinfo($remote_path, PATHINFO_EXTENSION));
+    @unlink($capturas_dir . '/' . md5($remote_path) . '.' . $ext);
+    foreach (glob($cache_dir . '/galeria_*.json') ?: [] as $cache) @unlink($cache);
+    echo json_encode(['status' => 'success']); exit;
 }
 
 function get_ftp_list($ip, $port, $dir) {
@@ -163,6 +183,7 @@ foreach ($capturas as $cap) {
     } else {
         $name = basename($cap);
     }
+    $game_id = preg_match('/CUSA\d{5}/i', $cap, $gameMatch) ? strtoupper($gameMatch[0]) : '';
 
     $ext = strtolower(pathinfo($cap, PATHINFO_EXTENSION));
     $hash = md5($cap);
@@ -177,7 +198,9 @@ foreach ($capturas as $cap) {
 
     $images_format[] = [
         'name' => $name,
-        'url' => $url_final
+        'url' => $url_final,
+        'remote_path' => $cap,
+        'game_id' => $game_id
     ];
 }
 

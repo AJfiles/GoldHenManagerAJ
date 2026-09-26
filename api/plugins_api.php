@@ -14,7 +14,7 @@ $ini_path = '/data/GoldHEN/plugins.ini';
 function responder_plugins($data) { echo json_encode($data); exit; }
 function validar_host_plugins($host) { return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4); }
 function nombre_prx($name) { $name = basename($name); return preg_match('/^[A-Za-z0-9._-]+\.prx$/i', $name) ? $name : false; }
-function seccion_valida($section) { return $section === 'default' || preg_match('/^CUSA\d{5}$/i', $section); }
+function seccion_valida($section) { return $section === 'default' || preg_match('/^[A-Z0-9_-]{1,32}$/i', $section); }
 function ftp_url_plugins($host, $path) { return 'ftp://' . $host . ':2121' . implode('/', array_map('rawurlencode', explode('/', $path))); }
 function ftp_list_plugins($host, $path) {
     $ch = curl_init(ftp_url_plugins($host, rtrim($path, '/') . '/'));
@@ -43,11 +43,29 @@ function parse_ini_plugins($text) {
     foreach (preg_split('/\R/', (string)$text) as $line) {
         $line = trim($line);
         if ($line === '' || substr($line, 0, 1) === '#' || substr($line, 0, 1) === ';') continue;
-        if (preg_match('/^\[([^\]]+)\]$/', $line, $m)) { $current = $m[1]; if (!isset($sections[$current])) $sections[$current] = []; continue; }
-        if ($current !== null && preg_match('#^/data/GoldHEN/plugins/[A-Za-z0-9._-]+\.prx$#i', $line)) $sections[$current][] = $line;
+        if (preg_match('/^\[([^\]]+)\]$/', $line, $m)) { $current = strcasecmp($m[1], 'default') === 0 ? 'default' : strtoupper($m[1]); if (!isset($sections[$current])) $sections[$current] = []; continue; }
+        if ($current !== null && preg_match('#^/data/GoldHEN/plugins/[A-Za-z0-9._-]+\.prx$#i', $line) && !in_array($line, $sections[$current], true)) $sections[$current][] = $line;
     }
     if (!isset($sections['default'])) $sections = ['default' => []] + $sections;
     return $sections;
+}
+function normalizar_ini_plugins($text) {
+    $out = []; $section = ''; $seen = [];
+    foreach (preg_split('/\R/', (string)$text) as $line) {
+        $trimmed = trim($line);
+        if (preg_match('/^\[([^\]]+)\]$/', $trimmed, $m)) {
+            $section = strtolower($m[1]); if (!isset($seen[$section])) $seen[$section] = []; $out[] = $line; continue;
+        }
+        if (preg_match('#^(/data/GoldHEN/plugins/[A-Za-z0-9._-]+\.prx)$#i', $trimmed, $m)) {
+            if ($section === '') { $out[] = $line; continue; }
+            $path = $m[1]; $key = strtolower($path);
+            if (isset($seen[$section][$key])) continue;
+            $seen[$section][$key] = true; $out[] = $path; continue;
+        }
+        if ($section !== '' && $trimmed === '') continue;
+        $out[] = $line;
+    }
+    return rtrim(implode("\n", $out)) . "\n";
 }
 /* Modifica únicamente la sección y la ruta exactas solicitadas. Así se
    preservan comentarios, secciones desconocidas y asignaciones ajenas. */
@@ -62,8 +80,17 @@ function actualizar_ini_plugins($text, $section, $plugin_path, $enabled) {
             $out[] = $line;
             continue;
         }
-        /* Quita solo duplicados de este plugin dentro del destino elegido. */
-        if ($inside && trim($line) === $plugin_path) continue;
+        $trimmed = trim($line);
+        if (preg_match('#^(/data/GoldHEN/plugins/[A-Za-z0-9._-]+\.prx)$#i', $trimmed, $pluginMatch)) {
+            $canonical = $pluginMatch[1];
+            if ($inside && strcasecmp($canonical, $plugin_path) === 0) {
+                if (!$enabled || $inserted) continue;
+                $inserted = true;
+            }
+            // Rutas sin espacios laterales; elimina líneas vacías intercaladas entre PRX.
+            $line = $canonical;
+            if (trim(end($out) ?: '') === '' && count($out) >= 2 && preg_match('#^/data/GoldHEN/plugins/.+\.prx$#i', trim($out[count($out)-2]))) array_pop($out);
+        }
         $out[] = $line;
     }
     if ($found_section) {
@@ -103,7 +130,7 @@ if ($action === 'download_ini') {
 if (!validar_host_plugins($host)) responder_plugins(['status' => 'error', 'message' => 'IP de PS4 inválida.']);
 if ($action === 'import_ini') {
     if (!isset($_FILES['ini']) || $_FILES['ini']['error'] !== UPLOAD_ERR_OK || $_FILES['ini']['size'] > 524288) responder_plugins(['status' => 'error', 'message' => 'Selecciona un plugins.ini de hasta 512 KB.']);
-    $new = file_get_contents($_FILES['ini']['tmp_name']);
+    $new = normalizar_ini_plugins(file_get_contents($_FILES['ini']['tmp_name']));
     $current = null;
     foreach (preg_split('/\R/', (string)$new) as $line) {
         $trim = trim($line);
@@ -135,7 +162,7 @@ if ($action === 'update_ini') {
     $backup_dir = __DIR__ . '/../user/backups/plugins'; @mkdir($backup_dir, 0777, true);
     @file_put_contents($backup_dir . '/plugins_' . date('Ymd_His') . '.ini', $old);
     $path = "$remote_dir/$name";
-    $new = actualizar_ini_plugins($old, $section, $path, $enabled);
+    $new = actualizar_ini_plugins(normalizar_ini_plugins($old), $section, $path, $enabled);
     if (!ftp_put_plugins($host, $ini_path, $new)) responder_plugins(['status' => 'error', 'message' => 'No se pudo escribir plugins.ini.']);
     responder_plugins(['status' => 'success', 'sections' => parse_ini_plugins($new)]);
 }

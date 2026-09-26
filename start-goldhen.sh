@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # Lanzador explícito y fiable para Termux. El servidor se deja en segundo plano
-# para que el mantenedor conserve la consola y pueda usar `store-admin`.
+# y escucha en la red local para que la PS4 pueda descargar PKG por RPI.
 set -u
 PROJECT_DIR="${HOME}/GoldHenManagerAJ"
 PORT="${GOLDHEN_PORT:-8080}"
@@ -27,7 +27,7 @@ fi
 
 # Sin los logs de peticiones en pantalla: quedan disponibles si alguna vez hay
 # que diagnosticar algo en ~/.goldhen-server.log.
-nohup php -d memory_limit=256M -d max_execution_time=0 -S "127.0.0.1:${PORT}" -t "$PROJECT_DIR" >"$LOG_FILE" 2>&1 &
+nohup php -d memory_limit=256M -d max_execution_time=0 -S "0.0.0.0:${PORT}" -t "$PROJECT_DIR" "$PROJECT_DIR/server-router.php" >"$LOG_FILE" 2>&1 &
 SERVER_PID=$!
 printf '%s\n' "$SERVER_PID" > "$PID_FILE"
 

@@ -281,3 +281,43 @@ Corrección de compatibilidad RPI y validación PHP 3.3
   eliminan para enlaces no-MediaFire al formar su URL directa.
 - La ficha de cada juego añade **Ver URL para probar en PS4**, que muestra la
   URL íntegra para comprobarla manualmente con el navegador de la consola.
+
+Mejoras solicitadas de conexión, transferencias y biblioteca
+-------------------------------------------------------------
+- `start-goldhen.sh` expone el servidor de la aplicación en la red local en el
+  puerto 8080 y lo mantiene en segundo plano. RPI puede acceder desde la PS4;
+  Store Admin sigue limitada a 127.0.0.1. `server-router.php` impide servir
+  directamente `user/`; `api/rpi_file.php` entrega solo el PKG solicitado y
+  valida su nombre. Termux conserva la consola y los logs quedan en
+  `~/.goldhen-server.log`.
+- `goldhen.sh` agrega un inicio opcional al abrir una nueva sesión interactiva
+  de Termux: cuenta regresiva de 15 segundos, Enter abre inmediatamente y otra
+  tecla cancela. El instalador agrega el bloque una sola vez a `.bashrc`.
+- RPI muestra IP de PS4 y puerto del instalador (12800 o Nova 12801), permite
+  ejecutar Radar FTP y conservar la entrada manual. La IP del teléfono se usa
+  para que la PS4 descargue el paquete desde el endpoint restringido del
+  servidor; se
+  eliminó el puerto 8082 que no tenía servidor escuchando. La API valida IP,
+  puerto y nombre `.pkg` antes de enviar la orden.
+- FTP Manual usa `/data/pkg/` inicialmente. Al terminar, **Nueva transferencia**
+  limpia nombre, selección, cola y métricas para elegir otro archivo sin salir.
+- La escritura de `plugins.ini` normaliza rutas PRX sin espacios laterales,
+  elimina asignaciones duplicadas del plugin editado y deduplica la lectura.
+  Plugins permite escoger secciones guardadas en el INI aunque la app no figure
+  en la Biblioteca; los PRX remotos sin catálogo se muestran por su nombre.
+- `volverAlLauncher()` lleva siempre al menú principal. Biblioteca agrupa
+  Cambiar vista y Capturas debajo del título, y muestra nombre/Title ID en la
+  galería. El botón de papelera permite eliminar una captura de la PS4 con
+  confirmación y refresca la galería y su caché.
+- El encabezado de red se llama **Centro de conexión PS4**; IP y puerto ocupan
+  una fila y Conectar/Radar otra, facilitando el uso en pantalla estrecha.
+
+Validación de esta actualización
+--------------------------------
+- Revisión estática de las rutas de frontend/API y scripts implicados, tomando
+  como referencia la auditoría general documentada en `AUDITORIA_TECNICA.txt`.
+- No se pudo ejecutar `php -l`, pruebas de JavaScript ni validación de FTP/RPI:
+  el entorno de edición no tiene PHP, Node.js, Bash/Termux ni una PS4 conectada.
+  En particular debe verificarse desde Termux que la consola descarga un PKG
+  pequeño por el puerto 8080 y que la versión de GoldHEN acepte RPI Nova si se
+  elige 12801.

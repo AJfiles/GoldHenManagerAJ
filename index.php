@@ -130,28 +130,26 @@ header('X-Author: ' . $firma);
                 <div class="flex items-center justify-between px-1 w-full">
                     <div class="flex items-center gap-2">
                         <div id="connection-ping-indicator" class="w-2 h-2 bg-red-500 rounded-full shadow-[0_0_8px_#ef4444]"></div>
-                        <span class="text-[9px] font-black tracking-widest text-gray-400 uppercase">Termux Network Interface</span>
+                        <span class="text-[9px] font-black tracking-widest text-gray-400 uppercase">Centro de conexión PS4</span>
                     </div>
                     <span class="text-[9px] font-mono text-red-400 font-bold uppercase" id="console-status-label">Desconectado</span>
                 </div>
 
-                <div class="flex gap-1.5 items-center w-full mt-1">
-                    <div class="relative flex-grow h-10 bg-black/60 border border-white/10 rounded-xl focus-within:border-cyan-400 overflow-hidden shadow-inner">
+                <div class="flex flex-col gap-2.5 w-full mt-1">
+                    <div class="flex gap-2 items-center w-full">
+                    <div class="relative flex-grow h-11 bg-black/60 border border-white/10 rounded-xl focus-within:border-cyan-400 overflow-hidden shadow-inner">
                         <i class="fa-solid fa-network-wired absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 text-[10px]"></i>
                         <input type="text" id="ps-ip-full-input" value="192.168." placeholder="192.168.xxx.xxx" class="w-full h-full bg-transparent pl-8 pr-1 text-[13px] font-mono font-bold tracking-wider text-white outline-none">
                     </div>
 
-                    <div class="flex items-center w-[3.5rem] bg-black/60 border border-white/10 rounded-xl h-10 overflow-hidden focus-within:border-cyan-400 shrink-0">
+                    <div class="flex items-center w-24 bg-black/60 border border-white/10 rounded-xl h-11 overflow-hidden focus-within:border-cyan-400 shrink-0">
                         <input type="number" id="ps-port-input" value="2121" class="w-full h-full bg-transparent text-[11px] font-mono font-bold text-gray-300 outline-none text-center [appearance:textfield]">
                     </div>
-
-                    <button onclick="conectarIPManualValidando()" class="w-10 h-10 rounded-xl bg-cyan-600/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 active:scale-95 transition-all shrink-0 hover:bg-cyan-600/20">
-                        <i class="fa-solid fa-link text-[11px]"></i>
-                    </button>
-
-                    <button onclick="lanzarRadarVentanaEmergente()" class="h-10 px-3 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center gap-1.5 text-cyan-400 font-bold text-[10px] tracking-wider active:scale-95 transition-all shrink-0 hover:bg-cyan-600/30">
-                        <i class="fa-solid fa-satellite-dish" id="radar-icon-loop"></i> Radar
-                    </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 w-full">
+                        <button onclick="conectarIPManualValidando()" class="h-10 rounded-xl bg-cyan-600/10 border border-cyan-500/20 flex items-center justify-center gap-2 text-cyan-300 active:scale-95 transition-all hover:bg-cyan-600/20 text-[10px] font-black uppercase tracking-widest"><i class="fa-solid fa-link text-[11px]"></i> Conectar</button>
+                        <button onclick="lanzarRadarVentanaEmergente()" class="h-10 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center gap-2 text-cyan-300 font-bold text-[10px] tracking-wider active:scale-95 transition-all hover:bg-cyan-600/30"><i class="fa-solid fa-satellite-dish" id="radar-icon-loop"></i> Radar de red</button>
+                    </div>
                 </div>
             </div>
         </div>

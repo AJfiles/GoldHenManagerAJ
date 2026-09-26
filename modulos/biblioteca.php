@@ -100,17 +100,19 @@
 <div id="layer-biblioteca" class="app-layer flex flex-col p-4 h-screen w-full overflow-hidden bg-[#060913]">
     
     <div class="w-full flex flex-col gap-3 shrink-0 pt-1 z-30">
-        <div class="flex justify-between items-center w-full">
-            <h2 class="text-2xl font-black tracking-tighter uppercase text-white">Biblioteca</h2>
-            <div class="flex items-center gap-2">
-                <button onclick="abrirGaleriaGlobal()" class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center active:scale-95 transition-all">
-                    <i class="fa-solid fa-images text-emerald-400 text-xs"></i>
-                </button>
-                <button onclick="conmutarModoVista()" class="w-8 h-8 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center active:scale-95 transition-all">
-                    <i class="fa-solid fa-cube text-cyan-400 text-xs" id="icono-vista"></i>
-                </button>
-                <button onclick="volverAlLauncher()" class="w-8 h-8 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center active:scale-95 transition-all">
+        <div class="flex flex-col gap-2 w-full">
+            <div class="flex justify-between items-center w-full">
+                <h2 class="text-2xl font-black tracking-tighter uppercase text-white">Biblioteca</h2>
+                <button onclick="volverAlLauncher()" aria-label="Volver al menú" class="w-8 h-8 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center active:scale-95 transition-all">
                     <i class="fa-solid fa-house text-gray-400 text-xs"></i>
+                </button>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="abrirGaleriaGlobal()" class="h-9 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all text-[9px] font-black uppercase tracking-widest text-emerald-300">
+                    <i class="fa-solid fa-images text-emerald-400"></i> Capturas
+                </button>
+                <button onclick="conmutarModoVista()" class="h-9 px-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center gap-2 active:scale-95 transition-all text-[9px] font-black uppercase tracking-widest text-cyan-300">
+                    <i class="fa-solid fa-cube text-cyan-400" id="icono-vista"></i> Cambiar vista
                 </button>
             </div>
         </div>

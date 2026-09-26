@@ -121,6 +121,8 @@ function cargarConfiguracionesLocales() {
     }
 
     globalAppConfig.portFTP = parseInt(portGuardado, 10);
+    const inputPort = document.getElementById('ps-port-input');
+    if (inputPort) inputPort.value = String(globalAppConfig.portFTP);
 
     const bgGuardado = localStorage.getItem('ps4_dynamic_bg') || 'bg-ps4';
     if (typeof changeDynamicWallpaper === 'function') {
@@ -293,18 +295,14 @@ function abrirModulo(moduloId) {
 
 function volverAlLauncher() {
     emitirEfectoSonidoNativo('click');
-    if (typeof window.volverAlLauncher === 'function') {
-        history.back(); 
-    } else {
-        document.querySelectorAll('.app-layer').forEach(layer => {
-            layer.classList.remove('active', 'flex');
-            layer.classList.add('hidden');
-        });
-        const main = document.getElementById('layer-launcher');
-        if (main) {
-            main.classList.remove('hidden');
-            main.classList.add('active', 'flex');
-        }
+    document.querySelectorAll('.app-layer').forEach(layer => {
+        layer.classList.remove('active', 'flex');
+        layer.classList.add('hidden');
+    });
+    const main = document.getElementById('layer-launcher');
+    if (main) {
+        main.classList.remove('hidden');
+        main.classList.add('active', 'flex');
     }
 }
 
