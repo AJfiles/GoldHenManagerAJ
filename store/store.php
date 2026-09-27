@@ -1,7 +1,7 @@
 <?php
 /**
  * ====================================================================
- * GOLDHEN MANAGER v3.3 - MÓDULO STORE (PÚBLICO)
+ * GOLDHEN MANAGER v4.0 - MÓDULO STORE (PÚBLICO)
  * ====================================================================
  */
 error_reporting(0);
@@ -61,7 +61,7 @@ if (file_exists($archivoCatalogo)) {
             </div>
             <div>
                 <h1 class="text-sm font-black tracking-widest uppercase leading-none">GoldHen Store</h1>
-                <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-widest">v3.3</span>
+                <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-widest">v4.0</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
