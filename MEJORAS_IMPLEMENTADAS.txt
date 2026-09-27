@@ -119,6 +119,9 @@ Prueba recomendada
 
 Actualización 4.0 y paquete PC 1.0
 ---------------------------------
+- Se retiró de la ficha de Biblioteca el acceso **Backup de Partidas**: no
+  tenía una API de saves y solo mostraba una notificación. El módulo principal
+  Respaldo sigue dedicado a la configuración local del Manager.
 - Biblioteca añade reglas responsivas exclusivas para PC (tipografía, tarjetas,
   espaciado y carrusel más grande); el CSS móvil conserva sus dimensiones.
 - El carrusel ahora responde a arrastre con mouse/táctil, rueda horizontal,
@@ -346,6 +349,22 @@ Corrección de compatibilidad RPI y validación PHP 3.3
 
 Mejoras solicitadas de conexión, transferencias y biblioteca
 -------------------------------------------------------------
+- RPI ahora permite buscar PKG en `user/pkgs_rpi`, Descargas, ambas o una
+  carpeta personalizada. Se conserva la ruta original del archivo y el
+  servidor entrega cada PKG mediante un identificador temporal de un solo
+  escaneo, sin renombrar ni copiar paquetes.
+- La descarga local de PKG anuncia soporte para solicitudes HTTP Range y
+  transmite en bloques, necesario para clientes que leen offsets del paquete
+  o reanudan la descarga. El límite práctico sigue dependiendo de Wi-Fi,
+  firewall, almacenamiento y velocidad de escritura de la consola.
+- La detección de IP del teléfono calcula la interfaz que enruta hacia la IP
+  seleccionada de PS4. El Radar prueba primero el puerto RPI elegido y usa FTP
+  como respaldo; si solo detecta FTP, indica que Package Installer debe estar
+  abierto. Los fallos HTTP 0 ahora muestran el error de conexión y puerto en
+  vez de atribuirlo erróneamente a la descarga del PKG.
+- Prueba local con PHP: se validó el escaneo de la carpeta RPI, una ruta
+  personalizada, la respuesta HTTP 206 para un rango de bytes y el POST a un
+  servidor RPI simulado. Esta prueba no reemplaza la confirmación en una PS4.
 - `start-goldhen.sh` expone el servidor de la aplicación en la red local en el
   puerto 8080 y lo mantiene en segundo plano. RPI puede acceder desde la PS4;
   Store Admin sigue limitada a 127.0.0.1. `server-router.php` impide servir
