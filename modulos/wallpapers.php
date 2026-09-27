@@ -94,6 +94,13 @@
     #bg-ocean { background:linear-gradient(180deg,#020617 0%,#082f49 58%,#0c4a6e 100%); overflow:hidden; }
     .ocean-layer { position:absolute; width:180vw; height:55vh; left:-40vw; border-radius:48%; background:linear-gradient(180deg,rgba(125,211,252,.18),rgba(14,116,144,.12)); border-top:1px solid rgba(186,230,253,.45); animation:oceanSwell 9s ease-in-out infinite alternate; }
     .ocean-layer:nth-child(1){top:48%;animation-duration:8s}.ocean-layer:nth-child(2){top:61%;opacity:.75;animation-delay:-3s}.ocean-layer:nth-child(3){top:73%;opacity:.55;animation-duration:12s;animation-delay:-6s}@keyframes oceanSwell{to{transform:translateX(16vw) translateY(-5vh) rotate(3deg)}}
+    #bg-minimal { background:radial-gradient(ellipse at 50% 110%,rgba(34,211,238,.16),transparent 54%),linear-gradient(145deg,#030712,#0b1020 55%,#080b16);overflow:hidden }
+    .minimal-orbit { position:absolute;left:50%;top:52%;width:min(72vw,430px);aspect-ratio:1;border:1px solid rgba(165,243,252,.22);border-radius:50%;transform:translate(-50%,-50%) rotateX(68deg);box-shadow:0 0 50px rgba(34,211,238,.08),inset 0 0 40px rgba(139,92,246,.06);animation:minimalOrbit 22s linear infinite }
+    .minimal-orbit:before,.minimal-orbit:after { content:'';position:absolute;inset:13%;border:1px solid rgba(196,181,253,.18);border-radius:50% }
+    .minimal-orbit:after { inset:29%;border-color:rgba(103,232,249,.16) }
+    .minimal-core { position:absolute;left:50%;top:52%;width:32px;height:32px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 35% 30%,#e0f2fe,#22d3ee 36%,#4c1d95 80%);box-shadow:0 0 55px rgba(34,211,238,.3);animation:minimalPulse 5s ease-in-out infinite alternate }
+    @keyframes minimalOrbit { to { transform:translate(-50%,-50%) rotateX(68deg) rotateZ(360deg) } }
+    @keyframes minimalPulse { to { transform:translate(-50%,-50%) scale(1.18);filter:brightness(1.2) } }
 </style>
 
 <div id="bg-container">
@@ -117,6 +124,7 @@
     <div id="bg-plasma" class="bg-layer"><div class="plasma-container"><div class="plasma-blob plasma-b-1"></div><div class="plasma-blob plasma-b-2"></div><div class="plasma-blob plasma-b-3"></div></div></div>
     <div id="bg-aurora" class="bg-layer"><div class="bg-aurora-band"></div><div class="bg-aurora-band"></div></div>
     <div id="bg-ocean" class="bg-layer"><div class="ocean-layer"></div><div class="ocean-layer"></div><div class="ocean-layer"></div></div>
+    <div id="bg-minimal" class="bg-layer"><div class="minimal-orbit"></div><div class="minimal-core"></div></div>
 </div>
 
 <script>

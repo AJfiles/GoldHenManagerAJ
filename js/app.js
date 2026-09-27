@@ -23,6 +23,7 @@ let globalAppConfig = {
 };
 
 let globalAudioCtx = null;
+let ultimoEfectoAudioAt = 0;
 let radarTimeoutId = null; // Para controlar el cierre automático del radar
 let pwaInstallPrompt = null;
 
@@ -51,7 +52,8 @@ const introNamesMap = {
     'intro-aurora': 'Aurora AJ',
     'intro-wave': 'Onda clásica',
     'intro-classic': 'Boot clásico',
-    'intro-ai': 'Inicio IA'
+    'intro-ai': 'Inicio IA',
+    'intro-minimal': 'Pulso minimal'
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -78,6 +80,20 @@ function aplicarPreferenciasDeAccesibilidad() {
     const etiquetaFuente = document.getElementById('lbl-tamano-texto');
     if (selectorFuente) selectorFuente.value = fuente;
     if (etiquetaFuente) etiquetaFuente.innerText = `${fuente}%`;
+}
+
+function alternarVistaLauncher(vertical) {
+    const grid = document.getElementById('launcher-grid');
+    if (!grid) return;
+    const enabled = Boolean(vertical);
+    grid.classList.toggle('launcher-vertical', enabled);
+    localStorage.setItem('cfg_launcher_vertical', enabled ? 'true' : 'false');
+}
+
+function cambiarFuenteApp(font) {
+    const fonts = { outfit: "'Outfit', sans-serif", system: "system-ui, -apple-system, sans-serif", arial: "Arial, Helvetica, sans-serif", mono: "'Courier New', monospace" };
+    document.documentElement.style.setProperty('--app-font', fonts[font] || fonts.outfit);
+    localStorage.setItem('cfg_app_font', fonts[font] ? font : 'outfit');
 }
 
 function guardarTema(valor) {
@@ -113,6 +129,7 @@ function cargarConfiguracionesLocales() {
     
     const volGuardado = localStorage.getItem('cfg_sebas_volumen_sfx');
     globalAppConfig.volumenSfx = volGuardado ? parseFloat(volGuardado) : 0.5;
+    globalAppConfig.estiloSfx = localStorage.getItem('cfg_sfx_style') || 'soft';
 
     if (ipGuardada) {
         globalAppConfig.ipConsola = ipGuardada;
@@ -125,6 +142,8 @@ function cargarConfiguracionesLocales() {
     if (inputPort) inputPort.value = String(globalAppConfig.portFTP);
 
     const bgGuardado = localStorage.getItem('ps4_dynamic_bg') || 'bg-ps4';
+    cambiarFuenteApp(localStorage.getItem('cfg_app_font') || 'outfit');
+    alternarVistaLauncher(localStorage.getItem('cfg_launcher_vertical') === 'true');
     if (typeof changeDynamicWallpaper === 'function') {
         setTimeout(() => changeDynamicWallpaper(bgGuardado), 300);
     }
@@ -145,10 +164,16 @@ function inicializarValoresInterfazAjustes() {
             sliderVol.value = valPorcentaje;
             lblVol.innerText = valPorcentaje + '%';
         }
+        const soundStyle = document.getElementById('cfg-sound-style');
+        if (soundStyle) soundStyle.value = globalAppConfig.estiloSfx || 'soft';
+        const fontSelect = document.getElementById('cfg-app-font');
+        if (fontSelect) fontSelect.value = localStorage.getItem('cfg_app_font') || 'outfit';
+        const verticalToggle = document.getElementById('cfg-launcher-vertical');
+        if (verticalToggle) verticalToggle.checked = localStorage.getItem('cfg_launcher_vertical') === 'true';
 
         const selectWall = document.getElementById('custom-select-label');
         if (selectWall) {
-            const bgNamesMap = { 'none': 'Apagar Fondos', 'bg-ps5': 'Órbitas PS5', 'bg-ps5-gold': 'Órbitas doradas', 'bg-ps4': 'Olas Líquidas (PS4)', 'bg-ps3': 'Ondas PS3', 'bg-ps2': 'Cubos 3D (PS2)', 'bg-ps1': 'Grid retro (PS1)', 'bg-matrix': 'Lluvia de Código (Matrix)', 'bg-starfield': 'Campo estelar', 'bg-warp': 'Velocidad Warp (Espacio)', 'bg-synth': 'Synthwave', 'bg-radar': 'Radar táctico', 'bg-sonar': 'Sonar', 'bg-plasma': 'Fluido Plasma', 'bg-network': 'Red Neuronal (Network)', 'bg-aurora': 'Aurora polar', 'bg-ocean': 'Océano nocturno' };
+            const bgNamesMap = { 'none': 'Apagar Fondos', 'bg-ps5': 'Órbitas PS5', 'bg-ps5-gold': 'Órbitas doradas', 'bg-ps4': 'Olas Líquidas (PS4)', 'bg-ps3': 'Ondas PS3', 'bg-ps2': 'Cubos 3D (PS2)', 'bg-ps1': 'Grid retro (PS1)', 'bg-matrix': 'Lluvia de Código (Matrix)', 'bg-starfield': 'Campo estelar', 'bg-warp': 'Velocidad Warp (Espacio)', 'bg-synth': 'Synthwave', 'bg-radar': 'Radar táctico', 'bg-sonar': 'Sonar', 'bg-plasma': 'Fluido Plasma', 'bg-network': 'Red Neuronal (Network)', 'bg-aurora': 'Aurora polar', 'bg-ocean': 'Océano nocturno', 'bg-minimal': 'Órbita minimal' };
             const bgGuardado = localStorage.getItem('ps4_dynamic_bg') || 'bg-ps4';
             selectWall.innerText = bgNamesMap[bgGuardado] || 'Olas Líquidas (PS4)';
         }
@@ -171,40 +196,30 @@ function inicializarContextoAudio() {
     }
 }
 
-function emitirEfectoSonidoNativo(tipo) {
+function emitirEfectoSonidoNativo(tipo, force = false) {
     if (!globalAppConfig.sonidosActivos || globalAppConfig.volumenSfx <= 0) return;
+    const now = Date.now();
+    if (!force && now - ultimoEfectoAudioAt < 45) return;
+    ultimoEfectoAudioAt = now;
     try {
         inicializarContextoAudio();
-        let ctx = globalAudioCtx;
-        let osc = ctx.createOscillator();
-        let gain = ctx.createGain();
-        let volumenReal = 0.3 * globalAppConfig.volumenSfx;
-        
-        if (tipo === 'click') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(600, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.08);
-            gain.gain.setValueAtTime(volumenReal, ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.08);
-        } 
-        else if (tipo === 'ps-ui') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.2);
-            gain.gain.setValueAtTime(0, ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(volumenReal, ctx.currentTime + 0.05); 
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4); 
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.4);
-        }
+        const ctx = globalAudioCtx, style = globalAppConfig.estiloSfx || 'soft';
+        const presets = {
+            soft: { wave:'sine', click:[520,360,.075], open:[660,990,.18] },
+            console: { wave:'sine', click:[720,180,.095], open:[540,1480,.24] },
+            arcade: { wave:'square', click:[440,880,.065], open:[520,1040,.2] },
+            minimal: { wave:'triangle', click:[420,320,.05], open:[700,900,.12] }
+        };
+        const preset = presets[style] || presets.soft, values = tipo === 'ps-ui' ? preset.open : preset.click;
+        const osc = ctx.createOscillator(), gain = ctx.createGain(), start = ctx.currentTime, duration = values[2];
+        osc.type = preset.wave; osc.frequency.setValueAtTime(values[0], start); osc.frequency.exponentialRampToValueAtTime(values[1], start + duration);
+        gain.gain.setValueAtTime(0.22 * globalAppConfig.volumenSfx, start); gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+        osc.connect(gain); gain.connect(ctx.destination); osc.start(start); osc.stop(start + duration);
     } catch (e) {}
 }
+
+function cambiarEstiloSonido(style) { globalAppConfig.estiloSfx = ['soft','console','arcade','minimal'].includes(style) ? style : 'soft'; localStorage.setItem('cfg_sfx_style', globalAppConfig.estiloSfx); emitirEfectoSonidoNativo('ps-ui', true); }
+function probarSonidoSeleccionado() { emitirEfectoSonidoNativo('ps-ui', true); }
 
 function cambiarVolumenSFX(valorStr) {
     let porcentaje = parseInt(valorStr, 10);
@@ -274,6 +289,9 @@ function configurarEventosDashboard() {
     }
     document.querySelectorAll('.launcher-card').forEach(card => {
         card.addEventListener('click', () => { emitirEfectoSonidoNativo('click'); });
+    });
+    document.addEventListener('click', evento => {
+        if (evento.target.closest('button, [role="button"], summary, a') && !evento.target.closest('input, select, textarea, label')) emitirEfectoSonidoNativo('click');
     });
 }
 
@@ -653,7 +671,7 @@ const modulosBusquedaGlobal = [
     ['Biblioteca', 'Juegos, iconos y capturas', 'biblioteca'], ['Explorador FTP', 'Archivos de la consola', 'explorador'],
     ['Transferencias', 'Subidas y Remote Package Installer', 'transferir'], ['Modding', 'Portadas y respaldos', 'modding'],
     ['Game Mods', 'Mods compatibles', 'mods'], ['Plugins', 'Asignaciones plugins.ini', 'plugins'],
-    ['Payloads', 'BinLoader GoldHEN', 'payloads'], ['Ajustes', 'Preferencias y actualización', 'ajustes'],
+    ['Payloads', 'BinLoader GoldHEN', 'payloads'], ['Ventilador', 'Control por firmware compatible', 'coolers'], ['Actualizaciones FW', 'Bloquear o permitir', 'actualizaciones-fw'], ['Ajustes', 'Preferencias y actualización', 'ajustes'],
     ['Store', 'Catálogo autorizado', 'store']
 ];
 function escaparBusquedaGlobal(texto) { const node = document.createElement('span'); node.textContent = String(texto || ''); return node.innerHTML; }
