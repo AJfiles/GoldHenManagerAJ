@@ -742,10 +742,6 @@ async function ejecutarAccionRapidaJuego(accion) {
             }
         }, 300);
     } 
-    else if (accion === 'saves') { 
-        window.ps5Notification("PARTIDAS", `Sincronizando saves de: ${juegoSeleccionadoLocal.nombre}`, "fa-floppy-disk"); 
-        cerrarBottomSheet(null);
-    } 
     else if (accion === 'galeria') { 
         cerrarBottomSheet(null);
         abrirGaleriaJuego();

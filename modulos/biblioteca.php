@@ -309,18 +309,6 @@
             </div>
 
             <div class="flex flex-col gap-3 w-full">
-                <button onclick="ejecutarAccionRapidaJuego('saves')" class="group flex items-center gap-4 p-4 rounded-2xl bg-[#0b121c]/80 border border-cyan-500/20 hover:bg-cyan-500/10 active:scale-[0.98] transition-all relative overflow-hidden shadow-lg text-left backdrop-blur-sm">
-                    <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-cyan-500/90 shadow-[0_0_15px_rgba(34,211,238,0.5)]"></div>
-                    <div class="w-11 h-11 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20 shrink-0">
-                        <i class="fa-solid fa-floppy-disk text-cyan-400 text-lg"></i>
-                    </div>
-                    <div class="flex flex-col flex-1">
-                        <span class="text-[12px] font-black uppercase tracking-widest text-gray-100 group-active:text-cyan-300 transition-colors">Backup de Partidas</span>
-                        <span class="text-[10px] text-gray-400 mt-1 leading-tight">Respaldar y restaurar tus partidas.</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-cyan-500/50 text-xs mr-1 group-hover:translate-x-1 transition-transform"></i>
-                </button>
-
                 <button onclick="ejecutarAccionRapidaJuego('galeria')" class="group flex items-center gap-4 p-4 rounded-2xl bg-[#0b1414]/80 border border-emerald-500/20 hover:bg-emerald-500/10 active:scale-[0.98] transition-all relative overflow-hidden shadow-lg text-left backdrop-blur-sm">
                     <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500/90 shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
                     <div class="w-11 h-11 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shrink-0 relative">

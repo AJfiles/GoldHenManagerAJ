@@ -16,8 +16,11 @@ let totalArchivosEnCola = 0;
 let archivoActualBlob = null;
 let archivoActualNombreFinal = "";
 let transferenciaInicio = 0;
+let rpiPhoneIpManual = false;
 
 document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById('rpi-console-ip')?.addEventListener('change', () => detectarIPCelular());
+    document.getElementById('rpi-phone-ip')?.addEventListener('input', () => { rpiPhoneIpManual = true; });
     const capaTrans = document.getElementById('layer-transferir');
     if (capaTrans) {
         const observador = new MutationObserver(() => {
@@ -52,10 +55,10 @@ function cambiarModoTransferencia(modo) {
         tabRpi.className = claseActiva; tabFtp.className = claseInactiva;
         vistaRpi.classList.remove('hidden'); vistaRpi.classList.add('flex');
         vistaFtp.classList.remove('flex'); vistaFtp.classList.add('hidden');
-        detectarIPCelular();
         const savedPs4 = localStorage.getItem('sebas_ip_final_libre') || '';
         const ps4Input = document.getElementById('rpi-console-ip');
         if (ps4Input && !ps4Input.value) ps4Input.value = savedPs4;
+        detectarIPCelular();
         escanearCarpetaRPI();
     }
 }
@@ -65,10 +68,13 @@ function cambiarModoTransferencia(modo) {
 // =======================================================
 async function detectarIPCelular() {
     const inputIp = document.getElementById('rpi-phone-ip');
+    if (!inputIp) return;
+    rpiPhoneIpManual = false;
     inputIp.placeholder = "Detectando IP...";
     try {
         let fd = new FormData();
         fd.append('action', 'get_phone_ip');
+        fd.append('host_ip', document.getElementById('rpi-console-ip')?.value.trim() || '');
         let res = await fetch('api/transferir_api.php', { method: 'POST', body: fd });
         let data = await res.json();
         
@@ -87,6 +93,32 @@ async function detectarIPCelular() {
     }
 }
 
+function cambiarOrigenRPI() {
+    const source = document.getElementById('rpi-package-source')?.value || 'pkgs_rpi';
+    const custom = document.getElementById('rpi-custom-path');
+    if (custom) {
+        custom.classList.toggle('hidden', source !== 'custom');
+        if (source === 'custom') custom.focus();
+    }
+    const customInput = document.getElementById('rpi-custom-path');
+    if (customInput) customInput.onkeydown = event => { if (event.key === 'Enter') escanearCarpetaRPI(); };
+    if (source !== 'custom' || customInput?.value.trim()) escanearCarpetaRPI();
+}
+
+async function comprobarPuertoRPI(ip, port) {
+    const fd = new FormData();
+    fd.append('action', 'check_rpi_port');
+    fd.append('host_ip', ip);
+    fd.append('rpi_port', String(port));
+    try {
+        const response = await fetch('api/transferir_api.php', { method: 'POST', body: fd });
+        const data = await response.json();
+        return { ok: data.status === 'success' && data.open === true, message: data.message || 'Abre Package Installer en primer plano y prueba 12800 o 12801.' };
+    } catch (_) {
+        return { ok: false, message: 'No se pudo comprobar el puerto RPI.' };
+    }
+}
+
 async function detectarPS4ParaRPI() {
     const status = document.getElementById('rpi-radar-status');
     const ipInput = document.getElementById('rpi-console-ip');
@@ -94,19 +126,40 @@ async function detectarPS4ParaRPI() {
     if (status) status.textContent = 'Buscando PS4 en la red…';
     try {
         const portFTP = parseInt(localStorage.getItem('sebas_port_libre') || '2121', 10);
-        const response = await fetch(`api/radar_api.php?timeout=1200&port=${portFTP}&max_ips=254`);
-        const data = await response.json();
-        if (!response.ok || data.status !== 'success') throw new Error(data.message || 'No se pudo explorar la red.');
-        if (!data.ps4_ips?.length) throw new Error(`No se encontró FTP en ${data.segmento}. Escribe la IP manualmente.`);
-        const ip = data.ps4_ips[0];
+        if (portInput && !['12800', '12801'].includes(portInput.value)) portInput.value = '12800';
+        const selectedRpiPort = parseInt(portInput?.value || '12800', 10);
+        const scan = async port => {
+            const response = await fetch(`api/radar_api.php?timeout=1200&port=${port}&max_ips=254`);
+            const result = await response.json();
+            if (!response.ok || result.status !== 'success') throw new Error(result.message || 'No se pudo explorar la red.');
+            return result;
+        };
+        let data = await scan(selectedRpiPort);
+        const foundByRpi = data.ps4_ips?.length > 0;
+        if (!foundByRpi) {
+            if (status) status.textContent = 'RPI no respondió; buscando PS4 por FTP…';
+            data = await scan(portFTP);
+        }
+        if (!data.ps4_ips?.length) throw new Error(`No se encontró PS4 en ${data.segmento}. Abre Package Installer; también puedes indicar la IP manualmente.`);
+        let ip = data.ps4_ips[0];
+        let rpiCheck = foundByRpi ? { ok: true } : null;
+        if (!foundByRpi) {
+            for (const candidate of data.ps4_ips) {
+                const check = await comprobarPuertoRPI(candidate, selectedRpiPort);
+                if (check.ok) { ip = candidate; rpiCheck = check; break; }
+                if (!rpiCheck) rpiCheck = check;
+            }
+        }
         if (ipInput) ipInput.value = ip;
         if (portInput && !['12800', '12801'].includes(portInput.value)) portInput.value = '12800';
         localStorage.setItem('sebas_ip_final_libre', ip);
         if (typeof globalAppConfig !== 'undefined') globalAppConfig.ipConsola = ip;
         const mainIp = document.getElementById('ps-ip-full-input');
         if (mainIp) mainIp.value = ip;
-        if (status) status.textContent = `Consola detectada: ${ip}`;
-        window.ps5Notification('RADAR PS4', `Consola encontrada en ${ip}.`, 'fa-satellite-dish');
+        await detectarIPCelular();
+        rpiCheck = rpiCheck || await comprobarPuertoRPI(ip, selectedRpiPort);
+        if (status) status.textContent = rpiCheck.ok ? `RPI detectado: ${ip}` : `FTP detectado: ${ip} · ${rpiCheck.message}`;
+        window.ps5Notification(rpiCheck.ok ? 'RADAR PS4' : 'RPI NO DISPONIBLE', rpiCheck.ok ? `RPI respondió en ${ip}:${selectedRpiPort}.` : `FTP detectado en ${ip}, pero ${rpiCheck.message}`, rpiCheck.ok ? 'fa-satellite-dish' : 'fa-triangle-exclamation');
     } catch (error) {
         if (status) status.textContent = error.message || 'Radar no disponible';
         window.ps5Notification('RADAR PS4', error.message || 'No se encontró la consola.', 'fa-triangle-exclamation');
@@ -115,45 +168,59 @@ async function detectarPS4ParaRPI() {
 
 async function escanearCarpetaRPI() {
     const container = document.getElementById('rpi-list-container');
-    container.innerHTML = `<div class="w-full py-6 text-center text-cyan-400 opacity-50"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br><span class="text-[9px] font-bold uppercase tracking-widest">Escaneando user/pkgs_rpi...</span></div>`;
+    if (!container) return;
+    container.innerHTML = `<div class="w-full py-6 text-center text-cyan-400 opacity-50"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br><span class="text-[9px] font-bold uppercase tracking-widest">Escaneando PKG...</span></div>`;
 
     try {
         let fd = new FormData();
         fd.append('action', 'scan_local_pkgs');
+        fd.append('source', document.getElementById('rpi-package-source')?.value || 'pkgs_rpi');
+        fd.append('custom_path', document.getElementById('rpi-custom-path')?.value.trim() || '');
         let res = await fetch('api/transferir_api.php', { method: 'POST', body: fd });
         let data = await res.json();
 
-        if (data.status === 'success') {
-            container.innerHTML = '';
-            if (data.data.length === 0) {
-                container.innerHTML = `<div class="w-full p-6 text-center border-2 border-dashed border-white/5 rounded-xl opacity-50"><i class="fa-solid fa-box-open text-2xl text-gray-500 mb-2"></i><br><span class="text-[9px] uppercase font-bold tracking-widest text-gray-500">Carpeta vacía.</span></div>`;
-                return;
-            }
-            data.data.forEach(pkg => {
-                let div = document.createElement('div');
-                div.className = "w-full flex items-center justify-between p-3 bg-[#111827] rounded-xl border border-white/5 hover:border-cyan-500/30 transition-all";
-                div.innerHTML = `
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 shrink-0 border border-cyan-500/20"><i class="fa-solid fa-box text-lg"></i></div>
-                        <div class="flex flex-col overflow-hidden">
-                            <span class="text-[11px] font-black text-gray-200 uppercase truncate">${pkg.name}</span>
-                            <span class="text-[9px] font-mono text-cyan-500">${formatearTamanoBytes(pkg.size)}</span>
-                        </div>
-                    </div>
-                    <button onclick="instalarRPIDirecto('${pkg.name}')" class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center hover:bg-emerald-500/20 active:scale-90 border border-emerald-500/20 shrink-0 ml-2">
-                        <i class="fa-solid fa-download"></i>
-                    </button>`;
-                container.appendChild(div);
-            });
+        if (!res.ok || data.status !== 'success') throw new Error(data.message || 'No se pudo escanear la carpeta.');
+        container.innerHTML = '';
+        if (!data.data?.length) {
+            container.innerHTML = `<div class="w-full p-6 text-center border-2 border-dashed border-white/5 rounded-xl opacity-50"><i class="fa-solid fa-box-open text-2xl text-gray-500 mb-2"></i><br><span class="text-[9px] uppercase font-bold tracking-widest text-gray-500">No se encontraron archivos PKG legibles.</span></div>`;
+            return;
         }
-    } catch(e) { container.innerHTML = `<div class="w-full py-4 text-center text-red-400 text-[10px] uppercase font-bold">Error al escanear</div>`; }
+        data.data.forEach(pkg => {
+            const row = document.createElement('div');
+            row.className = 'w-full flex items-center justify-between p-3 bg-[#111827] rounded-xl border border-white/5 hover:border-cyan-500/30 transition-all';
+            const info = document.createElement('div');
+            info.className = 'flex items-center gap-3 overflow-hidden';
+            const icon = document.createElement('div');
+            icon.className = 'w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 shrink-0 border border-cyan-500/20';
+            icon.innerHTML = '<i class="fa-solid fa-box text-lg"></i>';
+            const text = document.createElement('div');
+            text.className = 'flex flex-col overflow-hidden';
+            const name = document.createElement('span');
+            name.className = 'text-[11px] font-black text-gray-200 uppercase truncate';
+            name.textContent = pkg.name;
+            const meta = document.createElement('span');
+            meta.className = 'text-[9px] font-mono text-cyan-500';
+            meta.textContent = `${pkg.source_label} · ${formatearTamanoBytes(pkg.size)}`;
+            text.append(name, meta);
+            info.append(icon, text);
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center hover:bg-emerald-500/20 active:scale-90 border border-emerald-500/20 shrink-0 ml-2';
+            button.setAttribute('aria-label', `Instalar ${pkg.name}`);
+            button.innerHTML = '<i class="fa-solid fa-download"></i>';
+            button.addEventListener('click', () => instalarRPIDirecto(pkg.id, pkg.name));
+            row.append(info, button);
+            container.appendChild(row);
+        });
+    } catch(e) { const error = document.createElement('div'); error.className = 'w-full py-4 text-center text-red-400 text-[10px] uppercase font-bold'; error.textContent = e.message || 'Error al escanear'; container.replaceChildren(error); }
 }
 
-async function instalarRPIDirecto(nombrePkg) {
+async function instalarRPIDirecto(fileId, nombrePkg) {
     const ps4Ip = document.getElementById('rpi-console-ip')?.value.trim();
     if (!ps4Ip) { window.ps5Notification("ERROR", "No hay PS4 conectada.", "fa-wifi"); return; }
     if (typeof validarEstructuraIP === 'function' && !validarEstructuraIP(ps4Ip)) { window.ps5Notification('ERROR', 'La IP de PS4 no es válida.', 'fa-triangle-exclamation'); return; }
 
+    if (!rpiPhoneIpManual) await detectarIPCelular();
     const phoneIp = document.getElementById('rpi-phone-ip').value.trim();
     if (!phoneIp || phoneIp === '127.0.0.1') { 
         window.ps5Notification("ERROR", "El servidor debe usar la IP de WiFi.", "fa-exclamation-triangle"); return; 
@@ -165,6 +232,12 @@ async function instalarRPIDirecto(nombrePkg) {
     if (![12800, 12801].includes(rpiPort)) { window.ps5Notification('ERROR', 'Usa el puerto RPI 12800 o Nova 12801.', 'fa-triangle-exclamation'); return; }
     localStorage.setItem('sebas_ip_final_libre', ps4Ip);
 
+    const portCheck = await comprobarPuertoRPI(ps4Ip, rpiPort);
+    if (!portCheck.ok) {
+        window.ps5Notification('RPI NO DISPONIBLE', portCheck.message, 'fa-triangle-exclamation');
+        return;
+    }
+
     window.ps5Notification("RPI", "Enviando orden al instalador de PS4...", "fa-paper-plane");
     
     try {
@@ -173,6 +246,7 @@ async function instalarRPIDirecto(nombrePkg) {
         fd.append('host_ip', ps4Ip);
         fd.append('phone_ip', phoneIp);
         fd.append('server_port', serverPort);
+        fd.append('file_id', fileId);
         fd.append('filename', nombrePkg);
         fd.append('rpi_port', String(rpiPort));
         let res = await fetch('api/transferir_api.php', { method: 'POST', body: fd });

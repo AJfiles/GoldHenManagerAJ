@@ -37,7 +37,7 @@
         <div class="w-full bg-blue-900/20 border border-blue-500/30 rounded-xl p-3 flex gap-3 shrink-0">
             <i class="fa-solid fa-info-circle text-blue-400 mt-0.5"></i>
             <p class="text-[9px] text-blue-200 font-mono leading-relaxed">
-                Guarda tus PKG en <b class="text-white">user/pkgs_rpi</b>. Conecta la consola con Radar o indica su IP y puerto RPI. Abre Package Installer en la PS4 y pulsa descargar.
+                Selecciona dónde buscar los PKG. La PS4 debe estar en la misma red; el Radar comprueba FTP y te avisa aparte si el puerto RPI está disponible. Abre Package Installer y mantenlo en primer plano.
             </p>
         </div>
 
@@ -68,9 +68,19 @@
             </div>
         </div>
 
-        <div class="flex items-center justify-between mt-2 px-1 shrink-0">
-            <span class="text-[10px] font-black tracking-widest uppercase text-gray-400">Juegos en Carpeta Local:</span>
-            <button onclick="escanearCarpetaRPI()" class="text-[10px] text-cyan-400 font-bold uppercase active:scale-95"><i class="fa-solid fa-sync-alt mr-1"></i> Recargar</button>
+        <div class="w-full bg-[#0a0f1a] rounded-2xl p-3 border border-white/5 flex flex-col gap-2 shrink-0">
+            <label for="rpi-package-source" class="text-[9px] font-black uppercase tracking-widest text-gray-400">Buscar PKG en</label>
+            <select id="rpi-package-source" onchange="cambiarOrigenRPI()" class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-3 text-[11px] text-white outline-none focus:border-cyan-500/50">
+                <option value="pkgs_rpi">Carpeta del Manager · user/pkgs_rpi</option>
+                <option value="downloads">Descargas del teléfono o PC</option>
+                <option value="both">Ambas carpetas</option>
+                <option value="custom">Elegir otra carpeta</option>
+            </select>
+            <input id="rpi-custom-path" type="text" autocomplete="off" placeholder="Ruta completa de la carpeta con PKG" class="hidden w-full bg-black/40 border border-white/10 rounded-xl px-3 py-3 text-[11px] font-mono text-white outline-none focus:border-cyan-500/50">
+            <div class="flex items-center justify-between px-1">
+                <span class="text-[10px] font-black tracking-widest uppercase text-gray-400">PKG disponibles</span>
+                <button onclick="escanearCarpetaRPI()" class="text-[10px] text-cyan-400 font-bold uppercase active:scale-95"><i class="fa-solid fa-sync-alt mr-1"></i> Escanear</button>
+            </div>
         </div>
 
         <div id="rpi-list-container" class="flex flex-col gap-2 flex-1 overflow-y-auto custom-scrollbar">
