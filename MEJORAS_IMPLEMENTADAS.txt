@@ -454,3 +454,26 @@ Ajustes de interfaz y personalización
 - README documenta el comando para ejecutar en PC. También explica que la PWA
   sigue usando PHP y que una APK autónoma debe empaquetar PHP o migrar las API
   de FTP, sockets y archivos a servicios nativos Android.
+
+Radar LAN y selección de PKG en RPI
+----------------------------------
+- El Radar de red enumera interfaces IPv4 activas y sus máscaras para escanear
+  las subredes privadas realmente conectadas, en vez de deducir una única /24
+  desde la ruta por defecto. Comprueba el puerto indicado y los servicios
+  habituales de GoldHEN (FTP, RPI/Nova y BinLoader), y devuelve puertos por IP.
+- El Radar RPI usa los dispositivos hallados por el barrido y valida el puerto
+  RPI/Nova elegido. El Radar principal da hasta 2.5 segundos al barrido y
+  muestra los puertos detectados. Las redes con aislamiento de clientes o VLAN
+  separadas aún requieren corregir la configuración de red del router.
+- El índice de PKG temporal ahora se guarda en el directorio temporal privado de
+  PHP, no en user/cache del almacenamiento compartido Android; la API de
+  descarga usa la misma ubicación. Se añade un error más claro si falta espacio.
+- «Elegir PKG con Archivos…» abre el selector del teléfono/PC, importa los PKG
+  elegidos a user/pkgs_rpi y los deja listos para el escaneo RPI. El lanzador
+  Termux permite cargas grandes habilitando carga multipart sin límite de PHP.
+- Validación local: php -l correcto para radar_api.php, transferir_api.php y
+  rpi_file.php; el escaneo RPI de prueba guardó el índice temporal y rpi_file
+  entregó correctamente un rango HTTP 206. El Radar detectó el host
+  192.168.40.41 con FTP 2121; 12800/12801 no respondieron durante la prueba.
+  Falta confirmar en Android que ese host sea la PS4, abrir Package Installer
+  y validar el puerto RPI y la selección de archivos en el dispositivo.
