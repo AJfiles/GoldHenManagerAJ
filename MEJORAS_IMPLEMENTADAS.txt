@@ -356,3 +356,21 @@ Validación disponible
   controlado por BinLoader; el análisis estático no confirma payloads.
 - El Radar de red incorpora una animación ligera de órbita/planeta que destaca
   al detectar la consola, manteniendo intactos los mensajes de búsqueda.
+
+Ajustes de interfaz y personalización
+-------------------------------------
+- Las etiquetas de las tarjetas del launcher tienen alineación centrada; la
+  vista vertical opcional cambia las tarjetas a una lista compacta y guarda la
+  preferencia en el navegador.
+- El módulo y tarjeta Coolers se presentan como **Ventilador**.
+- Acerca de muestra versión 4.0. Se revisaron las menciones actuales de versión
+  para no dejar el antiguo 3.3 en los textos de producto.
+- Se agruparon los accesos de apariencia por Fondos y Animaciones de inicio.
+  Se añaden el fondo Órbita minimal y la intro Pulso minimal.
+- Ajustes permite escoger Outfit (predeterminada), fuente del sistema, Arial o
+  monoespaciada. Se guardan localmente. Hay cuatro perfiles SFX generados por
+  Web Audio (Suave, Consola, Arcade y Minimal), con vista previa; los botones,
+  enlaces, tarjetas y desplegables reciben el efecto seleccionado.
+- README documenta el comando para ejecutar en PC. También explica que la PWA
+  sigue usando PHP y que una APK autónoma debe empaquetar PHP o migrar las API
+  de FTP, sockets y archivos a servicios nativos Android.

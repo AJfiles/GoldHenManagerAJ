@@ -16,14 +16,16 @@ alcance de esas diferencias están documentados en
 - Transferencias: cargas FTP de archivos grandes y envío de PKG mediante Remote Package Installer.
 - Modding: respaldo e inyección de portadas, procesado de imágenes y galerías locales.
 - Game Mods: bóveda de mods de Minecraft e integración AFR para juegos compatibles.
-- Ajustes: notificaciones, audio, fondos, intros, tema y tamaño de texto.
+- Ajustes: notificaciones, cuatro perfiles SFX, fuentes, fondos, intros, tamaño de texto y vista vertical del launcher.
 - Plugins: sube `.prx`, consulta los instalados y asigna plugins a `[default]` o a CUSA mediante `plugins.ini`.
 - Payload Loader: lista payloads locales/remotos y los envía al BinLoader de GoldHEN en el puerto `9090`.
+- Ventilador y Actualizaciones FW: selección controlada de payloads compatibles por firmware.
 - Store: catálogo privado de paquetes autorizados; reutiliza la IP del Manager, detecta la PS4 por radar, prueba RPI Nova (`12801`) u Original (`12800`) y envía un PKG directo al instalador compatible sin guardarlo en el teléfono. Antes del envío valida el enlace, permite una URL alternativa y registra el diagnóstico local de RPI.
 
 ## Requisitos
 
 - Android con Termux.
+- Alternativa PC: PHP CLI con extensiones cURL y ZIP habilitadas; Git y Node.js son útiles para desarrollo/verificación.
 - Una PS4 con GoldHEN y servidor FTP activo, normalmente en el puerto `2121`.
 - Ambos dispositivos conectados a la misma red local.
 - Permiso de almacenamiento para Termux.
@@ -79,6 +81,28 @@ El módulo Plugins realiza una copia local de `plugins.ini` antes de editarlo. P
 - APIs: `api/`.
 - Interfaz modular: `modulos/`.
 - Controladores frontend: `js/`.
+
+### Ejecutar en un PC con Windows
+
+Instala PHP CLI y confirma que `php -m` incluya `curl` y `zip`. Desde PowerShell,
+en la carpeta del proyecto, inicia el servidor:
+
+```powershell
+php -S 0.0.0.0:8080 -t . server-router.php
+```
+
+Abre `http://127.0.0.1:8080` en ese PC. Para usar RPI desde la PS4, PC y consola
+deben estar en la misma red local y el firewall privado debe permitir el puerto
+8080. No publiques este servidor en Internet. `node --check js/app.js` permite
+revisar sintaxis JavaScript; `php -l ruta.php` revisa sintaxis PHP.
+
+### Aplicación Android
+
+El botón de instalación actual ofrece una PWA; esta sigue necesitando que el
+servidor PHP esté ejecutándose en Termux o en un PC. Para generar un APK
+autónomo hay que empaquetar también el backend PHP y sus extensiones, o migrar
+las API que usan FTP, sockets y archivos a un backend Android nativo. Un simple
+envoltorio WebView no sustituye esas API.
 
 Consulta [GUIA_DE_USO.md](GUIA_DE_USO.md) para un recorrido operativo y [AUDITORIA_TECNICA.txt](AUDITORIA_TECNICA.txt) para el estado de revisión de archivos.
 
