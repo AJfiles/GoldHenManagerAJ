@@ -80,16 +80,14 @@ if ($action === 'delete_capture') {
     if (strpos($remote_path, '/user/av_contents/photo/') !== 0 || in_array('..', $pathParts, true) || preg_match('/[\x00-\x1F\x7F]/', $remote_path) || !preg_match('/\.(jpg|jpeg|png)$/i', $remote_path)) {
         echo json_encode(['status' => 'error', 'message' => 'Ruta de captura inválida.']); exit;
     }
-    $remote_dir = dirname($remote_path);
-    $remote_name = basename($remote_path);
-    // Deja que libcurl entre primero al directorio indicado por la URL FTP y
-    // ejecuta DELE como POSTQUOTE. QUOTE se dispara antes del CWD de la URL,
-    // por lo que un CWD dentro de QUOTE puede fallar con 550 en GoldHEN.
-    $encoded_dir = implode('/', array_map('rawurlencode', explode('/', trim($remote_dir, '/'))));
-    $ftp_url = "ftp://$host_ip:$port/$encoded_dir/";
-    $quoted_name = '"' . str_replace(['\\', '"'], ['\\\\', '\\"'], $remote_name) . '"';
-    $ch = curl_init($ftp_url);
-    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_CUSTOMREQUEST => 'LIST', CURLOPT_POSTQUOTE => ['DELE ' . $quoted_name], CURLOPT_TIMEOUT => 15]);
+    // GoldHEN no acepta nombres entre comillas en QUOT/DELE: los interpreta
+    // como `DELE"nombre"`. Ejecuta la ruta absoluta desde la raíz FTP, igual
+    // que las operaciones de borrado del Explorador.
+    if (!preg_match('#^/user/av_contents/photo/[A-Za-z0-9._ /-]+\.(jpg|jpeg|png)$#i', $remote_path)) {
+        echo json_encode(['status' => 'error', 'message' => 'El nombre de la captura contiene caracteres no admitidos para FTP.']); exit;
+    }
+    $ch = curl_init("ftp://$host_ip:$port/");
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_CUSTOMREQUEST => 'LIST', CURLOPT_QUOTE => ['DELE ' . $remote_path], CURLOPT_TIMEOUT => 15]);
     $deleted = curl_exec($ch);
     $error = curl_error($ch);
     curl_close($ch);

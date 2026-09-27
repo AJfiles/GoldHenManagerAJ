@@ -22,28 +22,23 @@ let urlImagenActualLightbox = "";
 let nombreImagenActualLightbox = "";
 let isGlobalGallery = false; 
 let categoriaAEliminar = null;
+let bibliotecaAutoScanEnCurso = false;
+let bibliotecaAutoScanCompletado = Number(localStorage.getItem('ghm_biblioteca_ultimo_escaneo') || 0);
+let carruselIgnorarClickHasta = 0;
 
 function initBiblio() {
     const capaBib = document.getElementById('layer-biblioteca');
     if (capaBib) {
+        let estabaActiva = capaBib.classList.contains('active');
         const observadorCapa = new MutationObserver(() => {
-            if (capaBib.classList.contains('active')) { 
-                vistaModo = 'grid';
-                const icono = document.getElementById('icono-vista');
-                if (icono) icono.className = 'fa-solid fa-cube text-cyan-400';
-                
-                const target3D = document.getElementById('dom-3d-target');
-                if (target3D) target3D.innerHTML = '';
-                index3DActivo = 0;
-
+            const estaActiva = capaBib.classList.contains('active');
+            if (estaActiva && !estabaActiva) {
                 iniciarCargaInmediataYEscaneoSilencioso(); 
             }
+            estabaActiva = estaActiva;
         });
         observadorCapa.observe(capaBib, { attributes: true, attributeFilter: ['class'] });
         if (capaBib.classList.contains('active')) { 
-            vistaModo = 'grid';
-            const icono = document.getElementById('icono-vista');
-            if (icono) icono.className = 'fa-solid fa-cube text-cyan-400';
             iniciarCargaInmediataYEscaneoSilencioso(); 
         }
     }
@@ -90,6 +85,11 @@ async function levantarCacheLocalBiblioteca() {
 }
 
 async function ejecutarSincronizacionFantasmasFondo() {
+    const ahora = Date.now();
+    if (bibliotecaAutoScanEnCurso || ahora - bibliotecaAutoScanCompletado < 5 * 60 * 1000) return;
+    bibliotecaAutoScanEnCurso = true;
+    const estadoSync = document.getElementById('library-sync-status');
+    if (estadoSync) estadoSync.innerText = 'Conectando con PS4…';
     if (bibliotecaAbortController) { bibliotecaAbortController.abort(); }
     bibliotecaAbortController = new AbortController();
     const { signal } = bibliotecaAbortController;
@@ -105,10 +105,18 @@ async function ejecutarSincronizacionFantasmasFondo() {
 
         let responseScan = await fetch('api/library_biblioteca.php', { method: 'POST', body: formDataScan, signal: signal });
         let jsonScan = await responseScan.json();
-        if (jsonScan.status !== 'success' || !jsonScan.games) return;
+        if (jsonScan.status !== 'success' || !jsonScan.games) {
+            if (estadoSync) estadoSync.innerText = 'No se pudo consultar la biblioteca.';
+            return;
+        }
+        bibliotecaAutoScanCompletado = Date.now();
+        localStorage.setItem('ghm_biblioteca_ultimo_escaneo', String(bibliotecaAutoScanCompletado));
 
         const mapJuegosDetectados = jsonScan.games;
         let colaTrabajoCUSAs = Object.keys(mapJuegosDetectados);
+        const totalEscaneo = colaTrabajoCUSAs.length;
+        let procesadosEscaneo = 0;
+        if (estadoSync) estadoSync.innerText = totalEscaneo ? `Cargando títulos: 0/${totalEscaneo}` : 'Biblioteca actualizada.';
 
         if (colaTrabajoCUSAs.length > 10) {
             listadoJuegos = listadoJuegos.filter(localG => {
@@ -136,6 +144,7 @@ async function ejecutarSincronizacionFantasmasFondo() {
             });
 
             let respuestasLote = await Promise.all(promesasHilos);
+            procesadosEscaneo += loteActual.length;
 
             respuestasLote.forEach(res => {
                 if (res && res.status === 'success' && res.game) {
@@ -150,6 +159,7 @@ async function ejecutarSincronizacionFantasmasFondo() {
                     }
                 }
             });
+            if (estadoSync) estadoSync.innerText = `Cargando títulos: ${procesadosEscaneo}/${totalEscaneo}`;
         }
 
         if (huboCambiosNuevos) {
@@ -157,10 +167,22 @@ async function ejecutarSincronizacionFantasmasFondo() {
             actualizarInterfazFiltros();
             recompilarTodo();
         }
-    } catch (errorGlobal) {}
+        if (estadoSync) {
+            estadoSync.innerText = `Biblioteca actualizada · ${listadoJuegos.length} títulos`;
+            setTimeout(() => { if (estadoSync.isConnected) estadoSync.innerText = ''; }, 5000);
+        }
+    } catch (errorGlobal) {
+        if (estadoSync) estadoSync.innerText = 'No se pudo completar la sincronización.';
+    } finally {
+        bibliotecaAutoScanEnCurso = false;
+    }
 }
 
 async function forzarSincronizacionManual() {
+    if (bibliotecaAutoScanEnCurso) {
+        window.ps5Notification('BIBLIOTECA', 'La actualización automática ya está consultando la consola. Evité duplicar la sincronización.', 'fa-rotate');
+        return;
+    }
     const modal = document.getElementById('modal-sincronizacion-progreso');
     const title = document.getElementById('sinc-modal-title');
     const text = document.getElementById('sinc-modal-text');
@@ -250,6 +272,8 @@ async function forzarSincronizacionManual() {
         listadoJuegos.forEach(j => { if (j.tipo && !categoriasDinamicas.includes(j.tipo)) { categoriasDinamicas.push(j.tipo); } });
         actualizarInterfazFiltros();
         recompilarTodo();
+        bibliotecaAutoScanCompletado = Date.now();
+        localStorage.setItem('ghm_biblioteca_ultimo_escaneo', String(bibliotecaAutoScanCompletado));
         setTimeout(closeSincronizacionModal, 450);
     } catch (e) {
         closeSincronizacionModal(); 
@@ -320,6 +344,9 @@ function renderizarGridDOM(visibles) {
     visibles.forEach((jg) => {
         const divCard = document.createElement('div');
         divCard.className = "grid-card-modern rounded-[1.2rem] p-1.5 flex flex-col justify-between cursor-pointer shadow-lg animate-fade-in";
+        divCard.setAttribute('role', 'button');
+        divCard.tabIndex = 0;
+        divCard.setAttribute('aria-label', `Abrir ${jg.nombre || jg.id}`);
         divCard.onclick = () => { abrirOpcionesJuegoDirecto(jg.id); };
         divCard.innerHTML = `
             <div class="w-full h-[84%] rounded-[1rem] overflow-hidden border border-white/5 bg-cover bg-center" style="background-image: url('${jg.img}');"></div>
@@ -346,7 +373,7 @@ function construirCoverflowDOMEstatico(visibles) {
     let html3D = "";
     visibles.forEach((jg) => {
         html3D += `
-        <div class="ps4-box-case">
+        <div class="ps4-box-case" role="button" tabindex="0" aria-label="${String(jg.nombre).replace(/[&<>\"]/g, '')}">
             <div class="ps4-top-ribbon">
                 <i class="fa-brands fa-playstation text-white text-[10px]"></i>
                 <span class="ps4-ribbon-text">PS4</span>
@@ -359,6 +386,7 @@ function construirCoverflowDOMEstatico(visibles) {
     const tarjetas = target3D.querySelectorAll('.ps4-box-case');
     tarjetas.forEach((card, idx) => {
         card.onclick = () => {
+            if (Date.now() < carruselIgnorarClickHasta) return;
             if (idx !== index3DActivo) { index3DActivo = idx; actualizarCoverflow3DStyles(); }
             else { abrirOpcionesDesde3D(); }
         };
@@ -381,6 +409,9 @@ function actualizarCoverflow3DStyles() {
     if (index3DActivo < 0) index3DActivo = 0;
 
     const tarjetas = target3D.querySelectorAll('.ps4-box-case');
+    const desktop = document.body.classList.contains('layout-desktop');
+    const pasoCarrusel = desktop ? 220 : 145;
+    const pasoLateral = desktop ? 50 : 35;
     
     tarjetas.forEach((card, i) => {
         let offset = i - index3DActivo;
@@ -411,12 +442,12 @@ function actualizarCoverflow3DStyles() {
 
             if (glowBg) glowBg.style.background = `radial-gradient(circle, rgba(0, 162, 255, 0.5) 0%, rgba(0, 114, 230, 0.15) 45%, rgba(0,0,0,0) 70%)`;
         } else if (offset > 0) {
-            card.style.transform = `translateX(${145 + (offset - 1) * 35}px) translateZ(${-30 - (offset - 1) * 30}px) rotateY(-40deg) scale(0.85)`;
+            card.style.transform = `translateX(${pasoCarrusel + (offset - 1) * pasoLateral}px) translateZ(${-30 - (offset - 1) * 30}px) rotateY(-40deg) scale(0.85)`;
             card.style.opacity = absOffset > 2 ? '0' : '0.55';
             card.style.zIndex = `${50 - absOffset}`;
             card.style.pointerEvents = absOffset === 1 ? 'auto' : 'none';
         } else {
-            card.style.transform = `translateX(${-145 + (offset + 1) * 35}px) translateZ(${-30 - (absOffset - 1) * 30}px) rotateY(40deg) scale(0.85)`;
+            card.style.transform = `translateX(${-pasoCarrusel + (offset + 1) * pasoLateral}px) translateZ(${-30 - (absOffset - 1) * 30}px) rotateY(40deg) scale(0.85)`;
             card.style.opacity = absOffset > 2 ? '0' : '0.55';
             card.style.zIndex = `${50 - absOffset}`;
             card.style.pointerEvents = absOffset === 1 ? 'auto' : 'none';
@@ -430,22 +461,33 @@ function configurarRastreadorSwipe() {
     viewPort.replaceWith(viewPort.cloneNode(true));
     const newViewPort = document.getElementById('swipe-touch-zone');
 
-    newViewPort.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; isDragging = true; }, { passive: true });
-    newViewPort.addEventListener('touchmove', (e) => {
+    newViewPort.addEventListener('pointerdown', (event) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        startX = event.clientX;
+        currentX = startX;
+        isDragging = true;
+        if (newViewPort.setPointerCapture) newViewPort.setPointerCapture(event.pointerId);
+    });
+    newViewPort.addEventListener('pointermove', (event) => {
         if (!isDragging) return;
-        currentX = e.touches[0].clientX;
-        const diffX = startX - currentX;
-
-        if (Math.abs(diffX) > 50) {
-            const visibles = obtenerVisiblesFiltrados();
-            if (visibles.length === 0) { isDragging = false; return; }
-            if (diffX > 0) index3DActivo = (index3DActivo + 1) % visibles.length;
-            else index3DActivo = (index3DActivo - 1 + visibles.length) % visibles.length;
-            actualizarCoverflow3DStyles();
-            isDragging = false; 
+        currentX = event.clientX;
+        const distancia = startX - currentX;
+        const pasos = Math.trunc(Math.abs(distancia) / 45);
+        if (pasos > 0) {
+            moverCarruselBiblioteca((distancia > 0 ? 1 : -1) * Math.min(pasos, 4));
+            startX = currentX;
+            carruselIgnorarClickHasta = Date.now() + 350;
         }
-    }, { passive: true });
-    newViewPort.addEventListener('touchend', () => { isDragging = false; });
+    });
+    const finalizarArrastre = () => { isDragging = false; };
+    newViewPort.addEventListener('pointerup', finalizarArrastre);
+    newViewPort.addEventListener('pointercancel', finalizarArrastre);
+    newViewPort.addEventListener('wheel', (event) => {
+        const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : (event.shiftKey ? event.deltaY : 0);
+        if (!delta) return;
+        event.preventDefault();
+        moverCarruselBiblioteca(delta > 0 ? 1 : -1);
+    }, { passive: false });
 }
 
 function obtenerVisiblesFiltrados() {
@@ -634,7 +676,19 @@ function conmutarModoVista() {
     vistaModo = (vistaModo === 'grid') ? '3d' : 'grid';
     const icono = document.getElementById('icono-vista');
     if (icono) icono.className = vistaModo === '3d' ? 'fa-solid fa-table-cells text-purple-400' : 'fa-solid fa-cube text-cyan-400';
+    const button = document.getElementById('btn-toggle-library-view');
+    if (button) {
+        button.setAttribute('aria-pressed', vistaModo === '3d' ? 'true' : 'false');
+        button.setAttribute('aria-label', vistaModo === '3d' ? 'Cambiar a cuadrícula' : 'Cambiar a carrusel');
+    }
     recompilarTodo();
+}
+
+function moverCarruselBiblioteca(delta) {
+    const visibles = obtenerVisiblesFiltrados();
+    if (!visibles.length) return;
+    index3DActivo = (index3DActivo + delta % visibles.length + visibles.length) % visibles.length;
+    actualizarCoverflow3DStyles();
 }
 
 const capturasConteoCache = new Map();

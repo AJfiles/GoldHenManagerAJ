@@ -60,6 +60,10 @@ document.addEventListener("DOMContentLoaded", () => {
     cargarConfiguracionesLocales();
     cambiarDisenoDispositivo(localStorage.getItem('cfg_device_layout') || 'auto');
     window.addEventListener('resize', aplicarDisenoDispositivo);
+    document.querySelectorAll('.launcher-card').forEach(card => {
+        card.setAttribute('role', 'button');
+        card.tabIndex = 0;
+    });
     aplicarPreferenciasDeAccesibilidad();
     configurarEventosDashboard();
     verificarRadarInicial();
@@ -76,7 +80,9 @@ document.addEventListener("DOMContentLoaded", () => {
 function aplicarDisenoDispositivo() {
     const mode = localStorage.getItem('cfg_device_layout') || 'auto';
     const desktop = mode === 'desktop' || (mode === 'auto' && window.matchMedia('(min-width: 900px) and (pointer: fine)').matches);
+    const cambio = document.body.classList.contains('layout-desktop') !== desktop;
     document.body.classList.toggle('layout-desktop', desktop);
+    if (cambio && !localStorage.getItem('cfg_tamano_texto')) aplicarPreferenciasDeAccesibilidad();
 }
 
 function cambiarDisenoDispositivo(mode) {
@@ -87,8 +93,70 @@ function cambiarDisenoDispositivo(mode) {
     if (select && select.value !== valid) select.value = valid;
 }
 
+function objetivosNavegacionTeclado(capa) {
+    if (!capa) return [];
+    const selector = capa.id === 'layer-launcher'
+        ? '.launcher-card'
+        : 'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [role="button"], [tabindex="0"]';
+    return Array.from(capa.querySelectorAll(selector)).filter(element => {
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && Number(style.opacity) > 0.05;
+    });
+}
+
+document.addEventListener('keydown', event => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    const target = event.target;
+    const typing = target && (target.matches('input, textarea, select') || target.isContentEditable);
+    if (typing) return;
+
+    const modal = document.querySelector('.fixed.inset-0:not(.hidden):not(.app-layer):not(#intro-wrapper)');
+    if (modal) return;
+    const capa = document.querySelector('.app-layer.active') || document.getElementById('layer-launcher');
+    if (!capa) return;
+
+    if (capa.id === 'layer-biblioteca' && typeof vistaModo !== 'undefined' && vistaModo === '3d' && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+        event.preventDefault();
+        moverCarruselBiblioteca(event.key === 'ArrowRight' ? 1 : -1);
+        return;
+    }
+
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+        const items = objetivosNavegacionTeclado(capa);
+        if (!items.length) return;
+        const current = items.includes(document.activeElement) ? document.activeElement : items[0];
+        const from = current.getBoundingClientRect();
+        const cx = from.left + from.width / 2, cy = from.top + from.height / 2;
+        const direction = event.key;
+        let candidates = items.filter(item => item !== current).map(item => {
+            const r = item.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+            const primary = direction === 'ArrowRight' ? x - cx : direction === 'ArrowLeft' ? cx - x : direction === 'ArrowDown' ? y - cy : cy - y;
+            const cross = direction === 'ArrowLeft' || direction === 'ArrowRight' ? Math.abs(y - cy) : Math.abs(x - cx);
+            return { item, primary, cross };
+        }).filter(entry => entry.primary > 4);
+        candidates.sort((a, b) => (a.primary + a.cross * 1.8) - (b.primary + b.cross * 1.8));
+        event.preventDefault();
+        (candidates[0]?.item || items[0]).focus({ preventScroll: true });
+        return;
+    }
+
+    if ((event.key === 'Enter' || event.key === ' ') && target?.matches('[role="button"]') && !target.matches('button, input')) {
+        event.preventDefault();
+        target.click();
+        return;
+    }
+
+    if (event.key === 'Escape' && capa.id !== 'layer-launcher' && typeof window.volverAlLauncher === 'function') {
+        event.preventDefault();
+        window.volverAlLauncher();
+    }
+});
+
 function aplicarPreferenciasDeAccesibilidad() {
-    const fuente = Math.max(85, Math.min(130, parseInt(localStorage.getItem('cfg_tamano_texto') || '100', 10)));
+    const tamanoGuardado = localStorage.getItem('cfg_tamano_texto');
+    const tamanoPredeterminado = document.body.classList.contains('layout-desktop') ? '120' : '100';
+    const fuente = Math.max(85, Math.min(130, parseInt(tamanoGuardado || tamanoPredeterminado, 10)));
     document.documentElement.dataset.theme = 'dark';
     document.documentElement.style.fontSize = `${fuente}%`;
 

@@ -45,17 +45,20 @@
 
     .carousel-track-master {
         position: relative;
-        width: 145px;
-        height: 200px;
+        width: var(--library-card-width, 145px);
+        height: var(--library-card-height, 200px);
         transform-style: preserve-3d;
         -webkit-transform-style: preserve-3d;
         z-index: 2;
     }
 
+    .library-carousel-nav { position: absolute; top: 50%; z-index: 120; width: 40px; height: 40px; border-radius: 50%; transform: translateY(-50%); border: 1px solid rgba(255,255,255,.14); background: rgba(3,8,18,.72); color: #a5f3fc; display: flex; align-items: center; justify-content: center; transition: background .2s, transform .2s; }
+    .library-carousel-nav:hover { background: rgba(6,182,212,.25); transform: translateY(-50%) scale(1.08); }
+
     .ps4-box-case {
         position: absolute;
-        width: 145px;
-        height: 200px;
+        width: var(--library-card-width, 145px);
+        height: var(--library-card-height, 200px);
         background-color: #12151e;
         border-radius: 8px;
         overflow: hidden;
@@ -95,11 +98,42 @@
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34, 211, 238, 0.3); border-radius: 4px; }
+
+    body.layout-desktop #layer-biblioteca { padding: clamp(20px, 2.5vw, 38px); }
+    body.layout-desktop #library-header, body.layout-desktop #library-content { width: min(100%, 1500px); margin-inline: auto; }
+    body.layout-desktop #library-header { gap: 18px; }
+    body.layout-desktop #library-header h2 { font-size: 2rem; }
+    body.layout-desktop #library-header button { font-size: 11px; }
+    body.layout-desktop #library-header #library-sync-status { font-size: 11px; }
+    body.layout-desktop #library-header #engine-search { font-size: 15px; }
+    body.layout-desktop #library-header #badge-total-txt,
+    body.layout-desktop #library-header #label-filtro-actual,
+    body.layout-desktop #library-header #label-orden-actual { font-size: 11px; }
+    body.layout-desktop #library-content { margin-top: 14px; }
+    body.layout-desktop #container-view-grid { padding: 4px 8px 112px; }
+    body.layout-desktop #dom-grid-target { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 18px; }
+    body.layout-desktop .grid-card-modern { aspect-ratio: .82; border-radius: 20px; padding: 8px; }
+    body.layout-desktop .grid-card-modern p { font-size: 12px; padding-top: 9px; }
+    body.layout-desktop #container-view-3d { padding-top: 12px; }
+    body.layout-desktop .carousel-viewport-master { width: min(100%, 1200px); min-height: clamp(330px, 43vh, 520px); margin-inline: auto; }
+    body.layout-desktop #dom-3d-target,
+    body.layout-desktop .ps4-box-case { --library-card-width: 220px; --library-card-height: 300px; }
+    body.layout-desktop #text-title-3d { font-size: 24px; }
+    body.layout-desktop #text-cusa-3d,
+    body.layout-desktop #text-version-3d { font-size: 12px; }
+    body.layout-desktop #container-view-3d > div:last-child { max-width: 760px; margin: 14px auto 24px; }
+    body.layout-desktop #container-view-3d > div:last-child button { min-height: 78px; }
+    body.layout-desktop #container-view-3d > div:last-child button span { font-size: 10px; }
+    body.layout-desktop .library-carousel-nav { width: 48px; height: 48px; font-size: 15px; }
+    @media (max-width: 1150px) {
+        body.layout-desktop #dom-grid-target { grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; }
+        body.layout-desktop #library-header h2 { font-size: 1.6rem; }
+    }
 </style>
 
 <div id="layer-biblioteca" class="app-layer flex flex-col p-4 h-screen w-full overflow-hidden bg-[#060913]">
     
-    <div class="w-full flex flex-col gap-3 shrink-0 pt-1 z-30">
+    <div id="library-header" class="w-full flex flex-col gap-3 shrink-0 pt-1 z-30">
         <div class="flex flex-col gap-2 w-full">
             <div class="flex justify-between items-center w-full">
                 <h2 class="text-2xl font-black tracking-tighter uppercase text-white">Biblioteca</h2>
@@ -111,7 +145,7 @@
                 <button onclick="abrirGaleriaGlobal()" class="h-9 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all text-[9px] font-black uppercase tracking-widest text-emerald-300">
                     <i class="fa-solid fa-images text-emerald-400"></i> Capturas
                 </button>
-                <button onclick="conmutarModoVista()" class="h-9 px-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center gap-2 active:scale-95 transition-all text-[9px] font-black uppercase tracking-widest text-cyan-300">
+                <button id="btn-toggle-library-view" type="button" aria-label="Cambiar entre cuadrícula y carrusel" aria-pressed="false" onclick="conmutarModoVista()" class="h-9 px-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center gap-2 active:scale-95 transition-all text-[9px] font-black uppercase tracking-widest text-cyan-300">
                     <i class="fa-solid fa-cube text-cyan-400" id="icono-vista"></i> Cambiar vista
                 </button>
             </div>
@@ -145,10 +179,11 @@
         
         <div class="flex items-center justify-start w-full px-1">
             <span class="text-gray-500 text-[8px] font-black uppercase tracking-widest">Estado: <span id="badge-total-txt" class="text-cyan-400">0 Títulos</span></span>
+            <span id="library-sync-status" class="ml-3 text-[8px] font-bold text-cyan-300" aria-live="polite"></span>
         </div>
     </div>
 
-    <div class="flex-grow w-full relative overflow-hidden mt-1 flex flex-col">
+    <div id="library-content" class="flex-grow w-full relative overflow-hidden mt-1 flex flex-col">
         
         <div id="container-view-grid" class="absolute inset-0 overflow-y-auto hide-scrollbar w-full h-full pb-28 hidden">
             <div id="dom-grid-target" class="grid grid-cols-3 gap-3 w-full"></div>
@@ -159,6 +194,8 @@
             <div class="carousel-viewport-master shrink-0" id="swipe-touch-zone">
                 <div class="glow-background-master" id="dom-glow-target"></div>
                 <div id="dom-3d-target" class="carousel-track-master"></div>
+                <button type="button" onclick="moverCarruselBiblioteca(-1)" aria-label="Juego anterior" class="library-carousel-nav left-2" title="Anterior"><i class="fa-solid fa-chevron-left"></i></button>
+                <button type="button" onclick="moverCarruselBiblioteca(1)" aria-label="Siguiente juego" class="library-carousel-nav right-2" title="Siguiente"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
             
             <div class="w-full shrink-0 flex flex-col items-center mt-6 mb-20 z-20">
