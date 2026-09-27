@@ -117,10 +117,44 @@ Prueba recomendada
 7. En Game Mods, tras crear el backup AFR, usa Instalar Plugins AFR y elige
    un archivo ZIP.
 
+Actualización 4.0 y paquete PC 1.0
+---------------------------------
+- Ventilador y Actualizaciones FW muestran una advertencia obligatoria al
+  primer acceso por navegador. La aceptación queda guardada por módulo; cerrar
+  o rechazar la advertencia no habilita la opción.
+- Los payloads Enable Updates exigen tres pasos de confirmación en la interfaz
+  y la API exige además la frase exacta `ACTIVAR ACTUALIZACIONES` antes de
+  transmitir el archivo.
+- Ajustes muestra la advertencia legal/de seguridad. README elimina la guía
+  operativa privada de Store Admin y el diagnóstico de RPI; conserva el
+  descargo público de seguridad.
+- Ajustes permite elegir diseño automático, móvil o PC. Automático usa ancho de
+  pantalla y tipo de puntero, y el valor se conserva en el navegador.
+- Se preparó `GoldHenPC-Release-v1.0.zip` con PHP 8.5.11 x86 NTS portable,
+  extensiones requeridas, el proyecto público y el router seguro. No se incluye
+  `store/admin`, scripts de mantenedor ni datos locales de `user/`.
+- `Iniciar-GoldHenManager.bat` usa `server-router.php`, comprueba puerto y
+  disponibilidad HTTP y abre el navegador cuando el servidor responde. El
+  acceso RPI puede requerir autorización de Windows Firewall en red privada.
+- La compilación PHP disponible incluye FTP y detectó helpers AFR con nombres
+  que colisionaban con funciones internas de PHP. Se renombraron con prefijo
+  `ghm_afr_`.
+
+Validación local de 4.0
+----------------------
+- `php -l`: 44 archivos PHP del proyecto sin errores con el PHP 8.5.11 incluido.
+- El servidor portable respondió 200 en `/`, `/js/app.js` y `/manifest.json`;
+  `/user/pkgs_rpi/` devolvió 404 mediante `server-router.php`.
+- No se validó comunicación real FTP/RPI, envío de payloads ni comportamiento
+  en PS4; tampoco hay runtime Node.js disponible para `node --check`.
+- El PHP portable x86 puede necesitar Microsoft Visual C++ Redistributable
+  2015–2022 x86 si Windows no lo tiene instalado; se debe obtener de Microsoft.
+
 Limitación de validación local
 ------------------------------
-El entorno de edición no dispone de PHP, Node.js ni una PS4/GoldHEN accesible.
-La validación final debe hacerse con la prueba anterior en Termux.
+En ese ciclo inicial no se contaba con runtime PHP, Node.js ni una PS4/GoldHEN
+accesible; la validación parcial posterior está registrada en la sección
+«Validación local de 4.0».
 
 Actualización visual y de instalación 3.1
 -----------------------------------------

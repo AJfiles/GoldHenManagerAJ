@@ -54,6 +54,15 @@ header('X-Author: ' . $firma);
         #launcher-grid.launcher-vertical .launcher-card { aspect-ratio:auto; min-height:74px; display:grid; grid-template-columns:3rem minmax(0,1fr); grid-template-rows:auto auto; justify-items:start; align-content:center; padding:.8rem 1rem; }
         #launcher-grid.launcher-vertical .launcher-card > div:first-child { grid-row:1 / span 2; width:2.65rem;height:2.65rem;margin:0 .7rem 0 0; }
         #launcher-grid.launcher-vertical .launcher-card > span { width:auto;text-align:left;justify-self:stretch; }
+        body.layout-desktop #layer-launcher { padding:2rem clamp(2rem,5vw,6rem); }
+        body.layout-desktop #layer-launcher > .w-full.max-w-4xl { max-width:1100px; }
+        body.layout-desktop #launcher-grid { grid-template-columns:repeat(4,minmax(0,1fr)); max-width:1100px; gap:1.2rem; }
+        body.layout-desktop #launcher-grid .launcher-card { aspect-ratio:1.45/1; }
+        body.layout-desktop #launcher-grid.launcher-vertical { grid-template-columns:minmax(0,1fr); max-width:760px; }
+        body.layout-desktop #launcher-grid.launcher-vertical .launcher-card { aspect-ratio:auto; }
+        body.layout-desktop .app-layer:not(#layer-launcher) { padding-left:max(24px,calc((100vw - 1120px)/2)) !important; padding-right:max(24px,calc((100vw - 1120px)/2)) !important; }
+        @media (max-width:1050px) { body.layout-desktop #launcher-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+        @media (max-width:760px) { body.layout-desktop #launcher-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 
         .app-layer .bg-\[\#0a0f1a\], 
         .app-layer .bg-\[\#02040a\], 
@@ -223,6 +232,15 @@ header('X-Author: ' . $firma);
         </div>
     </div>
 
+    <div id="modal-fw-risk" class="fixed inset-0 z-[20000] hidden items-center justify-center bg-black/85 p-5 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="fw-risk-title">
+        <div class="w-full max-w-lg rounded-3xl border border-amber-400/30 bg-[#0a0f1a] p-6 shadow-2xl">
+            <div class="mb-4 flex items-center gap-3"><i class="fa-solid fa-triangle-exclamation text-amber-400 text-xl"></i><h2 id="fw-risk-title" class="text-sm font-black uppercase tracking-widest text-amber-200">Advertencia de firmware</h2></div>
+            <p class="text-sm leading-relaxed text-gray-200">Este módulo puede dañar tu consola si eliges el archivo que NO CORRESPONDA a tu versión de PS4. ¿Entiendes los riesgos y aceptas usarlo bajo tu responsabilidad?</p>
+            <p class="mt-3 text-[10px] leading-relaxed text-gray-400">Verifica el firmware exacto antes de enviar cualquier payload. La aceptación se guardará en este navegador para no repetir el aviso en cada visita.</p>
+            <div class="mt-6 grid grid-cols-2 gap-3"><button onclick="cancelarAccesoFirmware()" class="rounded-xl border border-white/10 bg-white/5 py-3 text-[10px] font-black uppercase text-gray-300">Cancelar</button><button onclick="aceptarAccesoFirmware()" class="rounded-xl bg-amber-400 py-3 text-[10px] font-black uppercase text-black">Entiendo y acepto</button></div>
+        </div>
+    </div>
+
     <?php include 'modulos/biblioteca.php'; ?>
     <?php include 'modulos/modding.php'; ?>
     <?php include 'modulos/explorador.php'; ?>
@@ -251,7 +269,17 @@ header('X-Author: ' . $firma);
     <script>
         history.replaceState({ page: 'launcher' }, "Launcher", "");
 
+        let moduloFirmwarePendiente = null;
+        const aceptarRiesgosFirmware = { coolers: 'ghm_fw_risk_fan_accepted', 'actualizaciones-fw': 'ghm_fw_risk_updates_accepted' };
+
         window.abrirModuloNativo = function(idModulo) {
+            const storageKey = aceptarRiesgosFirmware[idModulo];
+            if (storageKey && localStorage.getItem(storageKey) !== 'true') {
+                moduloFirmwarePendiente = idModulo;
+                const warning = document.getElementById('modal-fw-risk');
+                warning.classList.remove('hidden'); warning.classList.add('flex');
+                return;
+            }
             history.pushState({ page: idModulo, ruta: '/' }, "Modulo", "");
             activarCapaVisual(idModulo);
 
@@ -259,6 +287,21 @@ header('X-Author: ' . $firma);
                 cargarRutaFtp('/', true); 
                 if (typeof renderizarAccesosRapidos === 'function') renderizarAccesosRapidos();
             }
+        };
+
+        window.aceptarAccesoFirmware = function() {
+            if (!moduloFirmwarePendiente) return;
+            const moduleId = moduloFirmwarePendiente;
+            localStorage.setItem(aceptarRiesgosFirmware[moduleId], 'true');
+            moduloFirmwarePendiente = null;
+            const warning = document.getElementById('modal-fw-risk');
+            warning.classList.add('hidden'); warning.classList.remove('flex');
+            abrirModuloNativo(moduleId);
+        };
+        window.cancelarAccesoFirmware = function() {
+            moduloFirmwarePendiente = null;
+            const warning = document.getElementById('modal-fw-risk');
+            warning.classList.add('hidden'); warning.classList.remove('flex');
         };
 
         function activarCapaVisual(idModulo) {

@@ -1,6 +1,6 @@
-GOLDHEN MANAGER AJ 3.3 - FUNCIONES Y GUIAS
+GOLDHEN MANAGER AJ 4.0 - FUNCIONES Y GUIAS
 
-STORE PÚBLICA (v3.3)
+STORE PÚBLICA (v4.0)
 ---------------------
 - Abre Store desde el launcher. La IP guardada en GoldHen Manager se reutiliza
   automáticamente; no hay que escribirla otra vez.

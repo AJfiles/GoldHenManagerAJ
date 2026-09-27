@@ -16,16 +16,16 @@ alcance de esas diferencias están documentados en
 - Transferencias: cargas FTP de archivos grandes y envío de PKG mediante Remote Package Installer.
 - Modding: respaldo e inyección de portadas, procesado de imágenes y galerías locales.
 - Game Mods: bóveda de mods de Minecraft e integración AFR para juegos compatibles.
-- Ajustes: notificaciones, cuatro perfiles SFX, fuentes, fondos, intros, tamaño de texto y vista vertical del launcher.
+- Ajustes: notificaciones, perfiles SFX, fuentes, fondos, intros, tamaño de texto, vista vertical y diseño automático/móvil/PC.
 - Plugins: sube `.prx`, consulta los instalados y asigna plugins a `[default]` o a CUSA mediante `plugins.ini`.
 - Payload Loader: lista payloads locales/remotos y los envía al BinLoader de GoldHEN en el puerto `9090`.
 - Ventilador y Actualizaciones FW: selección controlada de payloads compatibles por firmware.
-- Store: catálogo privado de paquetes autorizados; reutiliza la IP del Manager, detecta la PS4 por radar, prueba RPI Nova (`12801`) u Original (`12800`) y envía un PKG directo al instalador compatible sin guardarlo en el teléfono. Antes del envío valida el enlace, permite una URL alternativa y registra el diagnóstico local de RPI.
+- Store: catálogo de paquetes autorizados y envío directo al instalador compatible de la PS4.
 
 ## Requisitos
 
 - Android con Termux.
-- Alternativa PC: PHP CLI con extensiones cURL y ZIP habilitadas; Git y Node.js son útiles para desarrollo/verificación.
+- Windows: paquete portable de PC en `GoldHenPC-Release-v1.0`; extrae el ZIP y ejecuta `Iniciar-GoldHenManager.bat`.
 - Una PS4 con GoldHEN y servidor FTP activo, normalmente en el puerto `2121`.
 - Ambos dispositivos conectados a la misma red local.
 - Permiso de almacenamiento para Termux.
@@ -40,7 +40,7 @@ curl -sL https://raw.githubusercontent.com/AJfiles/GoldHenManagerAJ/main/goldhen
 
 El instalador solicita acceso al almacenamiento, instala Git, PHP, PHP GD, ZIP/UNZIP y Termux API, descarga el proyecto en `$HOME/GoldHenManagerAJ`, crea `/sdcard/GoldHenManager/user` y configura los comandos locales. La salida usa un spinner silencioso. Si un mirror de Termux está desincronizado, limpia los índices y prueba automáticamente el mirror oficial y un segundo mirror estable antes de detenerse.
 
-Al finalizar, el instalador abre GoldHen Manager automáticamente. Para próximas sesiones basta con escribir `goldhen`; la terminal mostrará la URL exacta cuando el servidor esté listo. El servidor queda en segundo plano y los registros se guardan en `~/.goldhen-server.log`, por lo que la consola sigue disponible. Al abrir Termux de nuevo se ofrece un inicio automático con 15 segundos de espera: Enter abre de inmediato y otra tecla cancela. El servidor principal escucha en la red local para que la PS4 descargue PKG por RPI; solo el endpoint que valida cada archivo `.pkg` los entrega. Usa esta función solo en una Wi-Fi de confianza. El administrador privado se abre localmente con `store-admin` y no se muestra en la interfaz pública.
+Al finalizar, el instalador abre GoldHen Manager automáticamente. Para próximas sesiones basta con escribir `goldhen`; la terminal mostrará la URL exacta cuando el servidor esté listo. El servidor queda en segundo plano y los registros se guardan en `~/.goldhen-server.log`, por lo que la consola sigue disponible. Al abrir Termux de nuevo se ofrece un inicio automático con 15 segundos de espera: Enter abre de inmediato y otra tecla cancela. El servidor principal escucha en la red local para que la PS4 descargue PKG por RPI; solo el endpoint que valida cada archivo `.pkg` los entrega. Usa esta función solo en una Wi-Fi de confianza.
 
 Para evitar incompatibilidades de paquetes, se recomienda Termux desde [F-Droid](https://f-droid.org/packages/com.termux/) o GitHub oficial, no la versión obsoleta de Play Store. En instalaciones posteriores el script detecta componentes ya instalados y omite la actualización de paquetes innecesaria.
 
@@ -82,19 +82,14 @@ El módulo Plugins realiza una copia local de `plugins.ini` antes de editarlo. P
 - Interfaz modular: `modulos/`.
 - Controladores frontend: `js/`.
 
-### Ejecutar en un PC con Windows
+### Edición portable para Windows
 
-Instala PHP CLI y confirma que `php -m` incluya `curl` y `zip`. Desde PowerShell,
-en la carpeta del proyecto, inicia el servidor:
-
-```powershell
-php -S 0.0.0.0:8080 -t . server-router.php
-```
-
-Abre `http://127.0.0.1:8080` en ese PC. Para usar RPI desde la PS4, PC y consola
-deben estar en la misma red local y el firewall privado debe permitir el puerto
-8080. No publiques este servidor en Internet. `node --check js/app.js` permite
-revisar sintaxis JavaScript; `php -l ruta.php` revisa sintaxis PHP.
+Descarga `GoldHenPC-Release-v1.0.zip` desde Releases, descomprímelo y ejecuta
+`Iniciar-GoldHenManager.bat`. El paquete incluye el runtime PHP portable y abre
+el navegador al iniciar el servidor. No requiere configurar PHP ni agregarlo al
+PATH. PHP puede necesitar Microsoft Visual C++ Redistributable 2015–2022 x86 si
+ese componente no está instalado; el paquete indica el enlace oficial. Windows
+puede solicitar permiso para permitir RPI en la red privada.
 
 ### Aplicación Android
 
@@ -104,53 +99,23 @@ autónomo hay que empaquetar también el backend PHP y sus extensiones, o migrar
 las API que usan FTP, sockets y archivos a un backend Android nativo. Un simple
 envoltorio WebView no sustituye esas API.
 
-Consulta [GUIA_DE_USO.md](GUIA_DE_USO.md) para un recorrido operativo y [AUDITORIA_TECNICA.txt](AUDITORIA_TECNICA.txt) para el estado de revisión de archivos.
-
-## Administración privada de Store
-
-El catálogo de la tienda está separado de la aplicación de usuarios en
-`store/data/catalogo.json`. Como mantenedor, tras actualizar o instalar el
-proyecto, abre Termux y escribe:
-
-```bash
-store-admin
-```
-
-El comando abre un panel local en `http://127.0.0.1:8081`; no queda expuesto a
-otros dispositivos de la red. Cada inicio genera una credencial temporal y el
-navegador se abre automáticamente. Desde allí puedes añadir, editar, comprobar
-o retirar elementos, subir una carátula y descargar un ZIP de cambios.
-
-El ZIP incluye `store/data/catalogo.json`, las carátulas que se modificaron y
-`store-changes.json`. Este último registra las carátulas eliminadas para que
-puedas retirarlas también del repositorio. Sube el contenido del ZIP a la raíz
-del proyecto respetando las rutas indicadas. Los usuarios verán el catálogo al
-usar la tienda y pulsar **Actualizar**.
-
-Solo se aceptan enlaces `http(s)` que resuelvan a archivos `.pkg` y se exige que
-el mantenedor confirme tener autorización para publicar el contenido. La
-disponibilidad de servicios externos puede cambiar sin previo aviso.
-
-### Diagnóstico de RPI y enlaces remotos
-
-Antes de enviar un paquete, la Store comprueba el enlace con `HEAD` y, si el
-servidor no permite ese método, con una descarga de un byte. RPI recibe la URL
-directa mediante `POST /api/install`; el intento usa un límite de 30 segundos
-y queda registrado en `user/logs/rpi.log` con la URL, el payload y la respuesta.
-Si HTTPS no supera la comprobación, se prueba HTTP; si HTTPS supera la prueba
-pero RPI lo rechaza, HTTP se valida y se intenta como último recurso.
-
-Un HTTP 500 de RPI significa que la consola recibió la orden pero no pudo
-preparar la descarga desde el proveedor. Comprueba la URL mostrada en el
-mensaje desde el navegador de la PS4 y mantén RPI abierto y en primer plano.
-Para cada elemento puedes guardar **Enlace alternativo**: se prueba si la URL
-principal falla. Los parámetros de consulta firmados (`?…`) se conservan, pues
-quitarlos puede invalidar enlaces temporales de algunos proveedores.
-En la ficha pública, **Ver URL para probar en PS4** muestra la URL principal
-completa para copiarla al navegador de la consola.
+Consulta [GUIA_DE_USO.md](GUIA_DE_USO.md) para un recorrido operativo.
 
 ## Limitaciones conocidas
 
 - El FTP de GoldHEN no proporciona telemetría de CPU, GPU o temperatura.
 - Una PWA no puede garantizar cargas FTP largas en segundo plano cuando Android la suspende.
 - La compatibilidad de rutas y permisos depende de la versión de GoldHEN y del juego.
+
+## ⚠️ ADVERTENCIA LEGAL Y DE SEGURIDAD
+
+Este software se proporciona "tal cual", sin garantías y es de código abierto.
+
+El mantenedor "AJ" no se responsabiliza por daños a tu PS4, pérdida de datos o
+violación de términos de servicio.
+
+Usar payloads de firmware o Ventilador puede brickear tu consola si no se usan
+como debe ser. Úsalo bajo tu propio riesgo.
+
+Se recomienda tener una copia de seguridad del firmware original antes de
+aplicar cualquier parche.
