@@ -52,7 +52,7 @@ function guardar_db($archivo, $data) { file_put_contents($archivo, json_encode($
 // ==========================================
 // FUNCIONES FTP
 // ==========================================
-function ftp_list_files($ip, $port, $path) {
+function ghm_afr_ftp_list_files($ip, $port, $path) {
     $ch = curl_init("ftp://$ip:$port$path/");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "LIST");
@@ -74,7 +74,7 @@ function ftp_list_files($ip, $port, $path) {
     }
     return $files;
 }
-function ftp_upload($ip, $port, $remote_path, $local_path) {
+function ghm_afr_ftp_upload($ip, $port, $remote_path, $local_path) {
     $fp = fopen($local_path, 'r');
     $ch = curl_init("ftp://$ip:$port$remote_path");
     curl_setopt($ch, CURLOPT_UPLOAD, 1);
@@ -85,28 +85,28 @@ function ftp_upload($ip, $port, $remote_path, $local_path) {
     $res = curl_exec($ch);
     curl_close($ch); fclose($fp); return $res;
 }
-function ftp_mkdir($ip, $port, $path) {
+function ghm_afr_ftp_mkdir($ip, $port, $path) {
     $ch = curl_init("ftp://$ip:$port/");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POSTQUOTE, ["MKD $path"]);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     curl_exec($ch); curl_close($ch);
 }
-function ftp_rename($ip, $port, $old_path, $new_path) {
+function ghm_afr_ftp_rename($ip, $port, $old_path, $new_path) {
     $ch = curl_init("ftp://$ip:$port/");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POSTQUOTE, ["RNFR $old_path", "RNTO $new_path"]);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     $res = curl_exec($ch); curl_close($ch); return $res;
 }
-function ftp_delete($ip, $port, $path) {
+function ghm_afr_ftp_delete($ip, $port, $path) {
     $ch = curl_init("ftp://$ip:$port/");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POSTQUOTE, ["DELE $path"]);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     curl_exec($ch); curl_close($ch);
 }
-function ftp_download($ip, $port, $remote_file, $local_file) {
+function ghm_afr_ftp_download($ip, $port, $remote_file, $local_file) {
     $ch = curl_init("ftp://$ip:$port$remote_file");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 15);
@@ -152,8 +152,8 @@ if ($action === 'finalize_mod') {
     $mod_id = $_POST['mod_id'];
     $hashes = json_decode($_POST['file_hashes'], true);
 
-    ftp_mkdir($host_ip, $port, "/data/GoldHEN/AFR");
-    ftp_mkdir($host_ip, $port, "/data/GoldHEN/AFR/$cusa");
+    ghm_afr_ftp_mkdir($host_ip, $port, "/data/GoldHEN/AFR");
+    ghm_afr_ftp_mkdir($host_ip, $port, "/data/GoldHEN/AFR/$cusa");
 
     $archivos_off = [];
     $fallo_ftp = false;
@@ -163,7 +163,7 @@ if ($action === 'finalize_mod') {
             $filename_off = "{$mod_id}_{$i}.off";
             $remote_path = "/data/GoldHEN/AFR/$cusa/$filename_off";
             
-            if (ftp_upload($host_ip, $port, $remote_path, $temp_path)) { 
+            if (ghm_afr_ftp_upload($host_ip, $port, $remote_path, $temp_path)) { 
                 $archivos_off[] = $filename_off; 
                 @unlink($temp_path); // 🔥 SOLO BORRA SI SUBIÓ BIEN A LA PS4
             } else {
@@ -183,7 +183,7 @@ if ($action === 'finalize_mod') {
 if ($action === 'calibrar_motor') {
     $db = obtener_db($db_file);
     $sandbox_path = "/mnt/sandbox/pfsmnt/$cusa-patch0";
-    $archivos_base = ftp_list_files($host_ip, $port, $sandbox_path);
+    $archivos_base = ghm_afr_ftp_list_files($host_ip, $port, $sandbox_path);
     if (empty($archivos_base)) { ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'JUEGO_CERRADO']); exit; }
 
     $max_slot = 0;
@@ -213,7 +213,7 @@ if ($action === 'toggle_mod') {
     if (!$is_turning_on) {
         foreach ($target_mod['archivos_pak'] as $index => $pak_name) {
             $off_name = $target_mod['archivos_off'][$index];
-            ftp_rename($host_ip, $port, "/data/GoldHEN/AFR/$cusa/$pak_name", "/data/GoldHEN/AFR/$cusa/$off_name");
+            ghm_afr_ftp_rename($host_ip, $port, "/data/GoldHEN/AFR/$cusa/$pak_name", "/data/GoldHEN/AFR/$cusa/$off_name");
         }
         $target_mod['activo'] = false; $target_mod['archivos_pak'] = [];
     } 
@@ -224,7 +224,7 @@ if ($action === 'toggle_mod') {
                 if ($other_mod['id'] !== $mod_id && $other_mod['id_grupo'] === $target_mod['id_grupo'] && $other_mod['tipo'] === 'variante' && $other_mod['activo']) {
                     foreach ($other_mod['archivos_pak'] as $i => $pak_name) {
                         $off_name = $other_mod['archivos_off'][$i];
-                        ftp_rename($host_ip, $port, "/data/GoldHEN/AFR/$cusa/$pak_name", "/data/GoldHEN/AFR/$cusa/$off_name");
+                        ghm_afr_ftp_rename($host_ip, $port, "/data/GoldHEN/AFR/$cusa/$pak_name", "/data/GoldHEN/AFR/$cusa/$off_name");
                         if (preg_match('/patch_(\d+)\.pak/i', $pak_name, $matches)) { $slot_heredado = intval($matches[1]); }
                     }
                     $other_mod['activo'] = false; $other_mod['archivos_pak'] = [];
@@ -233,7 +233,7 @@ if ($action === 'toggle_mod') {
         }
         if ($slot_heredado === null) {
             $max_slot = $db['calibracion_slot'];
-            $archivos_afr = ftp_list_files($host_ip, $port, "/data/GoldHEN/AFR/$cusa");
+            $archivos_afr = ghm_afr_ftp_list_files($host_ip, $port, "/data/GoldHEN/AFR/$cusa");
             if (is_array($archivos_afr)) {
                 foreach ($archivos_afr as $file) {
                     if (preg_match('/patch_(\d+)\.pak/i', $file, $matches)) {
@@ -249,7 +249,7 @@ if ($action === 'toggle_mod') {
             $slot_final = $slot_heredado + $index; 
             $slot_str = str_pad($slot_final, 3, "0", STR_PAD_LEFT);
             $pak_name = "re_chunk_000.pak.patch_$slot_str.pak"; 
-            ftp_rename($host_ip, $port, "/data/GoldHEN/AFR/$cusa/$off_name", "/data/GoldHEN/AFR/$cusa/$pak_name");
+            ghm_afr_ftp_rename($host_ip, $port, "/data/GoldHEN/AFR/$cusa/$off_name", "/data/GoldHEN/AFR/$cusa/$pak_name");
             $nuevos_paks[] = $pak_name;
         }
         $target_mod['activo'] = true; $target_mod['archivos_pak'] = $nuevos_paks;
@@ -268,7 +268,7 @@ if ($action === 'sync_db') {
 if ($action === 'delete_mod_files') {
     $archivos = json_decode($_POST['archivos'], true);
     if (is_array($archivos)) {
-        foreach ($archivos as $archivo) { ftp_delete($host_ip, $port, "/data/GoldHEN/AFR/$cusa/$archivo"); }
+        foreach ($archivos as $archivo) { ghm_afr_ftp_delete($host_ip, $port, "/data/GoldHEN/AFR/$cusa/$archivo"); }
     }
     ob_end_clean(); echo json_encode(['status' => 'success']); exit;
 }
@@ -285,13 +285,13 @@ if ($action === 'backup_plugins') {
     $zip->open($zip_path, ZipArchive::CREATE | ZipArchive::OVERWRITE);
     
     $ini_local = "$cache_afr/plugins.ini";
-    if (ftp_download($host_ip, $port, '/data/GoldHEN/plugins.ini', $ini_local)) { $zip->addFile($ini_local, 'plugins.ini'); }
+    if (ghm_afr_ftp_download($host_ip, $port, '/data/GoldHEN/plugins.ini', $ini_local)) { $zip->addFile($ini_local, 'plugins.ini'); }
 
-    $plugins = ftp_list_files($host_ip, $port, '/data/GoldHEN/plugins');
+    $plugins = ghm_afr_ftp_list_files($host_ip, $port, '/data/GoldHEN/plugins');
     $descargados = 0;
     foreach ($plugins as $plugin) {
         $local_file = "$cache_afr/$plugin";
-        if (ftp_download($host_ip, $port, "/data/GoldHEN/plugins/$plugin", $local_file)) {
+        if (ghm_afr_ftp_download($host_ip, $port, "/data/GoldHEN/plugins/$plugin", $local_file)) {
             $zip->addFile($local_file, "plugins/$plugin");
             $descargados++;
         }
@@ -317,11 +317,11 @@ if ($action === 'install_plugins') {
         $zip->extractTo($extract_path);
         $zip->close();
 
-        if (file_exists("$extract_path/plugins.ini")) { ftp_upload($host_ip, $port, "/data/GoldHEN/plugins.ini", "$extract_path/plugins.ini"); }
-        ftp_mkdir($host_ip, $port, "/data/GoldHEN/plugins");
+        if (file_exists("$extract_path/plugins.ini")) { ghm_afr_ftp_upload($host_ip, $port, "/data/GoldHEN/plugins.ini", "$extract_path/plugins.ini"); }
+        ghm_afr_ftp_mkdir($host_ip, $port, "/data/GoldHEN/plugins");
         if (is_dir("$extract_path/plugins")) {
             foreach (glob("$extract_path/plugins/*") as $file) {
-                if (is_file($file)) { ftp_upload($host_ip, $port, "/data/GoldHEN/plugins/" . basename($file), $file); }
+                if (is_file($file)) { ghm_afr_ftp_upload($host_ip, $port, "/data/GoldHEN/plugins/" . basename($file), $file); }
             }
         }
 

@@ -58,6 +58,8 @@ const introNamesMap = {
 
 document.addEventListener("DOMContentLoaded", () => {
     cargarConfiguracionesLocales();
+    cambiarDisenoDispositivo(localStorage.getItem('cfg_device_layout') || 'auto');
+    window.addEventListener('resize', aplicarDisenoDispositivo);
     aplicarPreferenciasDeAccesibilidad();
     configurarEventosDashboard();
     verificarRadarInicial();
@@ -70,6 +72,20 @@ document.addEventListener("DOMContentLoaded", () => {
         if (wrap) wrap.style.display = 'none';
     }
 });
+
+function aplicarDisenoDispositivo() {
+    const mode = localStorage.getItem('cfg_device_layout') || 'auto';
+    const desktop = mode === 'desktop' || (mode === 'auto' && window.matchMedia('(min-width: 900px) and (pointer: fine)').matches);
+    document.body.classList.toggle('layout-desktop', desktop);
+}
+
+function cambiarDisenoDispositivo(mode) {
+    const valid = ['auto', 'mobile', 'desktop'].includes(mode) ? mode : 'auto';
+    localStorage.setItem('cfg_device_layout', valid);
+    aplicarDisenoDispositivo();
+    const select = document.getElementById('cfg-device-layout');
+    if (select && select.value !== valid) select.value = valid;
+}
 
 function aplicarPreferenciasDeAccesibilidad() {
     const fuente = Math.max(85, Math.min(130, parseInt(localStorage.getItem('cfg_tamano_texto') || '100', 10)));
@@ -170,6 +186,8 @@ function inicializarValoresInterfazAjustes() {
         if (fontSelect) fontSelect.value = localStorage.getItem('cfg_app_font') || 'outfit';
         const verticalToggle = document.getElementById('cfg-launcher-vertical');
         if (verticalToggle) verticalToggle.checked = localStorage.getItem('cfg_launcher_vertical') === 'true';
+        const deviceLayout = document.getElementById('cfg-device-layout');
+        if (deviceLayout) deviceLayout.value = localStorage.getItem('cfg_device_layout') || 'auto';
 
         const selectWall = document.getElementById('custom-select-label');
         if (selectWall) {

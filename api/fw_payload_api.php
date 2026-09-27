@@ -14,6 +14,7 @@ $map = [
 if (!isset($map[$action][$fw])) fw_reply(['status'=>'error','message'=>'Firmware no compatible con esta sección.']);
 $name = $_POST['name'] ?? '';
 if (!in_array($name, $map[$action][$fw], true)) fw_reply(['status'=>'error','message'=>'Payload no disponible para esta versión.']);
+if ($action === 'updates' && stripos($name, 'enable') === 0 && (($_POST['confirm_enable_warning'] ?? '') !== 'SI' || ($_POST['confirm_enable_firmware'] ?? '') !== $fw || ($_POST['confirm_enable'] ?? '') !== 'ACTIVAR ACTUALIZACIONES')) fw_reply(['status'=>'error','message'=>'Se requiere completar las tres confirmaciones para permitir actualizaciones.']);
 $sub = $action === 'coolers' ? '/Fan/' : '/';
 $file = realpath($base . '/' . $fw . $sub . $name);
 if (!$base || !$file || strpos($file, $base . DIRECTORY_SEPARATOR) !== 0 || !is_file($file)) fw_reply(['status'=>'error','message'=>'No se encontró el payload.']);

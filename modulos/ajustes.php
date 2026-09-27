@@ -116,6 +116,10 @@
         <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
             <div class="flex items-center gap-2 border-b border-white/5 pb-2"><i class="fas fa-grip text-cyan-300"></i><span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Vista del menú principal</span></div>
             <label class="flex items-center justify-between gap-3"><span class="text-[10px] text-gray-300">Vista vertical tipo lista</span><input id="cfg-launcher-vertical" type="checkbox" class="h-5 w-5 accent-cyan-500" onchange="alternarVistaLauncher(this.checked)"></label>
+            <label class="flex flex-col gap-2 text-[9px] text-gray-300">Diseño del dispositivo
+                <select id="cfg-device-layout" onchange="cambiarDisenoDispositivo(this.value)" class="rounded-lg border border-white/10 bg-[#111827] px-3 py-2 text-[9px] text-white"><option value="auto">Automático</option><option value="mobile">Teléfono / Android</option><option value="desktop">PC</option></select>
+            </label>
+            <p class="text-[8px] text-gray-500">Automático adapta la distribución al tamaño de pantalla y al tipo de entrada. Puedes fijar el diseño manualmente.</p>
         </div>
 
         <div class="w-full bg-[#0a0f1a] border border-white/5 rounded-[1.5rem] p-4 shadow-lg flex flex-col gap-3">
@@ -158,6 +162,11 @@
             <p id="update-status" class="text-[9px] text-gray-500 font-mono">Comprueba cambios publicados en GitHub.</p>
             <div class="grid grid-cols-2 gap-2"><button onclick="comprobarActualizacion()" class="py-3 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-wider text-gray-300"><i class="fas fa-rotate-right"></i> Verificar</button><button id="btn-aplicar-update" onclick="aplicarActualizacion()" disabled class="py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black uppercase tracking-wider text-emerald-400 opacity-40">Actualizar</button></div>
             <button onclick="mostrarInstalacionPWA()" class="py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-[9px] font-black uppercase tracking-wider text-cyan-400"><i class="fas fa-mobile-screen-button"></i> Instalar app en el teléfono</button>
+        </div>
+
+        <div class="w-full rounded-[1.5rem] border border-amber-500/25 bg-amber-950/20 p-4 shadow-lg">
+            <h3 class="mb-2 text-[10px] font-black uppercase tracking-wider text-amber-300">⚠️ Advertencia legal y de seguridad</h3>
+            <p class="text-[9px] leading-relaxed text-gray-300">Este software se proporciona "tal cual", sin garantías y es de código abierto. El mantenedor "AJ" no se responsabiliza por daños a tu PS4, pérdida de datos o violación de términos de servicio. Usar payloads de firmware o Ventilador puede brickear tu consola si no se usan como debe ser. Úsalo bajo tu propio riesgo. Se recomienda que los usuarios tengan una copia de seguridad del firmware original antes de aplicar cualquier parche.</p>
         </div>
 
     </div>
