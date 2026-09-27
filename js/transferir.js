@@ -98,7 +98,7 @@ function cambiarOrigenRPI() {
     const custom = document.getElementById('rpi-custom-path');
     if (custom) {
         custom.classList.toggle('hidden', source !== 'custom');
-        if (source === 'custom') custom.focus();
+        if (source === 'custom') document.getElementById('rpi-browser-picker')?.click();
     }
     const customInput = document.getElementById('rpi-custom-path');
     if (customInput) customInput.onkeydown = event => { if (event.key === 'Enter') escanearCarpetaRPI(); };
@@ -125,30 +125,25 @@ async function detectarPS4ParaRPI() {
     const portInput = document.getElementById('rpi-install-port');
     if (status) status.textContent = 'Buscando PS4 en la red…';
     try {
-        const portFTP = parseInt(localStorage.getItem('sebas_port_libre') || '2121', 10);
         if (portInput && !['12800', '12801'].includes(portInput.value)) portInput.value = '12800';
         const selectedRpiPort = parseInt(portInput?.value || '12800', 10);
         const scan = async port => {
-            const response = await fetch(`api/radar_api.php?timeout=1200&port=${port}&max_ips=254`);
+            const response = await fetch(`api/radar_api.php?timeout=2500&port=${port}`);
             const result = await response.json();
             if (!response.ok || result.status !== 'success') throw new Error(result.message || 'No se pudo explorar la red.');
             return result;
         };
-        let data = await scan(selectedRpiPort);
-        const foundByRpi = data.ps4_ips?.length > 0;
-        if (!foundByRpi) {
-            if (status) status.textContent = 'RPI no respondió; buscando PS4 por FTP…';
-            data = await scan(portFTP);
-        }
+        if (status) status.textContent = 'Escaneando interfaces LAN y puertos GoldHEN…';
+        const data = await scan(selectedRpiPort);
         if (!data.ps4_ips?.length) throw new Error(`No se encontró PS4 en ${data.segmento}. Abre Package Installer; también puedes indicar la IP manualmente.`);
         let ip = data.ps4_ips[0];
-        let rpiCheck = foundByRpi ? { ok: true } : null;
-        if (!foundByRpi) {
-            for (const candidate of data.ps4_ips) {
-                const check = await comprobarPuertoRPI(candidate, selectedRpiPort);
-                if (check.ok) { ip = candidate; rpiCheck = check; break; }
-                if (!rpiCheck) rpiCheck = check;
-            }
+        let rpiCheck = null;
+        for (const candidate of data.ps4_ips) {
+            const device = data.devices?.find(item => item.ip === candidate);
+            if (device?.ports?.includes(selectedRpiPort)) { ip = candidate; rpiCheck = { ok: true }; break; }
+            const check = await comprobarPuertoRPI(candidate, selectedRpiPort);
+            if (check.ok) { ip = candidate; rpiCheck = check; break; }
+            if (!rpiCheck) rpiCheck = check;
         }
         if (ipInput) ipInput.value = ip;
         if (portInput && !['12800', '12801'].includes(portInput.value)) portInput.value = '12800';
@@ -158,13 +153,38 @@ async function detectarPS4ParaRPI() {
         if (mainIp) mainIp.value = ip;
         await detectarIPCelular();
         rpiCheck = rpiCheck || await comprobarPuertoRPI(ip, selectedRpiPort);
-        if (status) status.textContent = rpiCheck.ok ? `RPI detectado: ${ip}` : `FTP detectado: ${ip} · ${rpiCheck.message}`;
+        if (status) status.textContent = rpiCheck?.ok ? `RPI detectado: ${ip}:${selectedRpiPort}` : `GoldHEN detectado: ${ip} · ${rpiCheck?.message || 'El puerto RPI no respondió'}`;
         window.ps5Notification(rpiCheck.ok ? 'RADAR PS4' : 'RPI NO DISPONIBLE', rpiCheck.ok ? `RPI respondió en ${ip}:${selectedRpiPort}.` : `FTP detectado en ${ip}, pero ${rpiCheck.message}`, rpiCheck.ok ? 'fa-satellite-dish' : 'fa-triangle-exclamation');
     } catch (error) {
         if (status) status.textContent = error.message || 'Radar no disponible';
         window.ps5Notification('RADAR PS4', error.message || 'No se encontró la consola.', 'fa-triangle-exclamation');
     }
 }
+
+async function importarPKGDesdeArchivos(files) {
+    const selected = Array.from(files || []).filter(file => /\.pkg$/i.test(file.name));
+    if (!selected.length) return;
+    const container = document.getElementById('rpi-list-container');
+    if (container) container.textContent = 'Copiando archivos seleccionados a user/pkgs_rpi…';
+    try {
+        for (const file of selected) {
+            const form = new FormData();
+            form.append('action', 'import_browser_pkg');
+            form.append('pkg', file, file.name);
+            const response = await fetch('api/transferir_api.php', { method: 'POST', body: form });
+            const result = await response.json();
+            if (!response.ok || result.status !== 'success') throw new Error(result.message || `No se pudo importar ${file.name}`);
+        }
+        const source = document.getElementById('rpi-package-source');
+        if (source) source.value = 'pkgs_rpi';
+        await escanearCarpetaRPI();
+    } catch (error) {
+        window.ps5Notification('IMPORTAR PKG', error.message || 'No se pudo importar el archivo.', 'fa-triangle-exclamation');
+        if (container) container.textContent = error.message || 'No se pudo importar el archivo.';
+    }
+}
+
+window.importarPKGDesdeArchivos = importarPKGDesdeArchivos;
 
 async function escanearCarpetaRPI() {
     const container = document.getElementById('rpi-list-container');

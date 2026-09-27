@@ -74,9 +74,10 @@
                 <option value="pkgs_rpi">Carpeta del Manager · user/pkgs_rpi</option>
                 <option value="downloads">Descargas del teléfono o PC</option>
                 <option value="both">Ambas carpetas</option>
-                <option value="custom">Elegir otra carpeta</option>
+                <option value="custom">Elegir PKG con Archivos…</option>
             </select>
-            <input id="rpi-custom-path" type="text" autocomplete="off" placeholder="Ruta completa de la carpeta con PKG" class="hidden w-full bg-black/40 border border-white/10 rounded-xl px-3 py-3 text-[11px] font-mono text-white outline-none focus:border-cyan-500/50">
+            <input id="rpi-browser-picker" type="file" accept=".pkg,application/octet-stream" multiple class="hidden" onchange="importarPKGDesdeArchivos(this.files); this.value='';">
+            <p class="text-[9px] text-gray-500">Elige archivos PKG desde el selector del teléfono. Se copiarán a la carpeta del Manager para que la PS4 pueda descargarlos.</p>
             <div class="flex items-center justify-between px-1">
                 <span class="text-[10px] font-black tracking-widest uppercase text-gray-400">PKG disponibles</span>
                 <button onclick="escanearCarpetaRPI()" class="text-[10px] text-cyan-400 font-bold uppercase active:scale-95"><i class="fa-solid fa-sync-alt mr-1"></i> Escanear</button>

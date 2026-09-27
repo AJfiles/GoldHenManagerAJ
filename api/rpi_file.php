@@ -11,7 +11,8 @@ if (!preg_match('/^[a-f0-9]{32,64}$/', $id)) {
     exit;
 }
 
-$registry_file = __DIR__ . '/../user/cache/rpi_packages_registry.json';
+$project = realpath(__DIR__ . '/..') ?: __DIR__;
+$registry_file = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'ghm_rpi_' . substr(hash('sha256', $project), 0, 16) . '.json';
 $registry = is_file($registry_file) ? json_decode((string)@file_get_contents($registry_file), true) : null;
 $entry = $registry['files'][$id] ?? null;
 $path = is_array($entry) ? realpath($entry['path'] ?? '') : false;

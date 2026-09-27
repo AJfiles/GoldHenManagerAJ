@@ -140,6 +140,33 @@ if ($action === 'check_exists') {
 // =======================================================
 // MODO 1: ESCANEAR JUEGOS LOCALES Y AUTO-RENOMBRAR (RPI)
 // =======================================================
+if ($action === 'import_browser_pkg') {
+    if (!in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)) {
+        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'La importación desde Archivos solo está disponible en el dispositivo del Manager.']); exit;
+    }
+    $upload = $_FILES['pkg'] ?? null;
+    if (!is_array($upload) || ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file($upload['tmp_name'] ?? '')) {
+        $code = (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE);
+        $message = $code === UPLOAD_ERR_INI_SIZE || $code === UPLOAD_ERR_FORM_SIZE
+            ? 'El PKG supera el límite de carga de PHP. Usa user/pkgs_rpi o Descargas.'
+            : 'No se pudo recibir el PKG desde el selector de archivos.';
+        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => $message]); exit;
+    }
+    $name = basename(str_replace('\\', '/', (string)($upload['name'] ?? '')));
+    if (!preg_match('/^[A-Za-z0-9._() -]+\.pkg$/i', $name)) {
+        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'El nombre del archivo PKG contiene caracteres no admitidos.']); exit;
+    }
+    $rpiDir = __DIR__ . '/../user/pkgs_rpi';
+    if (!is_dir($rpiDir) && !@mkdir($rpiDir, 0775, true) && !is_dir($rpiDir)) {
+        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'No se puede escribir en user/pkgs_rpi.']); exit;
+    }
+    $destination = $rpiDir . DIRECTORY_SEPARATOR . $name;
+    if (file_exists($destination)) $destination = $rpiDir . DIRECTORY_SEPARATOR . pathinfo($name, PATHINFO_FILENAME) . '_' . date('Ymd_His') . '.pkg';
+    if (!@move_uploaded_file($upload['tmp_name'], $destination)) {
+        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'No se pudo guardar el PKG. Comprueba el espacio libre y los permisos.']); exit;
+    }
+    ob_end_clean(); echo json_encode(['status' => 'success', 'name' => basename($destination), 'size' => (int)filesize($destination)]); exit;
+}
 if ($action === 'scan_local_pkgs') {
     $remote_addr = $_SERVER['REMOTE_ADDR'] ?? '';
     if (!in_array($remote_addr, ['127.0.0.1', '::1'], true)) {
@@ -177,9 +204,10 @@ if ($action === 'scan_local_pkgs') {
         ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'Elige una ubicación válida para buscar los PKG.']); exit;
     }
 
-    $cache_dir = __DIR__ . '/../user/cache';
-    if (!is_dir($cache_dir)) @mkdir($cache_dir, 0777, true);
-    $registry_file = $cache_dir . '/rpi_packages_registry.json';
+    // El índice contiene rutas locales y puede fallar en /sdcard/user/cache,
+    // cuyo acceso de escritura depende de los permisos compartidos de Android.
+    // El temporal privado de PHP sí es escribible y lo usan estas dos API.
+    $registry_file = rpiRegistryPath();
     $registry = ['files' => []];
     if (is_file($registry_file)) {
         $old_registry = json_decode((string)@file_get_contents($registry_file), true);
@@ -209,11 +237,17 @@ if ($action === 'scan_local_pkgs') {
         }
     }
     usort($lista, static function ($a, $b) { return strcasecmp($a['name'], $b['name']); });
-    if (@file_put_contents($registry_file, json_encode($registry, JSON_UNESCAPED_SLASHES), LOCK_EX) === false) {
-        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'No se pudo guardar el índice temporal de PKG.']); exit;
+    $jsonRegistry = json_encode($registry, JSON_UNESCAPED_SLASHES);
+    if ($jsonRegistry === false || @file_put_contents($registry_file, $jsonRegistry, LOCK_EX) === false) {
+        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'No se pudo crear el índice temporal de PKG en el directorio temporal de PHP. Comprueba que haya espacio disponible.']); exit;
     }
     ob_end_clean(); echo json_encode(['status' => 'success', 'data' => $lista]);
     exit;
+}
+
+function rpiRegistryPath(): string {
+    $project = realpath(__DIR__ . '/..') ?: __DIR__;
+    return rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'ghm_rpi_' . substr(hash('sha256', $project), 0, 16) . '.json';
 }
 // MODO 2: ORDEN AL REMOTE PACKAGE INSTALLER (PS4)
 // =======================================================
@@ -228,7 +262,7 @@ if ($action === 'rpi_install') {
     if (!filter_var($ps4_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || !filter_var($phone_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || !preg_match('/^[a-f0-9]{32,64}$/i', $file_id) || $server_port < 1 || $server_port > 65535 || !in_array($rpi_port, [12800, 12801], true)) {
         ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'IP, archivo o puerto no válido.']); exit;
     }
-    $registry_file = __DIR__ . '/../user/cache/rpi_packages_registry.json';
+    $registry_file = rpiRegistryPath();
     $registry = is_file($registry_file) ? json_decode((string)@file_get_contents($registry_file), true) : null;
     $entry = $registry['files'][$file_id] ?? null;
     $entry_path = is_array($entry) ? realpath($entry['path'] ?? '') : false;

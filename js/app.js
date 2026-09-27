@@ -601,13 +601,13 @@ async function lanzarRadarVentanaEmergente() {
 
         // Llamar al radar con timeout personalizado (250ms por defecto)
         // Podemos pasar un timeout mayor si la red es lenta (ej. 300ms)
-        const timeoutMs = 250;
+        const timeoutMs = 2500;
         let resRadar = await fetch(`api/radar_api.php?timeout=${timeoutMs}&port=${globalAppConfig.portFTP}`);
         let dataRadar = await resRadar.json();
 
         if (dataRadar && dataRadar.status === 'success') {
             if (subLabel) subLabel.innerText = `SCANNING.${dataRadar.segmento}`;
-            logTerm.innerHTML += `<p class="text-gray-500">Barriendo 254 IPs simultáneas en subred ${dataRadar.segmento} (Timeout ${timeoutMs}ms)...</p>`;
+            logTerm.innerHTML += `<p class="text-gray-500">Buscando servicios GoldHEN en ${dataRadar.segmento} (FTP, RPI y BinLoader)...</p>`;
             
             // Mostrar IP local detectada por el backend
             if (dataRadar.local_ip) {
@@ -619,7 +619,8 @@ async function lanzarRadarVentanaEmergente() {
             if (dataRadar.ps4_ips && dataRadar.ps4_ips.length > 0) {
                 if (galaxy) galaxy.classList.add('found');
                 let nuevaIP = dataRadar.ps4_ips[0];
-                logTerm.innerHTML += `<p class="text-white font-bold bg-emerald-950/50 px-1 border border-emerald-500/20">🎯 NUEVA CONSOLA HALLADA EN: ${nuevaIP}</p>`;
+                const puertos = dataRadar.devices?.find(device => device.ip === nuevaIP)?.ports || [];
+                logTerm.innerHTML += `<p class="text-white font-bold bg-emerald-950/50 px-1 border border-emerald-500/20">🎯 Dispositivo GoldHEN: ${nuevaIP} · puertos ${puertos.join(', ')}</p>`;
                 
                 globalAppConfig.ipConsola = nuevaIP;
                 localStorage.setItem('sebas_ip_final_libre', nuevaIP);
