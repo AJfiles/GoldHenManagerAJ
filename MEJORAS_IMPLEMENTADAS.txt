@@ -119,6 +119,29 @@ Prueba recomendada
 
 Actualización 4.0 y paquete PC 1.0
 ---------------------------------
+- Biblioteca añade reglas responsivas exclusivas para PC (tipografía, tarjetas,
+  espaciado y carrusel más grande); el CSS móvil conserva sus dimensiones.
+- El carrusel ahora responde a arrastre con mouse/táctil, rueda horizontal,
+  botones anterior/siguiente y flechas del teclado. Cuadrícula y tarjetas
+  reciben roles de teclado; Enter activa y Escape regresa al launcher.
+- Se conserva la vista de Biblioteca al cerrar/reabrir el módulo. Antes el
+  observador de la capa reiniciaba el carrusel cada vez que cambiaba su clase.
+- En PC sin preferencia de tamaño guardada, el tamaño de texto inicial pasa a
+  120%; en móvil sigue en 100%. La cuadrícula de Biblioteca amplía sus tarjetas
+  y etiquetas solamente bajo `layout-desktop`.
+- La sincronización automática de Biblioteca se limita a una ejecución cada
+  cinco minutos y una sincronización manual no lanza una segunda solicitud si
+  ya hay un escaneo de fondo activo. El estado de Biblioteca indica la
+  conexión y el avance de títulos incluso durante el escaneo silencioso.
+- La tarjeta de estado y los indicadores de sincronización también aumentan de
+  tamaño en escritorio. Se amplió el espacio de lectura y se añadieron botones
+  de navegación para que la vista 3D sea utilizable con mouse.
+- El borrado de capturas envía `DELE /ruta/archivo` sin comillas vía `QUOTE`,
+  coherente con el Explorador FTP y con el analizador de comandos de GoldHEN.
+  La prueba definitiva requiere una PS4, que no está conectada a este entorno.
+- La interfaz todavía no puede iniciar juegos por sí sola: GoldHEN no expone
+  actualmente un comando remoto de lanzamiento; requeriría un componente
+  residente compatible instalado en la consola.
 - Ventilador y Actualizaciones FW muestran una advertencia obligatoria al
   primer acceso por navegador. La aceptación queda guardada por módulo; cerrar
   o rechazar la advertencia no habilita la opción.
@@ -135,7 +158,12 @@ Actualización 4.0 y paquete PC 1.0
   `store/admin`, scripts de mantenedor ni datos locales de `user/`.
 - `Iniciar-GoldHenManager.bat` usa `server-router.php`, comprueba puerto y
   disponibilidad HTTP y abre el navegador cuando el servidor responde. El
-  acceso RPI puede requerir autorización de Windows Firewall en red privada.
+  acceso RPI puede requerir autorización de Windows Firewall privado. PHP abre
+  en una ventana visible para que los errores de arranque no queden ocultos.
+- El launcher normaliza la ruta raíz sin barra final para no escapar la comilla
+  de cierre en Windows, y usa `start ""` con título vacío antes de los
+  argumentos. Se comprobó el `.bat` real desde una carpeta extraída del ZIP:
+  abrió el servidor en 8080 y la portada respondió HTTP 200.
 - La compilación PHP disponible incluye FTP y detectó helpers AFR con nombres
   que colisionaban con funciones internas de PHP. Se renombraron con prefijo
   `ghm_afr_`.
@@ -373,18 +401,17 @@ Actualización 4.0 — módulos, estabilidad y organización
 - Volver desde el Explorador fuerza el launcher; la flecha superior conserva
   su navegación de carpetas. El conteo de capturas en la vista 3D usa debounce
   y caché temporal para reducir llamadas al servidor durante el desplazamiento.
-- El borrado de capturas ahora solicita la eliminación con `POSTQUOTE` después
-  de que libcurl cambie al directorio de la foto. El error 550 depende de la
-  implementación FTP y permisos de la PS4; debe confirmarse en la consola.
+- Actualización posterior: la eliminación usa `QUOTE` con la ruta completa y
+  sin comillas (`DELE /user/av_contents/photo/...`), porque GoldHEN rechazó la
+  forma anterior con comillas. Requiere confirmar el resultado en una PS4.
 - La interfaz, README, manifest y lanzador señalan la versión 4.0.
 
 Validación disponible
 --------------------
 - Se verificó sintaxis de los 12 archivos JavaScript con Node.js: correcto.
-- No se pudo validar sintaxis PHP ni ejecutar Termux/FTP/RPI/BinLoader porque
-  PHP y Bash no están disponibles en el entorno y no hay PS4 conectada. La
-  carpeta entregada tampoco contiene metadatos `.git`, así que no se pudo
-  consultar estado/diff del repositorio.
+- Validación actual: `php -l` pasó en los 84 archivos PHP usando el runtime
+  incluido en el paquete PC. No hay PS4 conectada para probar FTP/RPI/BinLoader;
+  esa validación sigue pendiente en hardware.
 - Coolers y Actualizaciones FW necesitan confirmación en una PS4 compatible.
   Antes de distribuir, probar primero el firmware seleccionado y un envío
   controlado por BinLoader; el análisis estático no confirma payloads.
