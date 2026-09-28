@@ -574,7 +574,7 @@ async function lanzarRadarVentanaEmergente() {
     modal.classList.remove('hidden');
     setTimeout(() => { modal.classList.add('opacity-100'); if (caja) { caja.classList.remove('scale-90'); } }, 10);
 
-    logTerm.innerHTML = `<p class="text-emerald-600">[SYS] Iniciando Protocolo de Detección Zero-Delay...</p>`;
+    logTerm.innerHTML = `<p class="text-emerald-600">[SYS] Iniciando búsqueda de dispositivos GoldHEN en la LAN...</p>`;
     if (subLabel) subLabel.innerText = `ANALYZING.NETWORK`;
 
     try {
@@ -596,18 +596,16 @@ async function lanzarRadarVentanaEmergente() {
         }
 
         logTerm.innerHTML += `<p class="text-yellow-500">Caché offline o cambio de red detectado.</p>`;
-        logTerm.innerHTML += `<p class="text-emerald-400">Aislando nueva subred y lanzando Escaneo Masivo Paralelo...</p>`;
+        logTerm.innerHTML += `<p class="text-emerald-400">Buscando en las interfaces LAN activas; se prueban FTP, RPI/Nova y BinLoader.</p>`;
         logTerm.scrollTop = logTerm.scrollHeight;
 
-        // Llamar al radar con timeout personalizado (250ms por defecto)
-        // Podemos pasar un timeout mayor si la red es lenta (ej. 300ms)
-        const timeoutMs = 2500;
+        const timeoutMs = 8000;
         let resRadar = await fetch(`api/radar_api.php?timeout=${timeoutMs}&port=${globalAppConfig.portFTP}`);
         let dataRadar = await resRadar.json();
 
         if (dataRadar && dataRadar.status === 'success') {
             if (subLabel) subLabel.innerText = `SCANNING.${dataRadar.segmento}`;
-            logTerm.innerHTML += `<p class="text-gray-500">Buscando servicios GoldHEN en ${dataRadar.segmento} (FTP, RPI y BinLoader)...</p>`;
+            logTerm.innerHTML += `<p class="text-gray-500">Buscando servicios GoldHEN en ${dataRadar.segmento}: FTP, RPI/Nova y BinLoader.</p>`;
             
             // Mostrar IP local detectada por el backend
             if (dataRadar.local_ip) {
@@ -618,12 +616,29 @@ async function lanzarRadarVentanaEmergente() {
 
             if (dataRadar.ps4_ips && dataRadar.ps4_ips.length > 0) {
                 if (galaxy) galaxy.classList.add('found');
-                let nuevaIP = dataRadar.ps4_ips[0];
-                const puertos = dataRadar.devices?.find(device => device.ip === nuevaIP)?.ports || [];
+                const orderedDevices = (dataRadar.devices || []).slice().sort((a, b) => {
+                    const ftpA = (a.ports || []).some(port => [2121, 2122].includes(Number(port)));
+                    const ftpB = (b.ports || []).some(port => [2121, 2122].includes(Number(port)));
+                    return Number(ftpB) - Number(ftpA);
+                });
+                let nuevaIP = orderedDevices[0]?.ip || dataRadar.ps4_ips[0];
+                const detectedDevice = orderedDevices.find(device => device.ip === nuevaIP);
+                const puertos = detectedDevice?.ports || [];
+                const ftpPort = puertos.map(Number).find(port => [2121, 2122].includes(port));
                 logTerm.innerHTML += `<p class="text-white font-bold bg-emerald-950/50 px-1 border border-emerald-500/20">🎯 Dispositivo GoldHEN: ${nuevaIP} · puertos ${puertos.join(', ')}</p>`;
                 
                 globalAppConfig.ipConsola = nuevaIP;
                 localStorage.setItem('sebas_ip_final_libre', nuevaIP);
+                if (ftpPort) {
+                    globalAppConfig.portFTP = ftpPort;
+                    localStorage.setItem('sebas_port_libre', String(ftpPort));
+                    const inputPort = document.getElementById('ps-port-input');
+                    if (inputPort) inputPort.value = String(ftpPort);
+                    logTerm.innerHTML += `<p class="text-emerald-300">Puerto FTP detectado y guardado: ${ftpPort}</p>`;
+                } else {
+                    const rpiPort = puertos.map(Number).find(port => [12800, 12801].includes(port));
+                    if (rpiPort) logTerm.innerHTML += `<p class="text-emerald-300">RPI detectado en puerto ${rpiPort}; FTP no figura entre los servicios abiertos.</p>`;
+                }
                 const inputIP = document.getElementById('ps-ip-full-input');
                 if (inputIP) inputIP.value = nuevaIP;
 
@@ -631,7 +646,7 @@ async function lanzarRadarVentanaEmergente() {
                 // Cerrar automáticamente después de 2 segundos
                 radarTimeoutId = setTimeout(() => { abortarYEstabilizarRadar(); }, 2000);
             } else {
-                logTerm.innerHTML += `<p class="text-red-400">[ERROR] Ninguna PS4 respondió en la red ${dataRadar.segmento}.</p>`;
+                logTerm.innerHTML += `<p class="text-red-400">[ERROR] No respondió ningún servicio conocido en ${dataRadar.segmento}. Revisa que PS4 y teléfono estén en la misma LAN y que GoldHEN/Package Installer esté activo.</p>`;
                 if (subLabel) subLabel.innerText = `SCAN.FAILED`;
                 // Cerrar automáticamente después de 3 segundos
                 radarTimeoutId = setTimeout(() => { abortarYEstabilizarRadar(); }, 3000);

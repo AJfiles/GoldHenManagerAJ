@@ -140,40 +140,13 @@ if ($action === 'check_exists') {
 // =======================================================
 // MODO 1: ESCANEAR JUEGOS LOCALES Y AUTO-RENOMBRAR (RPI)
 // =======================================================
-if ($action === 'import_browser_pkg') {
-    if (!in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)) {
-        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'La importación desde Archivos solo está disponible en el dispositivo del Manager.']); exit;
-    }
-    $upload = $_FILES['pkg'] ?? null;
-    if (!is_array($upload) || ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file($upload['tmp_name'] ?? '')) {
-        $code = (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE);
-        $message = $code === UPLOAD_ERR_INI_SIZE || $code === UPLOAD_ERR_FORM_SIZE
-            ? 'El PKG supera el límite de carga de PHP. Usa user/pkgs_rpi o Descargas.'
-            : 'No se pudo recibir el PKG desde el selector de archivos.';
-        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => $message]); exit;
-    }
-    $name = basename(str_replace('\\', '/', (string)($upload['name'] ?? '')));
-    if (!preg_match('/^[A-Za-z0-9._() -]+\.pkg$/i', $name)) {
-        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'El nombre del archivo PKG contiene caracteres no admitidos.']); exit;
-    }
-    $rpiDir = __DIR__ . '/../user/pkgs_rpi';
-    if (!is_dir($rpiDir) && !@mkdir($rpiDir, 0775, true) && !is_dir($rpiDir)) {
-        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'No se puede escribir en user/pkgs_rpi.']); exit;
-    }
-    $destination = $rpiDir . DIRECTORY_SEPARATOR . $name;
-    if (file_exists($destination)) $destination = $rpiDir . DIRECTORY_SEPARATOR . pathinfo($name, PATHINFO_FILENAME) . '_' . date('Ymd_His') . '.pkg';
-    if (!@move_uploaded_file($upload['tmp_name'], $destination)) {
-        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'No se pudo guardar el PKG. Comprueba el espacio libre y los permisos.']); exit;
-    }
-    ob_end_clean(); echo json_encode(['status' => 'success', 'name' => basename($destination), 'size' => (int)filesize($destination)]); exit;
-}
 if ($action === 'scan_local_pkgs') {
     $remote_addr = $_SERVER['REMOTE_ADDR'] ?? '';
     if (!in_array($remote_addr, ['127.0.0.1', '::1'], true)) {
         ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'Escanea archivos desde el dispositivo que ejecuta el Manager.']); exit;
     }
     $source = $_POST['source'] ?? 'pkgs_rpi';
-    $custom_path = trim($_POST['custom_path'] ?? '');
+    if (!in_array($source, ['pkgs_rpi', 'downloads', 'both'], true)) $source = 'pkgs_rpi';
     $rpi_dir = __DIR__ . '/../user/pkgs_rpi';
     if (!is_dir($rpi_dir)) @mkdir($rpi_dir, 0777, true);
     $downloads = [];
@@ -192,13 +165,6 @@ if ($action === 'scan_local_pkgs') {
     if ($source === 'pkgs_rpi' || $source === 'both') $roots[] = [$rpi_dir, 'Carpeta RPI'];
     if ($source === 'downloads' || $source === 'both') {
         foreach ($downloads as $dir) $roots[] = [$dir, 'Descargas'];
-    }
-    if ($source === 'custom') {
-        $custom_real = realpath($custom_path);
-        if ($custom_real === false || !is_dir($custom_real) || !is_readable($custom_real)) {
-            ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'La ruta personalizada no existe o PHP no puede leerla.']); exit;
-        }
-        $roots[] = [$custom_real, 'Carpeta personalizada'];
     }
     if (!$roots) {
         ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'Elige una ubicación válida para buscar los PKG.']); exit;
@@ -249,6 +215,38 @@ function rpiRegistryPath(): string {
     $project = realpath(__DIR__ . '/..') ?: __DIR__;
     return rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'ghm_rpi_' . substr(hash('sha256', $project), 0, 16) . '.json';
 }
+function rpiJobFile(string $id): string {
+    $project = realpath(__DIR__ . '/..') ?: __DIR__;
+    return rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'ghm_rpi_' . substr(hash('sha256', $project), 0, 16) . '_job_' . $id . '.json';
+}
+function rpiLaunchWorker(string $id): bool {
+    if (!function_exists('popen') || !function_exists('pclose')) return false;
+    $worker = __DIR__ . '/rpi_worker.php';
+    if (PHP_OS_FAMILY === 'Windows') {
+        $command = 'start "" /B ' . escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($worker) . ' ' . escapeshellarg($id) . ' >NUL 2>&1';
+    } else {
+        if (!function_exists('exec')) return false;
+        $command = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($worker) . ' ' . escapeshellarg($id) . ' >/dev/null 2>&1 &';
+    }
+    $pipe = @popen($command, 'r');
+    if (!is_resource($pipe)) return false;
+    @pclose($pipe);
+    return true;
+}
+
+if ($action === 'rpi_status') {
+    if (!in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)) {
+        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'Consulta local no permitida.']); exit;
+    }
+    $jobId = strtolower((string)($_POST['job_id'] ?? $_GET['job_id'] ?? ''));
+    if (!preg_match('/^[a-f0-9]{24}$/', $jobId)) { ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'ID de operación inválido.']); exit; }
+    $jobFile = rpiJobFile($jobId);
+    $job = is_file($jobFile) ? json_decode((string)@file_get_contents($jobFile), true) : null;
+    if (!is_array($job)) { ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'No se encontró el registro de la instalación.']); exit; }
+    $accessFile = $jobFile . '.access';
+    $access = is_file($accessFile) ? array_values(array_filter(array_map(static function ($line) { return json_decode($line, true); }, file($accessFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: []), 'is_array')) : [];
+    ob_end_clean(); echo json_encode(['status' => 'success', 'job' => $job, 'file_requests' => $access]); exit;
+}
 // MODO 2: ORDEN AL REMOTE PACKAGE INSTALLER (PS4)
 // =======================================================
 if ($action === 'rpi_install') {
@@ -269,42 +267,19 @@ if ($action === 'rpi_install') {
     if (!is_array($entry) || $entry_path === false || !is_file($entry_path) || !is_readable($entry_path) || basename($entry_path) !== (string)($entry['name'] ?? '') || $filename !== (string)($entry['name'] ?? '') || !preg_match('/\.pkg$/i', $entry_path) || (int)@filesize($entry_path) !== (int)($entry['size'] ?? -1) || (int)@filemtime($entry_path) !== (int)($entry['mtime'] ?? -1) || (int)($entry['created'] ?? 0) < time() - 21600) {
         ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'El PKG ya no está disponible en esa ruta. Vuelve a escanear.']); exit;
     }
-    $file_url = "http://$phone_ip:$server_port/api/rpi_file.php?id=" . rawurlencode($file_id);
-
-    $ch = curl_init("http://$ps4_ip:$rpi_port/api/install");
-    $payload = json_encode([ "type" => "direct", "packages" => [$file_url] ], JSON_UNESCAPED_SLASHES);
-    
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 25);
-    
-    $res = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curl_error = curl_error($ch);
-    curl_close($ch);
-
-    if ($res !== false && $http_code == 200) {
-        $respuesta_json = json_decode($res, true);
-        if (is_array($respuesta_json) && isset($respuesta_json['status']) && $respuesta_json['status'] === 'success') {
-            ob_end_clean(); echo json_encode(['status' => 'success', 'message' => 'Instalación iniciada.']);
-        } elseif ($res === '' || $respuesta_json === null) {
-            ob_end_clean(); echo json_encode(['status' => 'success', 'message' => 'RPI aceptó la solicitud (HTTP 200). Comprueba el progreso en Package Installer.']);
-        } else {
-            $detail = trim(substr((string)($respuesta_json['message'] ?? $res), 0, 240));
-            ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'La PS4 rechazó la solicitud RPI.' . ($detail !== '' ? ' ' . $detail : '')]);
-        }
-    } else {
-        if ($res === false || $http_code === 0) {
-            $message = "No se pudo conectar con el servicio RPI en $ps4_ip:$rpi_port. El radar solo confirma FTP; abre Package Installer en primer plano y verifica 12800/12801.";
-            if ($curl_error !== '') $message .= " Detalle: $curl_error";
-        } else {
-            $detail = trim(substr((string)$res, 0, 240));
-            $message = "El servicio RPI respondió HTTP $http_code." . ($detail !== '' ? " Respuesta: $detail" : ' Comprueba que el instalador esté abierto y acepte el enlace.');
-        }
-        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => $message]);
+    try { $job_id = bin2hex(random_bytes(12)); } catch (Throwable $error) { $job_id = substr(hash('sha256', uniqid('', true)), 0, 24); }
+    $job_file = rpiJobFile($job_id);
+    $job = [
+        'job_id' => $job_id, 'state' => 'queued', 'created' => time(), 'updated' => time(),
+        'host_ip' => $ps4_ip, 'rpi_port' => $rpi_port, 'phone_ip' => $phone_ip,
+        'server_port' => $server_port, 'file_id' => $file_id, 'filename' => (string)$entry['name'],
+    ];
+    if (@file_put_contents($job_file, json_encode($job, JSON_UNESCAPED_SLASHES), LOCK_EX) === false || !rpiLaunchWorker($job_id)) {
+        $job['state'] = 'error'; $job['message'] = 'PHP no pudo iniciar el proceso de envío RPI en segundo plano.';
+        @file_put_contents($job_file, json_encode($job, JSON_UNESCAPED_SLASHES), LOCK_EX);
+        ob_end_clean(); echo json_encode(['status' => 'error', 'message' => $job['message']]); exit;
     }
+    ob_end_clean(); echo json_encode(['status' => 'success', 'job_id' => $job_id, 'message' => 'Orden RPI iniciada. El servidor seguirá atendiendo la descarga del PKG.']);
     exit;
 }
 

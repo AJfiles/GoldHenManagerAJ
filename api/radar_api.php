@@ -5,7 +5,7 @@ ini_set('display_errors', '0');
 header('Content-Type: application/json; charset=utf-8');
 set_time_limit(15);
 
-$timeoutMs = max(100, min(2500, (int)($_GET['timeout'] ?? 1200)));
+$timeoutMs = max(100, min(8000, (int)($_GET['timeout'] ?? 2500)));
 $requestedPort = (int)($_GET['port'] ?? 2121);
 $ports = array_values(array_unique(array_filter([$requestedPort, 2121, 2122, 12800, 12801, 9090], static fn($p) => $p >= 1 && $p <= 65535)));
 $ports = array_slice($ports, 0, 6);

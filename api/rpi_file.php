@@ -70,7 +70,20 @@ header('Content-Disposition: attachment; filename="' . $download_name . '"');
 header('X-Content-Type-Options: nosniff');
 header('Cache-Control: no-store');
 if ($status === 206) header("Content-Range: bytes $start-$end/$size");
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD') exit;
+$requestMethod = (string)($_SERVER['REQUEST_METHOD'] ?? 'GET');
+
+$jobId = strtolower((string)($_GET['job'] ?? ''));
+if (preg_match('/^[a-f0-9]{24}$/', $jobId)) {
+    $project = realpath(__DIR__ . '/..') ?: __DIR__;
+    $prefix = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'ghm_rpi_' . substr(hash('sha256', $project), 0, 16);
+    $access = [
+        'at' => gmdate('c'), 'remote' => (string)($_SERVER['REMOTE_ADDR'] ?? ''),
+        'method' => $requestMethod, 'range' => $range,
+        'bytes' => $length, 'file' => $download_name,
+    ];
+    @file_put_contents($prefix . '_job_' . $jobId . '.json.access', json_encode($access, JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND | LOCK_EX);
+}
+if ($requestMethod === 'HEAD') exit;
 
 $handle = @fopen($path, 'rb');
 if ($handle === false || ($start > 0 && fseek($handle, $start) !== 0)) {

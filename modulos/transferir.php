@@ -32,12 +32,12 @@
         </button>
     </div>
 
-    <div id="vista-trans-rpi" class="flex-1 flex flex-col gap-4 overflow-y-auto hide-scrollbar pb-10">
+    <div id="vista-trans-rpi" class="min-h-0 flex-1 flex flex-col gap-4 overflow-y-auto overscroll-contain touch-pan-y pb-10 hide-scrollbar" style="-webkit-overflow-scrolling:touch">
         
         <div class="w-full bg-blue-900/20 border border-blue-500/30 rounded-xl p-3 flex gap-3 shrink-0">
             <i class="fa-solid fa-info-circle text-blue-400 mt-0.5"></i>
             <p class="text-[9px] text-blue-200 font-mono leading-relaxed">
-                Selecciona dónde buscar los PKG. La PS4 debe estar en la misma red; el Radar comprueba FTP y te avisa aparte si el puerto RPI está disponible. Abre Package Installer y mantenlo en primer plano.
+                Deja tus PKG en <b>/storage/emulated/0/GoldHenManager/user/pkgs_rpi/</b> o en Descargas. La PS4 debe estar en la misma red y Package Installer abierto en primer plano.
             </p>
         </div>
 
@@ -51,12 +51,16 @@
                     <span class="text-cyan-500 mr-2 text-[12px]"><i class="fa-solid fa-gamepad"></i></span>
                     <input type="text" id="rpi-console-ip" placeholder="IP de PS4 (ej. 192.168.1.20)" class="w-full bg-transparent text-[12px] font-mono text-white outline-none">
                 </div>
-                <div class="flex items-center bg-black/40 border border-white/10 rounded-xl px-2 focus-within:border-cyan-500/50 w-24">
+                <div class="flex items-center bg-black/40 border border-white/10 rounded-xl px-2 focus-within:border-cyan-500/50 w-36">
                     <span class="text-cyan-500 mr-1 text-[10px]">:</span>
-                    <input type="number" id="rpi-install-port" value="12800" min="1" max="65535" aria-label="Puerto RPI" class="w-full bg-transparent text-[12px] font-mono text-white outline-none text-center">
+                    <select id="rpi-install-port" aria-label="Puerto RPI" class="w-full bg-transparent text-[10px] font-mono text-white outline-none">
+                        <option value="auto">Auto</option>
+                        <option value="12800">12800</option>
+                        <option value="12801">12801 · Nova</option>
+                    </select>
                 </div>
             </div>
-            <div class="flex items-center justify-between text-[8px] text-gray-500 font-mono px-1"><span>Instalador RPI: 12800 · Nova: 12801</span><span id="rpi-radar-status">IP manual disponible</span></div>
+            <div class="flex items-center justify-between text-[8px] text-gray-500 font-mono px-1"><span>RPI Original: 12800 · Nova: 12801</span><span id="rpi-radar-status">IP manual disponible</span></div>
         </div>
 
         <div class="w-full bg-[#0a0f1a] rounded-[1.5rem] p-3 border border-white/5 shadow-md flex flex-col gap-2 shrink-0">
@@ -74,24 +78,33 @@
                 <option value="pkgs_rpi">Carpeta del Manager · user/pkgs_rpi</option>
                 <option value="downloads">Descargas del teléfono o PC</option>
                 <option value="both">Ambas carpetas</option>
-                <option value="custom">Elegir PKG con Archivos…</option>
             </select>
-            <input id="rpi-browser-picker" type="file" accept=".pkg,application/octet-stream" multiple class="hidden" onchange="importarPKGDesdeArchivos(this.files); this.value='';">
-            <p class="text-[9px] text-gray-500">Elige archivos PKG desde el selector del teléfono. Se copiarán a la carpeta del Manager para que la PS4 pueda descargarlos.</p>
+            <p class="text-[9px] text-gray-500">En Android: Manager en <b>Almacenamiento interno/GoldHenManager/user/pkgs_rpi/</b>; Descargas en <b>Almacenamiento interno/Download/</b>.</p>
             <div class="flex items-center justify-between px-1">
                 <span class="text-[10px] font-black tracking-widest uppercase text-gray-400">PKG disponibles</span>
                 <button onclick="escanearCarpetaRPI()" class="text-[10px] text-cyan-400 font-bold uppercase active:scale-95"><i class="fa-solid fa-sync-alt mr-1"></i> Escanear</button>
             </div>
         </div>
 
-        <div id="rpi-list-container" class="flex flex-col gap-2 flex-1 overflow-y-auto custom-scrollbar">
+        <section class="shrink-0 rounded-2xl border border-emerald-500/20 bg-[#050b12] p-3" aria-label="Registro de RPI">
+            <div class="mb-2 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-300"><i class="fa-solid fa-terminal"></i> Registro RPI</div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="copiarLogRPI()" class="rounded-lg border border-white/10 px-2.5 py-1.5 text-[9px] font-bold text-gray-300"><i class="fa-regular fa-copy mr-1"></i>Copiar</button>
+                    <button type="button" onclick="limpiarLogRPI()" class="rounded-lg border border-white/10 px-2.5 py-1.5 text-[9px] font-bold text-gray-300">Limpiar</button>
+                </div>
+            </div>
+            <div id="rpi-log-terminal" class="h-28 overflow-y-auto rounded-xl border border-white/5 bg-black/60 p-2 font-mono text-[9px] leading-relaxed text-emerald-200" aria-live="polite"><div>[SYS] Listo. Elige Radar PS4 o instala un PKG.</div></div>
+        </section>
+
+        <div id="rpi-list-container" class="flex flex-col gap-2 shrink-0 min-h-[8rem] custom-scrollbar">
             <div class="w-full p-6 text-center border-2 border-dashed border-white/5 rounded-xl opacity-50">
                 <span class="text-[9px] uppercase font-bold tracking-widest text-gray-500">Buscando PKGs...</span>
             </div>
         </div>
     </div>
 
-    <div id="vista-trans-ftp" class="hidden flex-1 flex flex-col gap-4 overflow-y-auto hide-scrollbar pb-10">
+    <div id="vista-trans-ftp" class="hidden min-h-0 flex-1 flex flex-col gap-4 overflow-y-auto overscroll-contain touch-pan-y pb-10 hide-scrollbar" style="-webkit-overflow-scrolling:touch">
         
         <div class="w-full bg-purple-900/20 border border-purple-500/30 rounded-xl p-3 flex gap-3 shrink-0 mb-1">
             <i class="fa-solid fa-image text-purple-400 mt-0.5"></i>

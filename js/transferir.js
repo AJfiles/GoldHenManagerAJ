@@ -17,6 +17,40 @@ let archivoActualBlob = null;
 let archivoActualNombreFinal = "";
 let transferenciaInicio = 0;
 let rpiPhoneIpManual = false;
+let rpiLogLines = [];
+let rpiDetectedPort = null;
+
+function registrarLogRPI(message, level = 'info') {
+    const stamp = new Date().toLocaleTimeString();
+    const entry = `[${stamp}] [${level.toUpperCase()}] ${String(message)}`;
+    rpiLogLines.push(entry);
+    if (rpiLogLines.length > 120) rpiLogLines = rpiLogLines.slice(-120);
+    const terminal = document.getElementById('rpi-log-terminal');
+    if (!terminal) return;
+    const line = document.createElement('div');
+    line.className = level === 'error' ? 'text-red-300' : (level === 'success' ? 'text-emerald-300' : 'text-gray-300');
+    line.textContent = entry;
+    terminal.appendChild(line);
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+function limpiarLogRPI() {
+    rpiLogLines = [];
+    const terminal = document.getElementById('rpi-log-terminal');
+    if (terminal) terminal.replaceChildren();
+}
+
+async function copiarLogRPI() {
+    const text = rpiLogLines.join('\n') || 'GoldHEN Manager: sin eventos RPI registrados.';
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch (_) {
+        const field = document.createElement('textarea');
+        field.value = text; field.style.position = 'fixed'; field.style.opacity = '0';
+        document.body.appendChild(field); field.select(); document.execCommand('copy'); field.remove();
+    }
+    window.ps5Notification('REGISTRO RPI', 'Mensajes copiados al portapapeles.', 'fa-copy');
+}
 
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('rpi-console-ip')?.addEventListener('change', () => detectarIPCelular());
@@ -28,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         observador.observe(capaTrans, { attributes: true, attributeFilter: ['class'] });
     }
+    document.getElementById('rpi-install-port')?.addEventListener('change', () => { rpiDetectedPort = null; });
 });
 
 function formatearTamanoBytes(bytes) {
@@ -94,15 +129,7 @@ async function detectarIPCelular() {
 }
 
 function cambiarOrigenRPI() {
-    const source = document.getElementById('rpi-package-source')?.value || 'pkgs_rpi';
-    const custom = document.getElementById('rpi-custom-path');
-    if (custom) {
-        custom.classList.toggle('hidden', source !== 'custom');
-        if (source === 'custom') document.getElementById('rpi-browser-picker')?.click();
-    }
-    const customInput = document.getElementById('rpi-custom-path');
-    if (customInput) customInput.onkeydown = event => { if (event.key === 'Enter') escanearCarpetaRPI(); };
-    if (source !== 'custom' || customInput?.value.trim()) escanearCarpetaRPI();
+    escanearCarpetaRPI();
 }
 
 async function comprobarPuertoRPI(ip, port) {
@@ -123,84 +150,78 @@ async function detectarPS4ParaRPI() {
     const status = document.getElementById('rpi-radar-status');
     const ipInput = document.getElementById('rpi-console-ip');
     const portInput = document.getElementById('rpi-install-port');
-    if (status) status.textContent = 'Buscando PS4 en la red…';
+    rpiDetectedPort = null;
+    if (status) status.textContent = 'Buscando PS4 y puertos RPI…';
+    registrarLogRPI('Radar RPI iniciado; se prueban interfaces LAN y puertos 12800/12801.');
     try {
-        if (portInput && !['12800', '12801'].includes(portInput.value)) portInput.value = '12800';
-        const selectedRpiPort = parseInt(portInput?.value || '12800', 10);
-        const scan = async port => {
-            const response = await fetch(`api/radar_api.php?timeout=2500&port=${port}`);
-            const result = await response.json();
-            if (!response.ok || result.status !== 'success') throw new Error(result.message || 'No se pudo explorar la red.');
-            return result;
-        };
-        if (status) status.textContent = 'Escaneando interfaces LAN y puertos GoldHEN…';
-        const data = await scan(selectedRpiPort);
-        if (!data.ps4_ips?.length) throw new Error(`No se encontró PS4 en ${data.segmento}. Abre Package Installer; también puedes indicar la IP manualmente.`);
-        let ip = data.ps4_ips[0];
-        let rpiCheck = null;
-        for (const candidate of data.ps4_ips) {
-            const device = data.devices?.find(item => item.ip === candidate);
-            if (device?.ports?.includes(selectedRpiPort)) { ip = candidate; rpiCheck = { ok: true }; break; }
-            const check = await comprobarPuertoRPI(candidate, selectedRpiPort);
-            if (check.ok) { ip = candidate; rpiCheck = check; break; }
-            if (!rpiCheck) rpiCheck = check;
+        const preference = portInput?.value || 'auto';
+        const response = await fetch('api/radar_api.php?timeout=8000&port=12800');
+        const data = await response.json();
+        if (!response.ok || data.status !== 'success') throw new Error(data.message || 'No se pudo explorar la red.');
+        registrarLogRPI(`Interfaces: ${data.local_ips?.join(', ') || data.local_ip}. Subred: ${data.segmento}.`);
+        const candidates = (data.devices || []).slice().sort((a, b) => {
+            const hasRpiA = (a.ports || []).some(port => [12800, 12801].includes(Number(port)));
+            const hasRpiB = (b.ports || []).some(port => [12800, 12801].includes(Number(port)));
+            return Number(hasRpiB) - Number(hasRpiA);
+        });
+        let ip = '';
+        let foundPort = 0;
+        let ftpPort = 0;
+        for (const device of candidates) {
+            const knownRpi = (device.ports || []).map(Number).filter(port => [12800, 12801].includes(port));
+            const order = preference === 'auto' ? [12801, 12800] : [Number(preference)];
+            for (const port of order) {
+                if (knownRpi.includes(port) || (await comprobarPuertoRPI(device.ip, port)).ok) {
+                    ip = device.ip; foundPort = port; break;
+                }
+            }
+            if (!ip) {
+                const detectedFtp = (device.ports || []).map(Number).find(port => [2121, 2122].includes(port));
+                if (detectedFtp) { ip = device.ip; ftpPort = detectedFtp; }
+            }
+            if (foundPort) break;
         }
+        if (!ip) throw new Error(`No se halló un servicio en ${data.segmento}. Abre Package Installer y vuelve a escanear.`);
         if (ipInput) ipInput.value = ip;
-        if (portInput && !['12800', '12801'].includes(portInput.value)) portInput.value = '12800';
         localStorage.setItem('sebas_ip_final_libre', ip);
         if (typeof globalAppConfig !== 'undefined') globalAppConfig.ipConsola = ip;
         const mainIp = document.getElementById('ps-ip-full-input');
         if (mainIp) mainIp.value = ip;
         await detectarIPCelular();
-        rpiCheck = rpiCheck || await comprobarPuertoRPI(ip, selectedRpiPort);
-        if (status) status.textContent = rpiCheck?.ok ? `RPI detectado: ${ip}:${selectedRpiPort}` : `GoldHEN detectado: ${ip} · ${rpiCheck?.message || 'El puerto RPI no respondió'}`;
-        window.ps5Notification(rpiCheck.ok ? 'RADAR PS4' : 'RPI NO DISPONIBLE', rpiCheck.ok ? `RPI respondió en ${ip}:${selectedRpiPort}.` : `FTP detectado en ${ip}, pero ${rpiCheck.message}`, rpiCheck.ok ? 'fa-satellite-dish' : 'fa-triangle-exclamation');
+        if (foundPort) {
+            rpiDetectedPort = foundPort;
+            registrarLogRPI(`RPI disponible en ${ip}:${foundPort}.`, 'success');
+            if (status) status.textContent = `RPI detectado: ${ip}:${foundPort}`;
+            window.ps5Notification('RADAR PS4', `RPI respondió en ${ip}:${foundPort}.`, 'fa-satellite-dish');
+        } else {
+            registrarLogRPI(`FTP encontrado en ${ip}:${ftpPort || globalAppConfig.portFTP}; Package Installer no respondió en el puerto elegido.`, 'error');
+            if (status) status.textContent = `PS4 ${ip} · RPI no disponible`;
+            window.ps5Notification('PS4 DETECTADA', `Encontré ${ip} por FTP. Abre Package Installer para iniciar RPI.`, 'fa-triangle-exclamation');
+        }
     } catch (error) {
+        registrarLogRPI(error.message || 'Fallo del Radar RPI.', 'error');
         if (status) status.textContent = error.message || 'Radar no disponible';
         window.ps5Notification('RADAR PS4', error.message || 'No se encontró la consola.', 'fa-triangle-exclamation');
     }
 }
 
-async function importarPKGDesdeArchivos(files) {
-    const selected = Array.from(files || []).filter(file => /\.pkg$/i.test(file.name));
-    if (!selected.length) return;
-    const container = document.getElementById('rpi-list-container');
-    if (container) container.textContent = 'Copiando archivos seleccionados a user/pkgs_rpi…';
-    try {
-        for (const file of selected) {
-            const form = new FormData();
-            form.append('action', 'import_browser_pkg');
-            form.append('pkg', file, file.name);
-            const response = await fetch('api/transferir_api.php', { method: 'POST', body: form });
-            const result = await response.json();
-            if (!response.ok || result.status !== 'success') throw new Error(result.message || `No se pudo importar ${file.name}`);
-        }
-        const source = document.getElementById('rpi-package-source');
-        if (source) source.value = 'pkgs_rpi';
-        await escanearCarpetaRPI();
-    } catch (error) {
-        window.ps5Notification('IMPORTAR PKG', error.message || 'No se pudo importar el archivo.', 'fa-triangle-exclamation');
-        if (container) container.textContent = error.message || 'No se pudo importar el archivo.';
-    }
-}
-
-window.importarPKGDesdeArchivos = importarPKGDesdeArchivos;
-
 async function escanearCarpetaRPI() {
     const container = document.getElementById('rpi-list-container');
     if (!container) return;
+    const source = document.getElementById('rpi-package-source')?.value || 'pkgs_rpi';
+    registrarLogRPI(`Buscando archivos .pkg en ${source === 'pkgs_rpi' ? 'user/pkgs_rpi' : source === 'downloads' ? 'Descargas' : 'ambas ubicaciones'}.`);
     container.innerHTML = `<div class="w-full py-6 text-center text-cyan-400 opacity-50"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br><span class="text-[9px] font-bold uppercase tracking-widest">Escaneando PKG...</span></div>`;
 
     try {
         let fd = new FormData();
         fd.append('action', 'scan_local_pkgs');
         fd.append('source', document.getElementById('rpi-package-source')?.value || 'pkgs_rpi');
-        fd.append('custom_path', document.getElementById('rpi-custom-path')?.value.trim() || '');
         let res = await fetch('api/transferir_api.php', { method: 'POST', body: fd });
         let data = await res.json();
 
         if (!res.ok || data.status !== 'success') throw new Error(data.message || 'No se pudo escanear la carpeta.');
         container.innerHTML = '';
+        registrarLogRPI(`${data.data?.length || 0} PKG encontrados.`);
         if (!data.data?.length) {
             container.innerHTML = `<div class="w-full p-6 text-center border-2 border-dashed border-white/5 rounded-xl opacity-50"><i class="fa-solid fa-box-open text-2xl text-gray-500 mb-2"></i><br><span class="text-[9px] uppercase font-bold tracking-widest text-gray-500">No se encontraron archivos PKG legibles.</span></div>`;
             return;
@@ -228,14 +249,14 @@ async function escanearCarpetaRPI() {
             button.className = 'w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center hover:bg-emerald-500/20 active:scale-90 border border-emerald-500/20 shrink-0 ml-2';
             button.setAttribute('aria-label', `Instalar ${pkg.name}`);
             button.innerHTML = '<i class="fa-solid fa-download"></i>';
-            button.addEventListener('click', () => instalarRPIDirecto(pkg.id, pkg.name));
+            button.addEventListener('click', () => instalarRPIDirecto(pkg.id, pkg.name, pkg.size));
             row.append(info, button);
             container.appendChild(row);
         });
-    } catch(e) { const error = document.createElement('div'); error.className = 'w-full py-4 text-center text-red-400 text-[10px] uppercase font-bold'; error.textContent = e.message || 'Error al escanear'; container.replaceChildren(error); }
+    } catch(e) { registrarLogRPI(e.message || 'Error al escanear los PKG.', 'error'); const error = document.createElement('div'); error.className = 'w-full py-4 text-center text-red-400 text-[10px] uppercase font-bold'; error.textContent = e.message || 'Error al escanear'; container.replaceChildren(error); }
 }
 
-async function instalarRPIDirecto(fileId, nombrePkg) {
+async function instalarRPIDirecto(fileId, nombrePkg, fileSize = 0) {
     const ps4Ip = document.getElementById('rpi-console-ip')?.value.trim();
     if (!ps4Ip) { window.ps5Notification("ERROR", "No hay PS4 conectada.", "fa-wifi"); return; }
     if (typeof validarEstructuraIP === 'function' && !validarEstructuraIP(ps4Ip)) { window.ps5Notification('ERROR', 'La IP de PS4 no es válida.', 'fa-triangle-exclamation'); return; }
@@ -248,16 +269,28 @@ async function instalarRPIDirecto(fileId, nombrePkg) {
 
     const serverPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
     if (window.location.protocol !== 'http:') { window.ps5Notification('ERROR RPI', 'El servidor local debe abrirse por HTTP para que la PS4 pueda descargar el PKG.', 'fa-triangle-exclamation'); return; }
-    const rpiPort = parseInt(document.getElementById('rpi-install-port')?.value || '12800', 10);
-    if (![12800, 12801].includes(rpiPort)) { window.ps5Notification('ERROR', 'Usa el puerto RPI 12800 o Nova 12801.', 'fa-triangle-exclamation'); return; }
+    const portChoice = document.getElementById('rpi-install-port')?.value || 'auto';
+    const portCandidates = portChoice === 'auto'
+        ? Array.from(new Set([rpiDetectedPort, 12800, 12801].filter(port => [12800, 12801].includes(Number(port)))))
+        : [Number(portChoice)];
+    if (!portCandidates.length || portCandidates.some(port => ![12800, 12801].includes(port))) { window.ps5Notification('ERROR', 'Elige Auto, 12800 o 12801.', 'fa-triangle-exclamation'); return; }
     localStorage.setItem('sebas_ip_final_libre', ps4Ip);
 
-    const portCheck = await comprobarPuertoRPI(ps4Ip, rpiPort);
-    if (!portCheck.ok) {
+    let rpiPort = 0;
+    for (const candidatePort of portCandidates) {
+        const check = await comprobarPuertoRPI(ps4Ip, candidatePort);
+        if (check.ok) { rpiPort = candidatePort; break; }
+    }
+    if (!rpiPort) {
+        const portCheck = await comprobarPuertoRPI(ps4Ip, portCandidates[0]);
+        registrarLogRPI(`${nombrePkg}: RPI no disponible en ${ps4Ip}; ${portCheck.message}`, 'error');
         window.ps5Notification('RPI NO DISPONIBLE', portCheck.message, 'fa-triangle-exclamation');
         return;
     }
 
+    registrarLogRPI(`PKG seleccionado: ${nombrePkg} (${formatearTamanoBytes(Number(fileSize) || 0)}).`);
+    registrarLogRPI(`Destino RPI: ${ps4Ip}:${rpiPort}. Servidor PKG: ${phoneIp}:${serverPort}.`);
+    registrarLogRPI('Enviando la orden RPI en segundo plano; el servidor queda libre para servir el paquete.');
     window.ps5Notification("RPI", "Enviando orden al instalador de PS4...", "fa-paper-plane");
     
     try {
@@ -271,16 +304,53 @@ async function instalarRPIDirecto(fileId, nombrePkg) {
         fd.append('rpi_port', String(rpiPort));
         let res = await fetch('api/transferir_api.php', { method: 'POST', body: fd });
         let data = await res.json();
-        
-        if (data.status === 'success') { 
-            window.ps5Notification("¡ÉXITO!", "Instalación iniciada en tu PS4.", "fa-check"); 
-        } 
-        else { 
-            window.ps5Notification("ERROR RPI", data.message, "fa-times"); 
-        }
+        if (data.status !== 'success' || !data.job_id) throw new Error(data.message || 'PHP no pudo iniciar el envío RPI.');
+        registrarLogRPI(`Operación ${data.job_id} iniciada. Esperando la respuesta de la consola.`);
+        await monitorearOperacionRPI(data.job_id, nombrePkg, ps4Ip, rpiPort);
     } catch(e) { 
-        window.ps5Notification("ERROR", "Fallo de comunicación RPI.", "fa-wifi"); 
+        registrarLogRPI(e.message || 'Fallo de comunicación RPI.', 'error');
+        window.ps5Notification("ERROR RPI", e.message || "Fallo de comunicación RPI.", "fa-wifi");
     }
+}
+
+async function monitorearOperacionRPI(jobId, filename, ps4Ip, port) {
+    const started = Date.now();
+    let lastAccessCount = 0;
+    let lastHeartbeat = 0;
+    let previousState = '';
+    while (Date.now() - started < 910000) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const form = new FormData(); form.append('action', 'rpi_status'); form.append('job_id', jobId);
+        const response = await fetch('api/transferir_api.php', { method: 'POST', body: form });
+        const data = await response.json();
+        if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Se perdió el registro de instalación RPI.');
+        const job = data.job || {};
+        const access = data.file_requests || [];
+        if (job.state !== previousState) {
+            previousState = job.state;
+            registrarLogRPI(`Estado ${job.state}: ${job.message || 'procesando'}.`);
+        }
+        if (access.length > lastAccessCount) {
+            access.slice(lastAccessCount).forEach(item => registrarLogRPI(`La PS4 solicitó ${item.file || filename}: ${item.method}${item.range ? ' · ' + item.range : ''} · ${formatearTamanoBytes(Number(item.bytes || 0))} · origen ${item.remote || 'desconocido'}.`, 'success'));
+            lastAccessCount = access.length;
+        }
+        if (job.state === 'success') {
+            registrarLogRPI(`RPI terminó la solicitud para ${filename}. Revisa el progreso final en la PS4.`, 'success');
+            window.ps5Notification('ORDEN ACEPTADA', job.message || `La PS4 aceptó ${filename}.`, 'fa-check');
+            return;
+        }
+        if (job.state === 'error') {
+            registrarLogRPI(`Fallo en ${ps4Ip}:${port} · HTTP ${job.http_code || 0} · ${job.curl_error || job.message || 'sin detalle'}`, 'error');
+            if (job.response) registrarLogRPI(`Respuesta de PS4: ${job.response}`, 'error');
+            window.ps5Notification('ERROR RPI', job.message || 'La consola no aceptó la solicitud.', 'fa-times');
+            return;
+        }
+        if (access.length === 0 && Date.now() - lastHeartbeat >= 20000) {
+            lastHeartbeat = Date.now();
+            registrarLogRPI('La orden sigue abierta; la PS4 aún no solicita el PKG. Se mantiene el servidor listo.');
+        }
+    }
+    registrarLogRPI('La espera del panel llegó a 15 minutos. El proceso sigue registrado; revisa la PS4 o vuelve a consultar el registro.', 'error');
 }
 
 // =======================================================
