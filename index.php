@@ -210,7 +210,7 @@ header('X-Author: ' . $firma);
                 <div class="flex items-center gap-3">
                     <i class="fa-solid fa-satellite-dish text-emerald-400 animate-pulse text-lg"></i>
                     <div>
-                        <h3 class="text-xs font-black tracking-widest uppercase text-white">NET RADAR 💀</h3>
+                        <h3 class="text-xs font-black tracking-widest uppercase text-white">RADAR DE RED</h3>
                         <p class="text-[9px] text-emerald-700 font-mono" id="radar-subnet-txt">ANALYZING.SUBNETS</p>
                     </div>
                 </div>
@@ -227,7 +227,7 @@ header('X-Author: ' . $firma);
             
             <div class="mt-4 text-center text-[8px] font-mono tracking-widest text-emerald-800 uppercase flex items-center justify-center gap-2">
                 <div class="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-ping"></div>
-                Termux Core Brute-Force Radar
+                ESCÁNER LAN · SERVICIOS GOLDHEN
             </div>
         </div>
     </div>

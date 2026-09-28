@@ -27,7 +27,7 @@ fi
 
 # Sin los logs de peticiones en pantalla: quedan disponibles si alguna vez hay
 # que diagnosticar algo en ~/.goldhen-server.log.
-nohup php -d memory_limit=256M -d max_execution_time=0 -d max_input_time=0 -d upload_max_filesize=0 -d post_max_size=0 -d max_file_uploads=30 -S "0.0.0.0:${PORT}" -t "$PROJECT_DIR" "$PROJECT_DIR/server-router.php" >"$LOG_FILE" 2>&1 &
+nohup php -d memory_limit=256M -d max_execution_time=0 -S "0.0.0.0:${PORT}" -t "$PROJECT_DIR" "$PROJECT_DIR/server-router.php" >"$LOG_FILE" 2>&1 &
 SERVER_PID=$!
 printf '%s\n' "$SERVER_PID" > "$PID_FILE"
 

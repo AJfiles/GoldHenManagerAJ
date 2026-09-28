@@ -477,3 +477,28 @@ Radar LAN y selección de PKG en RPI
   192.168.40.41 con FTP 2121; 12800/12801 no respondieron durante la prueba.
   Falta confirmar en Android que ese host sea la PS4, abrir Package Installer
   y validar el puerto RPI y la selección de archivos en el dispositivo.
+
+Correcciones solicitadas para RPI y Radar
+-----------------------------------------
+- Se retiró «Elegir PKG con Archivos» y su copia de archivos. La interfaz deja
+  las opciones user/pkgs_rpi, Descargas y Ambas, e indica las rutas Android
+  donde deben quedar los PKG.
+- La vista RPI ahora permite desplazamiento táctil en todo el contenido; la
+  lista de resultados ya no queda atrapada en un panel interno sin scroll.
+- El selector de puerto RPI ofrece Auto, 12800 y 12801. Auto comprueba ambos y
+  conserva el puerto detectado para la instalación.
+- Se añadió un terminal de diagnóstico RPI con estado de escaneo, IP/puerto,
+  respuestas, solicitudes de descarga que llegan desde la PS4 y botón para
+  copiar o limpiar el registro.
+- Se corrigió el bloqueo del servidor PHP de una sola petición: el POST RPI se
+  ejecuta en un worker CLI separado. Así, mientras RPI responde, PHP puede
+  atender la petición del PKG de la consola. El worker registra código HTTP y
+  error cURL, con espera de hasta 15 minutos para la fase inicial de RPI.
+- El Radar principal aumenta la ventana de búsqueda y, si descubre FTP, guarda
+  tanto la IP como el puerto 2121/2122 que respondió. Se renombró su indicador
+  y se precisó el mensaje cuando no hay servicios GoldHEN accesibles.
+- Validación: `php -l` correcto en las API y el worker; `node --check` correcto
+  en app.js y transferir.js. Prueba local con RPI simulado: el worker respondió
+  HTTP 200 y el servidor PHP atendió a la vez el GET del PKG (32 bytes), que
+  quedó registrado. La prueba real debe confirmar el comportamiento del RPI
+  Nova en la PS4 y la descarga desde Termux.
