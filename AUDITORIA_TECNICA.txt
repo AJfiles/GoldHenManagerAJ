@@ -97,3 +97,59 @@ accesible desde la red local para las descargas RPI. Al abrir la interfaz, las
 operaciones sin consola deben fallar con mensajes controlados;
 con una PS4 GoldHEN compatible deben poder listar, transferir y modificar
 solamente las rutas autorizadas por cada módulo.
+
+ACTUALIZACIÓN DE AUDITORÍA - RPI Y REVISIÓN DE CÓDIGO (2026-09-27)
+===================================================================
+
+Este anexo reemplaza las limitaciones de herramientas que constaban en la
+revisión anterior: en esta sesión sí se contó con el PHP portable del release y
+Node.js. La comprobación sigue siendo estática salvo la simulación descrita.
+
+Comprobaciones
+--------------
+- Inventario del proyecto: 1.136 archivos visibles; 86 archivos PHP contando
+  la copia del release PC y 12 controladores JavaScript en el árbol principal.
+- `php -l`: correcto en los 86 archivos PHP.
+- `node --check`: correcto en los 12 controladores JavaScript principales.
+- Los 49 archivos PHP/JavaScript compartidos entre la raíz y
+  GoldHenPC-Release-v1.0 coinciden por SHA-256 tras sincronizar este cambio.
+- Prueba simulada RPI con PHP portable: la URL de paquete no incluye query
+  string; `HEAD` respondió 200 y una solicitud Range respondió 206 con 32 bytes.
+  El mock devolvió `task_id` y progreso BGFT; la API registró éxito al llegar a
+  100 %. Esta prueba verifica el servidor y el worker, no el comportamiento de
+  firmware, Nova ni la instalación real.
+- README público: no contiene instrucciones para abrir `store-admin`.
+
+Revisión y prioridades recomendadas
+-----------------------------------
+1. Cerrar la validación RPI en una PS4: mantener Package Installer visible,
+   instalar primero un PKG pequeño y confirmar en el log que la consola pidió
+   la ruta `/rpi/...pkg`, que avanzó BGFT y que el título terminó instalado.
+   Repetir desde Android/Termux y desde el paquete PC si ambos se distribuirán.
+2. Añadir autenticación local opcional con PIN y protección CSRF para APIs que
+   escriben, borran, importan respaldos o envían payloads. El servidor escucha
+   en la LAN y varios endpoints sensibles no tienen sesión/autorización propia;
+   cualquier equipo con acceso a esa red podría invocarlos. Diseñarlo como una
+   capa común y probar módulos heredados antes de activarla por defecto.
+3. Hacer operaciones FTP destructivas más transaccionales: validar ruta y
+   resultado del servidor, guardar respaldo cuando aplique y mostrar qué ruta
+   será afectada. Priorizar borrado de DLC/capturas y operaciones del Explorador.
+4. Añadir pruebas de regresión locales con respuestas simuladas para Radar,
+   RPI, `plugins.ini`, importación de respaldo y rutas FTP. Mantener la prueba
+   real de consola como una lista de aceptación separada: el mock no valida las
+   diferencias entre versiones de GoldHEN ni permisos FTP.
+5. Reducir divergencias futuras del release PC copiando cada cambio común desde
+   la raíz y comprobando hashes antes de publicar. Los runtimes y lanzadores PC
+   sí deben seguir siendo específicos de su paquete.
+
+Hallazgos de arquitectura
+-------------------------
+- La aplicación combina interfaz PHP/JavaScript con APIs FTP, sockets, archivos
+  locales, PWA y payloads; el acceso a funciones de consola no se puede certificar
+  solo con lint. La compatibilidad depende del firmware, GoldHEN y plugin RPI.
+- El Radar prueba servicios y puertos conocidos dentro de interfaces/subredes
+  alcanzables. No puede descubrir una consola aislada por VLAN, aislamiento Wi-Fi
+  o firewall; en esas condiciones la IP manual es el respaldo necesario.
+- La métrica de bytes servidos mide lo que el teléfono/PC entregó; la métrica
+  BGFT mide lo que reporta la tarea de PS4. Cuando Nova no expone `task_id`, la
+  interfaz informa aceptación sin inventar porcentaje ni éxito de instalación.

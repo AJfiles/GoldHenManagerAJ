@@ -54,8 +54,9 @@ v2.4b18.10. Otras versiones pueden usar rutas, permisos o servicios distintos.
   disponibles, tiene búsqueda por nombre dentro de la carpeta actual y un árbol
   ligero de carpetas visitadas. Trabaje únicamente sobre rutas que conozca.
 - Transferencias: permite cargas FTP y envíos compatibles con Remote Package
-  Installer; muestra velocidad, tiempo transcurrido y estimaciones cuando el
-  protocolo entrega datos suficientes.
+  Installer. RPI muestra progreso, velocidad, restante y transcurrido cuando
+  Nova expone el `task_id` y BGFT informa esos datos; la finalización depende
+  del estado que reporte la consola.
 - Modding: extrae, respalda e inyecta portadas. Las imágenes de respaldo pueden
   descargarse, eliminarse o volver a seleccionarse para inyección.
 - Game Mods/AFR: organiza los motores implementados para Minecraft y Resident

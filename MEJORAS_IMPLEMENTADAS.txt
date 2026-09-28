@@ -502,3 +502,23 @@ Correcciones solicitadas para RPI y Radar
   HTTP 200 y el servidor PHP atendió a la vez el GET del PKG (32 bytes), que
   quedó registrado. La prueba real debe confirmar el comportamiento del RPI
   Nova en la PS4 y la descarga desde Termux.
+
+Corrección de instalación RPI y progreso de PKG
+-----------------------------------------------
+- El error HTTP 500 de Nova indicaba que no podía descargar el encabezado del
+  paquete. El enlace anterior llevaba `?id=...&job=...`; esa versión de RPI lo
+  estaba escapando como `%3f...` dentro de la ruta. Ahora recibe una ruta limpia
+  `/rpi/<operación>/<archivo>/<nombre>.pkg`, sin query string, que el enrutador
+  valida antes de servir el archivo local.
+- El endpoint PKG atiende `HEAD` y rangos HTTP, valida que el nombre, tamaño y
+  fecha coincidan con el escaneo, y registra bytes servidos. El servidor puede
+  entregar el paquete sin copiarlo a la PS4.
+- El worker consulta `/api/get_task_progress` de RPI Nova con el `task_id` que
+  responde la consola. La transferencia muestra porcentaje, velocidad,
+  restante y transcurrido; el registro diferencia orden aceptada, descarga,
+  error y finalización reportada por BGFT. Si el RPI no da `task_id`, la UI no
+  simula un porcentaje ni afirma que terminó.
+- Validación local simulada: URL sin `?`, respuesta `HEAD 200`, descarga parcial
+  `206` de 32 bytes, `task_id` y progreso BGFT hasta 100 %. Sintaxis PHP correcta
+  en los 86 archivos y JavaScript en los 12 archivos fuente. Falta repetir con
+  el RPI Nova real y un PKG en PS4 para validar cabeceras y estado final BGFT.

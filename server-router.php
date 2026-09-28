@@ -27,6 +27,16 @@ if (preg_match('#^/(?:\.git|store/admin)(?:/|$)#i', $uriPath) || preg_match('#\.
     exit;
 }
 
+// Enlace directo sin query string para RPI: algunos builds convierten `?id=`
+// en parte de la ruta (%3F) y no pueden descargar el encabezado del PKG.
+if (preg_match('#^/rpi/([a-f0-9]{24})/([a-f0-9]{32,64})/([A-Za-z0-9._-]+\.pkg)$#i', $uriPath, $rpiMatch)) {
+    $_GET['job'] = strtolower($rpiMatch[1]);
+    $_GET['id'] = strtolower($rpiMatch[2]);
+    $_GET['path_name'] = $rpiMatch[3];
+    require __DIR__ . '/api/rpi_file.php';
+    exit;
+}
+
 $file = realpath(__DIR__ . $uriPath);
 $root = realpath(__DIR__);
 if ($file !== false && $root !== false && strpos($file, $root . DIRECTORY_SEPARATOR) === 0 && is_file($file)) {
