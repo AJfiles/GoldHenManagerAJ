@@ -245,7 +245,9 @@ if ($action === 'rpi_status') {
     if (!is_array($job)) { ob_end_clean(); echo json_encode(['status' => 'error', 'message' => 'No se encontró el registro de la instalación.']); exit; }
     $accessFile = $jobFile . '.access';
     $access = is_file($accessFile) ? array_values(array_filter(array_map(static function ($line) { return json_decode($line, true); }, file($accessFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: []), 'is_array')) : [];
-    ob_end_clean(); echo json_encode(['status' => 'success', 'job' => $job, 'file_requests' => $access]); exit;
+    $downloadProgressFile = $jobFile . '.progress';
+    $downloadProgress = is_file($downloadProgressFile) ? json_decode((string)@file_get_contents($downloadProgressFile), true) : null;
+    ob_end_clean(); echo json_encode(['status' => 'success', 'job' => $job, 'file_requests' => $access, 'download_progress' => is_array($downloadProgress) ? $downloadProgress : null]); exit;
 }
 // MODO 2: ORDEN AL REMOTE PACKAGE INSTALLER (PS4)
 // =======================================================
@@ -272,7 +274,7 @@ if ($action === 'rpi_install') {
     $job = [
         'job_id' => $job_id, 'state' => 'queued', 'created' => time(), 'updated' => time(),
         'host_ip' => $ps4_ip, 'rpi_port' => $rpi_port, 'phone_ip' => $phone_ip,
-        'server_port' => $server_port, 'file_id' => $file_id, 'filename' => (string)$entry['name'],
+        'server_port' => $server_port, 'file_id' => $file_id, 'filename' => (string)$entry['name'], 'file_size' => (int)$entry['size'],
     ];
     if (@file_put_contents($job_file, json_encode($job, JSON_UNESCAPED_SLASHES), LOCK_EX) === false || !rpiLaunchWorker($job_id)) {
         $job['state'] = 'error'; $job['message'] = 'PHP no pudo iniciar el proceso de envío RPI en segundo plano.';

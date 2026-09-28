@@ -62,6 +62,11 @@ if ($range !== '') {
 $length = $size === 0 ? 0 : $end - $start + 1;
 $download_name = preg_replace('/[^A-Za-z0-9._-]/', '_', $name);
 if ($download_name === '' || !preg_match('/\.pkg$/i', $download_name)) $download_name = 'package.pkg';
+$pathName = (string)($_GET['path_name'] ?? '');
+if ($pathName !== '' && !hash_equals($download_name, $pathName)) {
+    http_response_code(404);
+    exit;
+}
 http_response_code($status);
 header('Content-Type: application/octet-stream');
 header('Accept-Ranges: bytes');
@@ -73,6 +78,7 @@ if ($status === 206) header("Content-Range: bytes $start-$end/$size");
 $requestMethod = (string)($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
 $jobId = strtolower((string)($_GET['job'] ?? ''));
+$progressFile = '';
 if (preg_match('/^[a-f0-9]{24}$/', $jobId)) {
     $project = realpath(__DIR__ . '/..') ?: __DIR__;
     $prefix = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'ghm_rpi_' . substr(hash('sha256', $project), 0, 16);
@@ -82,6 +88,24 @@ if (preg_match('/^[a-f0-9]{24}$/', $jobId)) {
         'bytes' => $length, 'file' => $download_name,
     ];
     @file_put_contents($prefix . '_job_' . $jobId . '.json.access', json_encode($access, JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND | LOCK_EX);
+    $progressFile = $prefix . '_job_' . $jobId . '.json.progress';
+    if ($requestMethod !== 'HEAD') {
+        $progressHandle = @fopen($progressFile, 'c+');
+        if ($progressHandle) {
+            if (flock($progressHandle, LOCK_EX)) {
+                $contents = stream_get_contents($progressHandle);
+                $progress = json_decode((string)$contents, true);
+                if (!is_array($progress)) $progress = ['bytes_served' => 0, 'bytes_total' => $size, 'requests' => 0, 'updated' => time()];
+                $progress['bytes_total'] = $size;
+                $progress['requests'] = (int)($progress['requests'] ?? 0) + 1;
+                $progress['updated'] = time();
+                ftruncate($progressHandle, 0); rewind($progressHandle);
+                fwrite($progressHandle, json_encode($progress, JSON_UNESCAPED_SLASHES));
+                fflush($progressHandle); flock($progressHandle, LOCK_UN);
+            }
+            fclose($progressHandle);
+        }
+    }
 }
 if ($requestMethod === 'HEAD') exit;
 
@@ -92,11 +116,30 @@ if ($handle === false || ($start > 0 && fseek($handle, $start) !== 0)) {
     exit;
 }
 $remaining = $length;
+$pendingProgressBytes = 0;
 while ($remaining > 0 && !feof($handle)) {
     $chunk = fread($handle, min(1024 * 1024, $remaining));
     if ($chunk === false || $chunk === '') break;
     echo $chunk;
     $remaining -= strlen($chunk);
+    $pendingProgressBytes += strlen($chunk);
+    if ($progressFile !== '' && ($pendingProgressBytes >= 8 * 1024 * 1024 || $remaining === 0)) {
+        $progressHandle = @fopen($progressFile, 'c+');
+        if ($progressHandle) {
+            if (flock($progressHandle, LOCK_EX)) {
+                $contents = stream_get_contents($progressHandle);
+                $progress = json_decode((string)$contents, true);
+                if (!is_array($progress)) $progress = ['bytes_served' => 0, 'bytes_total' => $size, 'requests' => 1];
+                $progress['bytes_served'] = (int)($progress['bytes_served'] ?? 0) + $pendingProgressBytes;
+                $progress['updated'] = time();
+                ftruncate($progressHandle, 0); rewind($progressHandle);
+                fwrite($progressHandle, json_encode($progress, JSON_UNESCAPED_SLASHES));
+                fflush($progressHandle); flock($progressHandle, LOCK_UN);
+            }
+            fclose($progressHandle);
+        }
+        $pendingProgressBytes = 0;
+    }
     flush();
 }
 fclose($handle);
