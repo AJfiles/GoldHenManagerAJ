@@ -86,8 +86,18 @@
             </div>
         </div>
 
-        <section class="shrink-0 rounded-2xl border border-emerald-500/20 bg-[#050b12] p-3" aria-label="Registro de RPI">
-            <div class="mb-2 flex items-center justify-between gap-2">
+        <section class="shrink-0 rounded-2xl border border-cyan-500/20 bg-[#050b12] p-3" aria-label="Progreso y registro de RPI">
+            <div class="mb-2 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-cyan-200">
+                <span><i class="fa-solid fa-gauge-high mr-1"></i> Transferencia a PS4</span>
+                <span id="rpi-progress-percent">En espera</span>
+            </div>
+            <div class="h-2 overflow-hidden rounded-full bg-white/10"><div id="rpi-progress-bar" class="h-full w-0 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-[width] duration-500" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
+            <div class="mt-2 grid grid-cols-3 gap-2 text-[9px] text-gray-400">
+                <span>Velocidad <b id="rpi-progress-speed" class="block text-white">—</b></span>
+                <span>Restante <b id="rpi-progress-remaining" class="block text-white">—</b></span>
+                <span>Transcurrido <b id="rpi-progress-elapsed" class="block text-white">—</b></span>
+            </div>
+            <div class="mb-2 mt-4 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-300"><i class="fa-solid fa-terminal"></i> Registro RPI</div>
                 <div class="flex gap-2">
                     <button type="button" onclick="copiarLogRPI()" class="rounded-lg border border-white/10 px-2.5 py-1.5 text-[9px] font-bold text-gray-300"><i class="fa-regular fa-copy mr-1"></i>Copiar</button>

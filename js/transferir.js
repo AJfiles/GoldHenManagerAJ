@@ -318,7 +318,12 @@ async function monitorearOperacionRPI(jobId, filename, ps4Ip, port) {
     let lastAccessCount = 0;
     let lastHeartbeat = 0;
     let previousState = '';
-    while (Date.now() - started < 910000) {
+    let previousBytes = 0;
+    let previousSampleAt = started;
+    let lastPercent = -1;
+    let lastLoggedPercent = -5;
+    reiniciarProgresoRPI();
+    while (Date.now() - started < 21600000) {
         await new Promise(resolve => setTimeout(resolve, 2000));
         const form = new FormData(); form.append('action', 'rpi_status'); form.append('job_id', jobId);
         const response = await fetch('api/transferir_api.php', { method: 'POST', body: form });
@@ -326,6 +331,29 @@ async function monitorearOperacionRPI(jobId, filename, ps4Ip, port) {
         if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Se perdió el registro de instalación RPI.');
         const job = data.job || {};
         const access = data.file_requests || [];
+        const download = data.download_progress || {};
+        const bgft = job.progress || {};
+        const total = Number(bgft.total || download.bytes_total || job.file_size || 0);
+        const transferred = Number(bgft.transferred || 0);
+        const served = Number(download.bytes_served || 0);
+        const bytesForRate = transferred > 0 ? transferred : served;
+        const now = Date.now();
+        const sampleSeconds = Math.max(0.5, (now - previousSampleAt) / 1000);
+        const speed = Math.max(0, bytesForRate - previousBytes) / sampleSeconds;
+        previousBytes = bytesForRate;
+        previousSampleAt = now;
+        const percent = total > 0 ? Math.min(100, Math.max(0, Math.floor((bytesForRate / total) * 100))) : Number(bgft.percent || 0);
+        const remaining = bgft.remaining_seconds !== null && bgft.remaining_seconds !== undefined
+            ? Number(bgft.remaining_seconds)
+            : (speed > 0 && total > bytesForRate ? Math.ceil((total - bytesForRate) / speed) : null);
+        pintarProgresoRPI(percent, speed, remaining, Math.floor((now - started) / 1000), job.message || 'Preparando RPI');
+        if (Number(bgft.percent) !== lastPercent && Number.isFinite(Number(bgft.percent))) {
+            lastPercent = Number(bgft.percent);
+            if (lastPercent >= 100 || lastPercent >= lastLoggedPercent + 5) {
+                lastLoggedPercent = lastPercent;
+                registrarLogRPI(`Progreso BGFT: ${lastPercent}% · ${formatearTamanoBytes(transferred)} de ${formatearTamanoBytes(total)}.`, 'info');
+            }
+        }
         if (job.state !== previousState) {
             previousState = job.state;
             registrarLogRPI(`Estado ${job.state}: ${job.message || 'procesando'}.`);
@@ -335,8 +363,14 @@ async function monitorearOperacionRPI(jobId, filename, ps4Ip, port) {
             lastAccessCount = access.length;
         }
         if (job.state === 'success') {
-            registrarLogRPI(`RPI terminó la solicitud para ${filename}. Revisa el progreso final en la PS4.`, 'success');
-            window.ps5Notification('ORDEN ACEPTADA', job.message || `La PS4 aceptó ${filename}.`, 'fa-check');
+            pintarProgresoRPI(100, speed, 0, Math.floor((Date.now() - started) / 1000), job.message || 'Transferencia completada');
+            registrarLogRPI(`BGFT completó la transferencia para ${filename}.`, 'success');
+            window.ps5Notification('TRANSFERENCIA COMPLETADA', job.message || `BGFT terminó ${filename}. Confirma que el título aparezca instalado.`, 'fa-check');
+            return;
+        }
+        if (job.state === 'accepted') {
+            registrarLogRPI(job.message || 'RPI aceptó la orden, pero no expuso progreso BGFT.', 'success');
+            window.ps5Notification('ORDEN ACEPTADA', job.message || 'Confirma el progreso en Package Installer.', 'fa-check');
             return;
         }
         if (job.state === 'error') {
@@ -350,7 +384,30 @@ async function monitorearOperacionRPI(jobId, filename, ps4Ip, port) {
             registrarLogRPI('La orden sigue abierta; la PS4 aún no solicita el PKG. Se mantiene el servidor listo.');
         }
     }
-    registrarLogRPI('La espera del panel llegó a 15 minutos. El proceso sigue registrado; revisa la PS4 o vuelve a consultar el registro.', 'error');
+    registrarLogRPI('El panel dejó de esperar tras 6 horas. Revisa el estado final en la PS4.', 'error');
+}
+
+function reiniciarProgresoRPI() {
+    const bar = document.getElementById('rpi-progress-bar');
+    if (bar) { bar.style.width = '0%'; bar.setAttribute('aria-valuenow', '0'); }
+    const values = { 'rpi-progress-percent': 'Preparando', 'rpi-progress-speed': '—', 'rpi-progress-remaining': '—', 'rpi-progress-elapsed': '0:00' };
+    Object.entries(values).forEach(([id, value]) => { const el = document.getElementById(id); if (el) el.textContent = value; });
+}
+
+function pintarProgresoRPI(percent, speed, remaining, elapsed, state) {
+    const safePercent = Math.min(100, Math.max(0, Number(percent) || 0));
+    const bar = document.getElementById('rpi-progress-bar');
+    if (bar) { bar.style.width = `${safePercent}%`; bar.setAttribute('aria-valuenow', String(safePercent)); }
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    const duration = seconds => {
+        if (!Number.isFinite(seconds) || seconds < 0) return 'Calculando';
+        const h = Math.floor(seconds / 3600), m = Math.floor((seconds % 3600) / 60), s = Math.floor(seconds % 60);
+        return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
+    };
+    set('rpi-progress-percent', `${safePercent}% · ${String(state || 'RPI')}`);
+    set('rpi-progress-speed', speed > 0 ? `${formatearTamanoBytes(speed)}/s` : 'Esperando PS4');
+    set('rpi-progress-remaining', remaining === null ? 'Calculando' : duration(remaining));
+    set('rpi-progress-elapsed', duration(elapsed));
 }
 
 // =======================================================
